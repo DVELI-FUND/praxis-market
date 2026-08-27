@@ -57,3 +57,7 @@ export async function queryHeight(): Promise<HeightInfo> {
   );
   return { height: Number(d.height || 0), networkId: d.network_id ?? d.networkID };
 }
+
+export async function queryAccount(address: string): Promise<{ amount?: string | number }> {
+  return rpc<{ amount?: string | number }>("/v1/query/account", { address });
+}
