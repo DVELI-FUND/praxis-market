@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import type { Market } from "@/lib/markets";
 import { CAT_SYMBOLS, extractCat, extractImg, stripCatPrefix, yesPct } from "@/lib/markets";
 import { fmtPRX } from "@/lib/format";
@@ -29,11 +30,13 @@ export default function MarketCard({ market, featured = false, bookmarked, onTog
   const qTrunc = question.length > maxLen ? question.slice(0, maxLen) + "…" : question;
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-card border border-line bg-surface transition-all hover:-translate-y-0.5 hover:border-up/35 hover:shadow-[0_6px_28px_rgba(0,0,0,0.6),0_0_0_1px_rgba(0,232,122,0.1)]">
+    <Link
+      href={`/market/${market.marketId}`}
+      className="flex h-full flex-col overflow-hidden rounded-card border border-line bg-surface transition-all hover:-translate-y-0.5 hover:border-up/35 hover:shadow-[0_6px_28px_rgba(0,0,0,0.6),0_0_0_1px_rgba(0,232,122,0.1)]"
+    >
       <div className="flex-1 px-3 pb-2 pt-2.5">
         <div className="mb-1.5 flex items-center gap-1.5 font-mono text-[8px] uppercase tracking-[1.5px] text-ink-3">
           {imgUrl ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={imgUrl}
               alt=""
@@ -100,7 +103,10 @@ export default function MarketCard({ market, featured = false, bookmarked, onTog
         </div>
       </div>
 
-      <div className="flex items-center justify-between border-t border-line bg-bg-2 px-3 py-1.5">
+      <div
+        className="flex items-center justify-between border-t border-line bg-bg-2 px-3 py-1.5"
+        onClick={(e) => e.preventDefault()}
+      >
         <div className="font-mono text-[9px] text-ink-3">
           VOL&nbsp;<b className="text-[10px] text-cyanx">{vol}</b>
         </div>
@@ -110,6 +116,7 @@ export default function MarketCard({ market, featured = false, bookmarked, onTog
         <button
           className={`p-0.5 text-[13px] transition-colors ${bookmarked ? "text-amberx" : "text-ink-3 hover:text-amberx"}`}
           onClick={(e) => {
+            e.preventDefault();
             e.stopPropagation();
             onToggleBookmark(market.marketId);
           }}
@@ -118,6 +125,6 @@ export default function MarketCard({ market, featured = false, bookmarked, onTog
           {bookmarked ? "★" : "☆"}
         </button>
       </div>
-    </div>
+    </Link>
   );
 }

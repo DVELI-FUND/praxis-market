@@ -3,7 +3,7 @@ import MarketsBoard from "@/components/MarketsBoard";
 import WalletPill from "@/components/WalletPill";
 import { useHeight } from "@/hooks/useHeight";
 
-const PH2_CANARY = "PRAXIS-NEXT-PH2";
+const PH3_CANARY = "PRAXIS-NEXT-PH3";
 
 export default function Page() {
   const { data, isError } = useHeight();
@@ -33,7 +33,7 @@ export default function Page() {
 
       <MarketsBoard />
 
-      <span className="hidden" aria-hidden="true">{PH2_CANARY}</span>
+      <span className="hidden" aria-hidden="true">{PH3_CANARY}</span>
     </main>
   );
 }
