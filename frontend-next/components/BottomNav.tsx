@@ -5,8 +5,8 @@ import { useUi } from "@/store/ui";
 
 const ITEMS: { href: string | null; icon: string; label: string }[] = [
   { href: "/", icon: "◈", label: "Markets" },
-  { href: null, icon: "◉", label: "Resolvers" },
-  { href: null, icon: "⌕", label: "Search" },
+  { href: "/resolvers", icon: "◉", label: "Resolvers" },
+  { href: "/search", icon: "⌕", label: "Search" },
   { href: "/profile", icon: "◫", label: "Profile" },
   { href: null, icon: "≡", label: "More" },
 ];
@@ -20,10 +20,9 @@ export default function BottomNav() {
       {ITEMS.map((it) => {
         const active = it.href !== null && pathname === it.href;
         const isMore = it.label === "More";
-        const disabled = !it.href && !isMore;
         const cls = `flex flex-1 flex-col items-center justify-center gap-[3px] border-none bg-transparent font-mono text-[8px] uppercase tracking-[0.5px] transition-colors ${
           active ? "text-up" : "text-ink-3"
-        } ${disabled ? "opacity-40" : ""}`;
+        }`;
         if (it.href) {
           return (
             <Link key={it.label} href={it.href} className={cls}>
@@ -33,13 +32,7 @@ export default function BottomNav() {
           );
         }
         return (
-          <button
-            key={it.label}
-            className={cls}
-            disabled={disabled}
-            title={disabled ? "Coming in a later phase" : undefined}
-            onClick={isMore ? () => setMore(true) : undefined}
-          >
+          <button key={it.label} className={cls} onClick={() => setMore(true)}>
             <span className="text-[20px] leading-none">{it.icon}</span>
             <span>{it.label}</span>
           </button>
