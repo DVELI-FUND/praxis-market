@@ -1,3 +1,4 @@
+import { b64ToHex } from "@/lib/format";
 import { getPluginRPC, queryHeight } from "@/lib/rpc";
 
 export const CLOSED_WINDOW = 20000; // blocks — from Frontend/markets.js
@@ -73,7 +74,7 @@ export async function fetchMarkets(): Promise<Market[]> {
       marketId: id,
       question: mk.question || "(no question)",
       rules: mk.rules || "",
-      creator: mk.creator || "",
+      creator: b64ToHex(mk.creator || ""),
       b0: BigInt(mk.b_eff || 0),
       expiry,
       status,

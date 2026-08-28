@@ -1,4 +1,5 @@
 // Market detail data fetching — uses available plugin endpoints
+import { b64ToHex } from "@/lib/format";
 import { getPluginRPC } from "@/lib/rpc";
 
 export interface MarketDetail {
@@ -105,7 +106,7 @@ export async function fetchMarket(mid: string): Promise<MarketDetail> {
     marketId: raw.id,
     question: mk.question || "(no question)",
     rules: mk.rules || "",
-    creator: mk.creator || "",
+    creator: b64ToHex(mk.creator || ""),
     b0: BigInt(mk.b_eff || 0),
     expiry: BigInt(mk.expiry_time || 0),
     status: mk.status ?? 0,
