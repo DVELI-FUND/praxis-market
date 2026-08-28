@@ -20,6 +20,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" data-theme="dark">
       <body className={`${syne.variable} ${dmMono.variable} ${dmSans.variable} bg-bg text-ink font-sans`}>
+        <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta httpEquiv="Pragma" content="no-cache" />
+        <meta httpEquiv="Expires" content="0" />
         <Providers>
           <Chrome>{children}</Chrome>
         </Providers>
