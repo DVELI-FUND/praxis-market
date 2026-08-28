@@ -5,6 +5,7 @@ import DriftBanner from "./DriftBanner";
 import BottomNav from "./BottomNav";
 import Toaster from "./Toaster";
 import ConfirmModal from "./ConfirmModal";
+import MoreSheet from "./MoreSheet";
 
 export default function Chrome({ children }: { children: ReactNode }) {
   return (
@@ -14,6 +15,7 @@ export default function Chrome({ children }: { children: ReactNode }) {
       <BottomNav />
       <Toaster />
       <ConfirmModal />
+      <MoreSheet />
     </WalletProvider>
   );
 }
