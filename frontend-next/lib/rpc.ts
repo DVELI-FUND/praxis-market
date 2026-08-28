@@ -48,14 +48,36 @@ export async function submitTxRPC(obj: Record<string, unknown>): Promise<string>
 export interface HeightInfo {
   height: number;
   networkId?: number;
+  chainId?: number;
 }
 
+// Mirrors legacy checkRPC: height + networkID from /v1/query/height,
+// chainID from block-by-height → lastQuorumCertificate.header.
 export async function queryHeight(): Promise<HeightInfo> {
   const d = await rpc<{ height?: number | string; network_id?: number; networkID?: number }>(
     "/v1/query/height",
     {}
   );
-  return { height: Number(d.height || 0), networkId: d.network_id ?? d.networkID };
+  const height = Number(d.height || 0);
+  let networkId = d.network_id ?? d.networkID;
+  let chainId: number | undefined;
+  try {
+    const blk = await rpc<{
+      blockHeader?: {
+        lastQuorumCertificate?: {
+          header?: { chainId?: number; chainID?: number; networkID?: number; networkId?: number };
+        };
+      };
+    }>("/v1/query/block-by-height", { height });
+    const hdr = blk?.blockHeader?.lastQuorumCertificate?.header;
+    if (hdr) {
+      chainId = hdr.chainId ?? hdr.chainID;
+      networkId = hdr.networkID ?? hdr.networkId ?? networkId;
+    }
+  } catch {
+    // chainId optional — encSignBytes falls back to 1
+  }
+  return { height, networkId, chainId };
 }
 
 export async function queryAccount(address: string): Promise<{ amount?: string | number }> {

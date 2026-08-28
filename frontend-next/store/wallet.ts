@@ -13,6 +13,8 @@ interface WalletState {
   ethAddress: string | null;
   praxisAddress: string | null;
   pubHex: string | null;
+  privKey: Uint8Array | null;
+  pubKey: Uint8Array | null;
   status: WalletStatus;
   error: string | null;
   restored: boolean;
@@ -27,6 +29,8 @@ export const useWallet = create<WalletState>((set, get) => ({
   ethAddress: null,
   praxisAddress: null,
   pubHex: null,
+  privKey: null,
+  pubKey: null,
   status: "disconnected",
   error: null,
   restored: false,
@@ -36,6 +40,8 @@ export const useWallet = create<WalletState>((set, get) => ({
       ethAddress: s.ethAddress,
       praxisAddress: s.praxisAddress,
       pubHex: s.pubHex,
+      privKey: s.privKey,
+      pubKey: s.pubKey,
       status: "connected",
       error: null,
     }),
@@ -55,7 +61,15 @@ export const useWallet = create<WalletState>((set, get) => ({
 
   disconnect: () => {
     disconnectWallet();
-    set({ ethAddress: null, praxisAddress: null, pubHex: null, status: "disconnected", error: null });
+    set({
+      ethAddress: null,
+      praxisAddress: null,
+      pubHex: null,
+      privKey: null,
+      pubKey: null,
+      status: "disconnected",
+      error: null,
+    });
   },
 
   restore: async () => {
@@ -69,13 +83,12 @@ export const useWallet = create<WalletState>((set, get) => ({
     }
   },
 
-  // Mobile bridges don't push accountsChanged — poll + focus/visibility sync.
   checkDrift: async () => {
     const st = get();
     if (st.status !== "connected" && st.status !== "drift") return;
     try {
       const acc = await currentEthAccount();
-      if (!acc) return; // no authorized origin info; keep cached session
+      if (!acc) return;
       if (acc !== st.ethAddress) set({ status: "drift" });
       else if (st.status === "drift") set({ status: "connected" });
     } catch {
