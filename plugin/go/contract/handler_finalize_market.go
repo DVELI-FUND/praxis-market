@@ -243,6 +243,9 @@ resolverFeePool.Amount   = 0
 }
 }
 
+txLogOp, pe := buildMarketTxLogOp(market, msg.MarketId, "finalize_market", msg.CallerAddr, now, proposal.ProposedOutcome, 0, 0)
+if pe != nil { return &PluginDeliverResponse{Error: pe} }
+
 rawM, pe := SafeMarshal(market)
 if pe != nil { return &PluginDeliverResponse{Error: pe} }
 rawT, pe := SafeMarshal(treasury)
@@ -254,6 +257,7 @@ sets := []*PluginSetOp{
 {Key: KeyForMarket(msg.MarketId),          Value: rawM},
 {Key: KeyForTreasuryReserve(msg.MarketId), Value: rawT},
 {Key: KeyForAccount(msg.CallerAddr),        Value: rawCaller},
+txLogOp,
 }
 
 if proposal != nil && proposerKey != nil {

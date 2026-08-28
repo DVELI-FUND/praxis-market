@@ -150,6 +150,9 @@ Rules:         msg.Rules,
 pool := &Pool{Id: c.Config.ChainId, Amount: lmsrSeed}
 treasury := &TreasuryReserve{LockedReserve: FINALIZATION_BOUNTY, CreatorBond: CREATOR_BOND}
 
+txLogOp, pe := buildMarketTxLogOp(market, marketId, "create_market", msg.CreatorAddress, now, false, 0, 0)
+if pe != nil { return &PluginDeliverResponse{Error: pe} }
+
 rawMarket, pe := SafeMarshal(market)
 if pe != nil { return &PluginDeliverResponse{Error: pe} }
 rawCreator, pe := SafeMarshal(creator)
@@ -175,6 +178,7 @@ sets := []*PluginSetOp{
 	{Key: gTreasuryKey,  Value: rawGTreasury},
 	{Key: midxKey,       Value: rawMidx},
 		{Key: ocKey,         Value: rawOC},
+	txLogOp,
 }
 var deletes []*PluginDeleteOp
 if creator.Amount > 0 {

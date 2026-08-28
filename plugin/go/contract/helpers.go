@@ -117,3 +117,30 @@ newTotal := currentShares + newShares
 cap := totalSideShares * MAX_POSITION_BPS / 10000
 return newTotal > cap
 }
+
+// buildMarketTxLogOp builds the set-op for a single market-txs activity log entry.
+// Call once per handler, after all other in-memory mutation of `market` is decided
+// but before SafeMarshal(market) -- it increments market.TxCount as a side effect
+// (so that mutation must still be marshaled/written by the caller), and the key it
+// returns uses the pre-increment value as the log's sequence number (so the first
+// entry for a market is seq 0). Append the returned op into the handler's own
+// `sets` slice alongside the market/other writes -- same atomic StateWrite call.
+// Only called from the 6 market-affecting handlers (create/predict/propose/dispute/
+// finalize/cancel); claim/resolver-only handlers do not log to this feed.
+func buildMarketTxLogOp(market *MarketState, marketId []byte, txType string, actor []byte, height uint64, outcome bool, shares, cost uint64) (*PluginSetOp, *PluginError) {
+seq := market.TxCount
+market.TxCount++
+entry := &MarketTxEntry{
+TxType:  txType,
+Actor:   actor,
+Height:  height,
+Outcome: outcome,
+Shares:  shares,
+Cost:    cost,
+}
+raw, pe := SafeMarshal(entry)
+if pe != nil {
+return nil, pe
+}
+return &PluginSetOp{Key: KeyForMarketTx(marketId, seq), Value: raw}, nil
+}

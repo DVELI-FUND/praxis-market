@@ -1,5 +1,7 @@
 package contract
 
+import "log"
+
 // handler_endblock.go — PRIS v1.0-r3 EndBlock epoch boundary processor
 //
 // Triggered inside EndBlock every PRIS_EPOCH_BLOCKS blocks.
@@ -14,6 +16,20 @@ package contract
 //
 // EndBlock must never return an error that halts the chain.
 
+
+// EndBlock() is called once per block by the FSM (see plugin.go's FSMToPlugin_End
+// case). On PRIS epoch boundaries it hands off to processEpochBoundary below.
+// Per this file's own doc comment above, EndBlock must never halt the chain, so
+// any processEpochBoundary failure is logged and swallowed rather than returned.
+func (c *Contract) EndBlock(req *PluginEndRequest) *PluginEndResponse {
+height := req.GetHeight()
+if height%PRIS_EPOCH_BLOCKS == 0 {
+if pe := c.processEpochBoundary(height); pe != nil {
+log.Printf("EndBlock: processEpochBoundary error at height %d: %v", height, pe)
+}
+}
+return &PluginEndResponse{}
+}
 
 func (c *Contract) processEpochBoundary(height uint64) *PluginError {
 epoch := height / PRIS_EPOCH_BLOCKS

@@ -97,3 +97,23 @@ var creatorOpenCountPrefix = []byte{0x2C}
 func KeyForCreatorOpenCount(addr []byte) []byte {
 return JoinLenPrefix(creatorOpenCountPrefix, addr)
 }
+
+var marketTxPrefix = []byte{0x2D}
+
+// KeyForMarketTx returns the state key for a single market transaction log entry.
+// Composite: market_id (20 bytes) + seq (8-byte big-endian, from MarketState.TxCount
+// at write time, pre-increment). Value: MarketTxEntry proto.
+//
+// Built as separate JoinLenPrefix segments (not pre-concatenated into one blob) so
+// that KeyForMarketTxPrefix(marketId) is a true byte-prefix of every key this
+// function returns for that market -- enabling an efficient per-market range scan
+// instead of a full-prefix scan-and-filter (see KeyForPosition/positions endpoint).
+func KeyForMarketTx(marketId []byte, seq uint64) []byte {
+return JoinLenPrefix(marketTxPrefix, marketId, uint64ToBytes(seq))
+}
+
+// KeyForMarketTxPrefix returns the range-scan prefix covering every tx log entry
+// for one market, in ascending seq (chronological) order.
+func KeyForMarketTxPrefix(marketId []byte) []byte {
+return JoinLenPrefix(marketTxPrefix, marketId)
+}

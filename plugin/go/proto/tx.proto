@@ -71,6 +71,21 @@ message MarketState {
   uint64 finalized_pool_amount = 11;
   string question        = 12;
   string rules           = 13;
+  uint64 tx_count        = 14; // monotonic per-market counter; doubles as market-txs log seq
+}
+
+// MarketTxEntry is a single append-only log entry recorded for a market-affecting
+// transaction. Keyed by market_id + tx_count (see KeyForMarketTx in keys.go).
+// Populated by: create_market, submit_prediction, propose_outcome, file_dispute,
+// finalize_market, cancel_market. Not populated by resolver-only/claim tx types.
+message MarketTxEntry {
+  string tx_type = 1;  // "create_market" | "submit_prediction" | "propose_outcome" |
+                        // "file_dispute" | "finalize_market" | "cancel_market"
+  bytes  actor    = 2;  // address that submitted the tx
+  uint64 height   = 3;  // block height at delivery
+  bool   outcome  = 4;  // YES/NO side; meaningful for submit_prediction/propose_outcome/finalize_market
+  uint64 shares   = 5;  // shares transacted; submit_prediction only, else 0
+  uint64 cost     = 6;  // PRX trade cost; submit_prediction only, else 0 -- drives price chart
 }
 
 message PositionState {
@@ -147,12 +162,8 @@ message PanelEntropyAccum {
 }
 
 // Transaction messages (12 types)
-message MessageSend {
-  bytes  from_address = 1;
-  bytes  to_address   = 2;
-  uint64 amount       = 3;
-}
-
+// NOTE: MessageSend is defined above (line ~42); duplicate definition removed here
+// during market-txs endpoint work -- it was blocking protoc regeneration entirely.
 message MessageCreateMarket {
   bytes  creator_address = 1;
   uint64 b0              = 2;

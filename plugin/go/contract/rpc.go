@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"sort"
+	"strconv"
 )
 
 // StartRPCServer() launches the plugin's own HTTP server.
@@ -154,6 +155,77 @@ func (p *Plugin) StartRPCServer() {
 
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(holders)
+	})
+
+	// GET /v1/query/market-txs?market=<hex>          -> newest-first tx log, default limit 50
+	// GET /v1/query/market-txs?market=<hex>&limit=N   -> newest-first tx log, capped at 200
+	// Powers: price chart, activity feed, ticker strip. Logged tx types: create_market,
+	// submit_prediction, propose_outcome, file_dispute, finalize_market, cancel_market.
+	// Uses a market-scoped range prefix (KeyForMarketTxPrefix), not a full-table scan.
+	// See KeyForMarketTx in keys_pris.go for why that's safe.
+	mux.HandleFunc("/v1/query/market-txs", func(w http.ResponseWriter, r *http.Request) {
+		marketHex := r.URL.Query().Get("market")
+		if marketHex == "" {
+			http.Error(w, "missing required query param: market", http.StatusBadRequest)
+			return
+		}
+		marketId, err := hex.DecodeString(marketHex)
+		if err != nil {
+			http.Error(w, "invalid market: must be hex-encoded", http.StatusBadRequest)
+			return
+		}
+
+		limit := uint64(50)
+		if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+			parsed, perr := strconv.ParseUint(limitStr, 10, 64)
+			if perr != nil {
+				http.Error(w, "invalid limit: must be a non-negative integer", http.StatusBadRequest)
+				return
+			}
+			limit = parsed
+		}
+		if limit == 0 || limit > 200 {
+			limit = 200
+		}
+
+		resp, qErr := p.QueryState(0, &PluginStateReadRequest{
+			Ranges: []*PluginRangeRead{
+				{QueryId: 1, Prefix: KeyForMarketTxPrefix(marketId), Limit: limit, Reverse: true},
+			},
+		})
+		if qErr != nil {
+			http.Error(w, qErr.Msg, http.StatusInternalServerError)
+			return
+		}
+
+		type txEntry struct {
+			TxType string `json:"txType"`
+			Actor  string `json:"actor"`
+			Height uint64 `json:"height"`
+			Outcome bool  `json:"outcome"`
+			Shares uint64 `json:"shares"`
+			Cost   uint64 `json:"cost"`
+		}
+		txs := []txEntry{}
+		if len(resp.Results) > 0 {
+			for _, entry := range resp.Results[0].Entries {
+				e := &MarketTxEntry{}
+				if perr := Unmarshal(entry.Value, e); perr != nil {
+					continue
+				}
+				txs = append(txs, txEntry{
+					TxType:  e.TxType,
+					Actor:   hex.EncodeToString(e.Actor),
+					Height:  e.Height,
+					Outcome: e.Outcome,
+					Shares:  e.Shares,
+					Cost:    e.Cost,
+				})
+			}
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(txs)
 	})
 
 	// GET /v1/query/resolvers  -> list all registered resolvers

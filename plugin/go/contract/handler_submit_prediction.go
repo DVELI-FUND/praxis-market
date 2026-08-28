@@ -186,6 +186,9 @@ market.TotalPositions++
 
 market.ElevatedRisk = IsElevatedRisk(mPool.Amount)
 
+txLogOp, pe := buildMarketTxLogOp(market, msg.MarketId, "submit_prediction", msg.BettorAddress, now, msg.Outcome, msg.Shares, tradeCost)
+if pe != nil { return &PluginDeliverResponse{Error: pe} }
+
 rawMarket, pe := SafeMarshal(market)
 if pe != nil { return &PluginDeliverResponse{Error: pe} }
 rawPos, pe := SafeMarshal(position)
@@ -209,6 +212,7 @@ sets := []*PluginSetOp{
 {Key: creatorFeeKey,  Value: rawCreatorFee},
 {Key: resolverFeeKey, Value: rawResolverFee},
 		{Key: gTreasuryKey,   Value: rawGTreasury},
+	txLogOp,
 }
 var deletes []*PluginDeleteOp
 if bettor.Amount == 0 {

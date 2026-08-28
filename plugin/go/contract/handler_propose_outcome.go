@@ -175,6 +175,11 @@ Status:          PROPOSAL_OPEN,
 resolverState := &ResolverState{ResolverAddress: msg.ResolverAddress}
 
 // ── Marshal all ───────────────────────────────────────────────────────────
+txLogOp, pe := buildMarketTxLogOp(market, msg.MarketId, "propose_outcome", msg.ResolverAddress, now, msg.ProposedOutcome, 0, 0)
+if pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
+
 rawM, pe := SafeMarshal(market)
 if pe != nil {
 return &PluginDeliverResponse{Error: pe}
@@ -201,6 +206,7 @@ Sets: []*PluginSetOp{
 {Key: KeyForResolverRecord(msg.ResolverAddress), Value: rawRR},
 {Key: KeyForProposal(msg.MarketId),             Value: rawPR},
 {Key: KeyForResolverState(msg.MarketId),        Value: rawRS}, // NF-5
+txLogOp,
 },
 })
 if pe := errCheckWrite(wr, werr); pe != nil {

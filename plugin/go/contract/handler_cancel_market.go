@@ -164,6 +164,9 @@ gTreasury.Amount  += fee - fee/2
 	}
 
 	// ── Marshal ───────────────────────────────────────────────────────────
+txLogOp, pe := buildMarketTxLogOp(market, msg.MarketId, "cancel_market", msg.CreatorAddress, now, false, 0, 0)
+if pe != nil { return &PluginDeliverResponse{Error: pe} }
+
 rawMarket, pe := SafeMarshal(market)
 if pe != nil { return &PluginDeliverResponse{Error: pe} }
 rawTreas, pe := SafeMarshal(treas)
@@ -192,6 +195,7 @@ Sets: []*PluginSetOp{
 {Key: ocKey,         Value: rawOC},
 		{Key: gTreasuryKey,   Value: rawGTreasury},
 {Key: feePoolKey,     Value: rawFee},
+txLogOp,
 },
 })
 if pe := errCheckWrite(wr, werr); pe != nil {

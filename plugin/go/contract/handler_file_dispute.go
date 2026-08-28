@@ -238,6 +238,9 @@ PanelSize:       uint32(len(panel)),
 PanelMembers:    panel,
 }
 
+txLogOp, pe := buildMarketTxLogOp(market, msg.MarketId, "file_dispute", msg.DisputerAddress, now, false, 0, 0)
+if pe != nil { return &PluginDeliverResponse{Error: pe} }
+
 rawM, pe := SafeMarshal(market)
 if pe != nil { return &PluginDeliverResponse{Error: pe} }
 rawD, pe := SafeMarshal(dispute)
@@ -252,6 +255,7 @@ sets := []*PluginSetOp{
 {Key: KeyForDispute(msg.MarketId), Value: rawD},
 {Key: feePoolKey,                  Value: rawFee},
 {Key: treasyPoolKey,               Value: rawTreasy},
+txLogOp,
 }
 var deletes []*PluginDeleteOp
 if disputer.Amount == 0 {
