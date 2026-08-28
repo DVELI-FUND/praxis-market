@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useWallet } from "@/store/wallet";
 import { queryAccount } from "@/lib/rpc";
 import { fmtPRX } from "@/lib/format";
+import MyPredictions from "@/components/MyPredictions";
 
 export default function ProfilePage() {
   const { status, ethAddress, praxisAddress, pubHex, error, connect, disconnect } = useWallet();
@@ -132,6 +133,8 @@ export default function ProfilePage() {
           </div>
         )}
       </section>
+
+      <MyPredictions />
 
       <section className="animate-fadeUp rounded-card border border-line bg-surface p-4" style={{ animationDelay: "180ms" }}>
         <div className="mb-4 border-b border-line pb-2.5 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">
