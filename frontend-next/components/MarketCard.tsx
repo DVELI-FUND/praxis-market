@@ -46,7 +46,7 @@ export default function MarketCard({ market, featured = false, bookmarked, onTog
           <div className="absolute left-3 top-2.5 flex items-center gap-1.5 rounded-pill border border-line-2 bg-bg/70 px-2 py-0.5 font-mono text-[8px] uppercase tracking-[1.5px] text-ink-2 backdrop-blur">
             <span>{catSymbol}</span> {catKey}
           </div>
-          <div className="absolute right-3 top-2.5">
+          <div className="absolute right-3 top-2.5 rounded-pill border border-line-2 bg-bg/70 p-0.5 backdrop-blur">
             <StatusPill status={market.status} />
           </div>
         </div>
