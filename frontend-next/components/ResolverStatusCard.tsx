@@ -4,9 +4,7 @@ import { useMyResolver, MIN_RESOLVER_STAKE, UNBONDING_BLOCKS, PARTIAL_RRS_HIT } 
 import { useHeight } from "@/hooks/useHeight";
 import { fmtPRX } from "@/lib/format";
 
-const PH9_CANARY = "PRAXIS-NEXT-PH9";
-
-export default function ResolverStatusCard() {
+export default function ResolverStatusCard({ hideCta = false }: { hideCta?: boolean }) {
   const rec = useMyResolver();
   const { data: chain } = useHeight();
   if (!rec) return null;
@@ -39,7 +37,7 @@ export default function ResolverStatusCard() {
         </div>
       </div>
 
-      {released && (
+      {released && !hideCta && (
         <Link
           href="/action/claimunbonded"
           className="mt-2 block rounded-card bg-up py-2 text-center font-sans text-[11px] font-bold text-black transition-all hover:brightness-110"
@@ -53,7 +51,6 @@ export default function ResolverStatusCard() {
         RRS −{PARTIAL_RRS_HIT} · full exit resets RRS · unbonding{" "}
         {UNBONDING_BLOCKS.toLocaleString()} blocks · one pending unbonding at a time
       </div>
-      <span className="hidden" aria-hidden="true">{PH9_CANARY}</span>
     </div>
   );
 }

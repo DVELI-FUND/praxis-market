@@ -11,6 +11,7 @@ import { TYPE_URLS } from "@/lib/tx";
 import { useToast } from "@/store/toast";
 import { fmtPRX } from "@/lib/format";
 import ResolverStatusCard from "./ResolverStatusCard";
+import UnstakePlanner from "./UnstakePlanner";
 
 const CATS = ["crypto", "sports", "politics", "finance", "other"];
 
@@ -66,8 +67,16 @@ export default function ActionForm({ def }: { def: ActionDef }) {
   const set = (id: string, val: string | number | boolean) => setVals((p) => ({ ...p, [id]: val }));
 
   // Protocol guards for unstake (handler_unstake_resolver.go)
+  const planAmtU = BigInt(Math.floor(Number(vals.amount) || 0)) * 1000000n;
+  const planMinOk =
+    !myResolver ||
+    planAmtU === 0n ||
+    planAmtU >= myResolver.stake ||
+    myResolver.stake - planAmtU >= MIN_RESOLVER_STAKE;
   const unstakeBlocked =
-    def.key === "unstake" && myResolver !== null && (myResolver.unbonding > 0n || !myResolver.active);
+    def.key === "unstake" &&
+    myResolver !== null &&
+    (myResolver.unbonding > 0n || !myResolver.active || !planMinOk);
 
   const submit = async () => {
     const toast = useToast.getState().show;
@@ -143,7 +152,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
         // {def.msgType}
       </div>
 
-      {def.statusCard === "resolver" && <ResolverStatusCard />}
+      {def.statusCard === "resolver" && <ResolverStatusCard hideCta={def.key === "claimunbonded"} />}
 
       {def.fields.map((f) => (
         <div key={f.id} className="mb-2.5">
@@ -198,30 +207,13 @@ export default function ActionForm({ def }: { def: ActionDef }) {
         </div>
       ))}
 
-      {def.key === "unstake" && myResolver && myResolver.stake > 0n && (
-        <div className="mb-2.5 flex gap-1.5">
-          <button
-            onClick={() =>
-              set(
-                "amount",
-                Number(
-                  (myResolver.stake > MIN_RESOLVER_STAKE
-                    ? myResolver.stake - MIN_RESOLVER_STAKE
-                    : 0n) / 1000000n
-                )
-              )
-            }
-            className="flex-1 rounded-card border border-line px-2 py-1.5 font-mono text-[9px] text-ink-2 transition-colors hover:border-up hover:text-up"
-          >
-            Max partial ({fmtPRX(myResolver.stake > MIN_RESOLVER_STAKE ? myResolver.stake - MIN_RESOLVER_STAKE : 0n)})
-          </button>
-          <button
-            onClick={() => set("amount", 0)}
-            className="flex-1 rounded-card border border-line px-2 py-1.5 font-mono text-[9px] text-ink-2 transition-colors hover:border-amberx hover:text-amberx"
-          >
-            Full exit (0)
-          </button>
-        </div>
+      {def.key === "unstake" && myResolver && (
+        <UnstakePlanner
+          rec={myResolver}
+          amount={Number(vals.amount) || 0}
+          onAmount={(n) => set("amount", n)}
+          currentHeight={chain?.height ?? 0}
+        />
       )}
 
       {def.key === "register" && myResolver && (

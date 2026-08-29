@@ -2,6 +2,7 @@
 export function fmtPRX(n: bigint | number | string | null | undefined): string {
   if (n === null || n === undefined || n === "") return "—";
   const x = Number(n) / 1_000_000;
+  if (x === 0) return "0";
   if (x >= 1e9) return (x / 1e9).toFixed(2) + "B";
   if (x >= 1e6) return (x / 1e6).toFixed(2) + "M";
   if (x >= 1000) return (x / 1000).toFixed(2) + "k";
