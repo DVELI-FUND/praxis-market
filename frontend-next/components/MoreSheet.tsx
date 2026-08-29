@@ -45,6 +45,7 @@ const SECTIONS: NavSection[] = [
       { href: "/action/claimunbonded", label: "Claim Unbonded", icon: "◎", badge: "RESOLVER" },
       { href: "/action/create", label: "Create Market", icon: "+", badge: "ADMIN" },
       { href: "/action/finalize", label: "Finalize Market", icon: "✓", badge: "ADMIN" },
+      { href: "/settings", label: "Settings", icon: "⚙", badge: "ADMIN" },
     ],
   },
 ];
