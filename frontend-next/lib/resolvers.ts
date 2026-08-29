@@ -49,3 +49,11 @@ export function useMyResolver(): Resolver | null {
   const a = (addr || "").toLowerCase();
   return useMemo(() => resolvers.find((r) => r.address.toLowerCase() === a) || null, [resolvers, a]);
 }
+
+// Protocol tier weights — handler_claim_resolver_reward.go (rrsWeight):
+// 1x Bronze / 3x Silver (RRS 50+) / 7x Gold (RRS 200+)
+export function tierOf(rrs: number): { label: string; weight: number; cls: string } {
+  if (rrs >= 200) return { label: "Gold", weight: 7, cls: "border-amberx/40 bg-amberx/10 text-amberx" };
+  if (rrs >= 50) return { label: "Silver", weight: 3, cls: "border-line-2 bg-surface-2 text-ink-2" };
+  return { label: "Bronze", weight: 1, cls: "border-[#cd7f32]/40 bg-[#cd7f32]/10 text-[#cd7f32]" };
+}
