@@ -12,6 +12,7 @@ import { useToast } from "@/store/toast";
 import { fmtPRX } from "@/lib/format";
 import ResolverStatusCard from "./ResolverStatusCard";
 import UnstakePlanner from "./UnstakePlanner";
+import { b2b64 } from "@/lib/proto";
 import ResolutionPlanner from "./ResolutionPlanner";
 
 const CATS = ["crypto", "sports", "politics", "finance", "other"];
@@ -50,6 +51,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
     return init;
   });
   const [pending, setPending] = useState(false);
+  const [payload, setPayload] = useState("");
 
   useEffect(() => {
     if (!praxisAddress) return;
@@ -133,6 +135,33 @@ export default function ActionForm({ def }: { def: ActionDef }) {
     } finally {
       setPending(false);
     }
+  };
+
+  const buildPayload = () => {
+    const toast = useToast.getState().show;
+    const err = validateField(def, vals);
+    if (err) {
+      toast(err, true);
+      return;
+    }
+    if (!chain?.height) {
+      toast("Node not connected", true);
+      return;
+    }
+    const inner = def.build(vals, { wallet: praxisAddress, height: chain.height });
+    const unsigned = {
+      message_type: def.msgType,
+      msg: { type_url: TYPE_URLS[def.msgType], value: b2b64(inner) },
+      signature: null,
+      created_height: chain.height,
+      time: Number(BigInt(Date.now()) * 1000n),
+      fee: Number(vals.fee) || 10000,
+      memo: "",
+      network_id: chain.networkId ?? 1,
+      chain_id: chain.chainId ?? 1,
+    };
+    setPayload(JSON.stringify(unsigned, null, 2));
+    toast("✓ Unsigned payload built — copy for CLI signing");
   };
 
   if (gated) {
@@ -234,13 +263,31 @@ export default function ActionForm({ def }: { def: ActionDef }) {
         </div>
       )}
 
-      <button
-        onClick={() => void submit()}
-        disabled={pending || !connected || unstakeBlocked}
-        className="mt-2 w-full rounded-card bg-up py-2.5 font-sans text-[12px] font-bold text-black transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        {pending ? "▪▪▪ broadcasting…" : "⚡ Sign & Submit"}
-      </button>
+      <div className="mt-2 flex gap-1.5">
+        <button
+          onClick={() => void submit()}
+          disabled={pending || !connected || unstakeBlocked}
+          className="flex-1 rounded-card bg-grad-up py-2.5 font-sans text-[12px] font-extrabold text-black shadow-glowUp transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {pending ? "▪▪▪ broadcasting…" : "⚡ Sign & Submit"}
+        </button>
+        <button
+          onClick={buildPayload}
+          className="rounded-card border border-line-2 px-3 py-2.5 font-mono text-[10px] text-ink-2 transition-colors hover:border-up hover:text-up"
+          title="Build unsigned payload"
+        >
+          ⎘ Payload
+        </button>
+      </div>
+      {payload && (
+        <textarea
+          readOnly
+          value={payload}
+          rows={7}
+          className="mt-2 w-full break-all rounded-card border border-line bg-bg p-2 font-mono text-[9px] text-ink-2 outline-none"
+          onFocus={(e) => e.currentTarget.select()}
+        />
+      )}
       {unstakeBlocked && myResolver && (
         <div className="mt-1.5 text-center font-mono text-[9px] text-amberx">
           {myResolver.unbonding > 0n
