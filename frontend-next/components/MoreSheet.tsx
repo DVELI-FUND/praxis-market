@@ -2,7 +2,67 @@
 import Link from "next/link";
 import { useUi } from "@/store/ui";
 import { useRoles } from "@/lib/roles";
-import { ACTION_SECTIONS, ACTIONS } from "@/lib/actions";
+
+type Badge = "RESOLVER" | "ADMIN" | null;
+interface NavItem { href: string; label: string; icon: string; badge?: Badge }
+interface NavSection { name: string; items: NavItem[] }
+
+const SECTIONS: NavSection[] = [
+  {
+    name: "Markets",
+    items: [
+      { href: "/", label: "Browse Markets", icon: "◈" },
+      { href: "/action/claim", label: "Claim Winnings", icon: "◎" },
+      { href: "/action/reclaim", label: "Reclaim Stake", icon: "◍" },
+      { href: "/resolvers", label: "Browse Resolvers", icon: "◉" },
+      { href: "/action/claimcreator", label: "Claim Creator Fee", icon: "◔" },
+      { href: "/action/cancel", label: "Cancel Market", icon: "✕" },
+    ],
+  },
+  {
+    name: "Rewards",
+    items: [
+      { href: "/rewards/resolver", label: "Resolver Rewards", icon: "", badge: "RESOLVER" },
+      { href: "/rewards/builder", label: "Builder Rewards", icon: "◎", badge: "ADMIN" },
+      { href: "/rewards/community", label: "Community Rewards", icon: "◉" },
+      { href: "/rewards/investor", label: "Investor Rewards", icon: "◆" },
+      { href: "/rewards/protocol", label: "Protocol Rewards", icon: "◐" },
+    ],
+  },
+  {
+    name: "Account",
+    items: [
+      { href: "/profile", label: "Profile", icon: "◫" },
+      { href: "/action/register", label: "Register", icon: "◈", badge: "RESOLVER" },
+      { href: "/action/forfeit", label: "Forfeit Position", icon: "↩", badge: "RESOLVER" },
+      { href: "/action/propose", label: "Propose Outcome", icon: "⚖", badge: "RESOLVER" },
+      { href: "/action/dispute", label: "File Dispute", icon: "⚠", badge: "RESOLVER" },
+      { href: "/action/commit", label: "Commit Vote", icon: "◌", badge: "RESOLVER" },
+      { href: "/action/reveal", label: "Reveal Vote", icon: "○", badge: "RESOLVER" },
+      { href: "/action/tally", label: "Tally Votes", icon: "≡", badge: "RESOLVER" },
+      { href: "/action/slash", label: "Claim Slash", icon: "◈", badge: "RESOLVER" },
+      { href: "/action/unstake", label: "Unstake Resolver", icon: "↓", badge: "RESOLVER" },
+      { href: "/action/claimunbonded", label: "Claim Unbonded", icon: "◎", badge: "RESOLVER" },
+      { href: "/action/create", label: "Create Market", icon: "+", badge: "ADMIN" },
+      { href: "/action/finalize", label: "Finalize Market", icon: "✓", badge: "ADMIN" },
+    ],
+  },
+];
+
+function BadgeChip({ kind }: { kind: Badge }) {
+  if (!kind) return null;
+  return (
+    <span
+      className={`ml-auto rounded border px-1.5 py-0.5 font-mono text-[7px] tracking-[1px] ${
+        kind === "RESOLVER"
+          ? "border-amberx/40 bg-amberx/10 text-amberx"
+          : "border-bluex/40 bg-bluex/10 text-bluex"
+      }`}
+    >
+      {kind}
+    </span>
+  );
+}
 
 export default function MoreSheet() {
   const open = useUi((s) => s.moreOpen);
@@ -11,52 +71,41 @@ export default function MoreSheet() {
 
   if (!open) return null;
 
-  const allowed = (gate?: "resolver" | "admin" | "creator") =>
-    !gate ||
-    (gate === "resolver" && roles.isResolver) ||
-    (gate === "admin" && (roles.isAdmin || roles.isCreator)) ||
-    (gate === "creator" && (roles.isCreator || roles.isAdmin));
-
-  const linkCls =
-    "rounded-card border border-line bg-bg-2 px-3 py-2 font-mono text-[10px] text-ink-2 transition-colors hover:border-up hover:text-up";
+  const badgeVisible = (b: Badge) =>
+    !b || (b === "RESOLVER" && roles.isResolver) || (b === "ADMIN" && (roles.isAdmin || roles.isCreator));
 
   return (
     <div className="fixed inset-0 z-[240] bg-black/75 backdrop-blur-[4px]" onClick={() => setMore(false)}>
       <div
-        className="absolute bottom-0 left-0 right-0 max-h-[70vh] overflow-y-auto rounded-t-card border-t border-line bg-surface p-4 pb-8"
+        className="absolute bottom-0 left-0 right-0 max-h-[78vh] overflow-y-auto rounded-t-card border-t border-line bg-surface p-4 pb-8"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-center justify-between">
-          <div className="font-display text-[15px] font-extrabold">More</div>
-          <button className="font-mono text-[14px] text-ink-2" onClick={() => setMore(false)}>
-            ✕
-          </button>
+          <div className="font-display text-[15px] font-extrabold">Menu</div>
+          <button className="font-mono text-[14px] text-ink-2" onClick={() => setMore(false)}>✕</button>
         </div>
 
-        {ACTION_SECTIONS.filter((sec) => allowed(sec.gate)).map((sec) => (
+        {SECTIONS.map((sec) => (
           <div key={sec.name} className="mb-4">
             <div className="mb-1.5 font-mono text-[8px] uppercase tracking-[3px] text-ink-3">{sec.name}</div>
-            <div className="grid grid-cols-2 gap-1.5">
-              {sec.keys.map((k) => (
-                <Link key={k} href={`/action/${k}`} onClick={() => setMore(false)} className={linkCls}>
-                  {ACTIONS[k].title}
+            <div className="space-y-1">
+              {sec.items.map((it) => (
+                <Link
+                  key={it.href + it.label}
+                  href={it.href}
+                  onClick={() => setMore(false)}
+                  className={`flex items-center gap-2.5 rounded-card border border-line bg-bg-2 px-3 py-2 font-mono text-[10px] text-ink-2 transition-colors hover:border-up hover:text-up ${
+                    it.badge && !badgeVisible(it.badge) ? "opacity-50" : ""
+                  }`}
+                >
+                  <span className="w-4 text-center text-[12px]">{it.icon}</span>
+                  <span>{it.label}</span>
+                  <BadgeChip kind={it.badge ?? null} />
                 </Link>
               ))}
             </div>
           </div>
         ))}
-
-        <div className="mb-2">
-          <div className="mb-1.5 font-mono text-[8px] uppercase tracking-[3px] text-ink-3">Network</div>
-          <div className="grid grid-cols-2 gap-1.5">
-            <Link href="/resolvers" onClick={() => setMore(false)} className={linkCls}>
-              ◉ Browse Resolvers
-            </Link>
-            <Link href="/rewards" onClick={() => setMore(false)} className={linkCls}>
-              ◎ Rewards Dashboard
-            </Link>
-          </div>
-        </div>
       </div>
     </div>
   );
