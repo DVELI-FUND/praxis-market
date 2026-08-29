@@ -17,6 +17,9 @@ export default function MoreSheet() {
     (gate === "admin" && (roles.isAdmin || roles.isCreator)) ||
     (gate === "creator" && (roles.isCreator || roles.isAdmin));
 
+  const linkCls =
+    "rounded-card border border-line bg-bg-2 px-3 py-2 font-mono text-[10px] text-ink-2 transition-colors hover:border-up hover:text-up";
+
   return (
     <div className="fixed inset-0 z-[240] bg-black/75 backdrop-blur-[4px]" onClick={() => setMore(false)}>
       <div
@@ -29,23 +32,31 @@ export default function MoreSheet() {
             ✕
           </button>
         </div>
+
         {ACTION_SECTIONS.filter((sec) => allowed(sec.gate)).map((sec) => (
           <div key={sec.name} className="mb-4">
             <div className="mb-1.5 font-mono text-[8px] uppercase tracking-[3px] text-ink-3">{sec.name}</div>
             <div className="grid grid-cols-2 gap-1.5">
               {sec.keys.map((k) => (
-                <Link
-                  key={k}
-                  href={`/action/${k}`}
-                  onClick={() => setMore(false)}
-                  className="rounded-card border border-line bg-bg-2 px-3 py-2 font-mono text-[10px] text-ink-2 transition-colors hover:border-up hover:text-up"
-                >
+                <Link key={k} href={`/action/${k}`} onClick={() => setMore(false)} className={linkCls}>
                   {ACTIONS[k].title}
                 </Link>
               ))}
             </div>
           </div>
         ))}
+
+        <div className="mb-2">
+          <div className="mb-1.5 font-mono text-[8px] uppercase tracking-[3px] text-ink-3">Network</div>
+          <div className="grid grid-cols-2 gap-1.5">
+            <Link href="/resolvers" onClick={() => setMore(false)} className={linkCls}>
+              ◉ Browse Resolvers
+            </Link>
+            <Link href="/rewards" onClick={() => setMore(false)} className={linkCls}>
+              ◎ Rewards Dashboard
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -182,6 +182,7 @@ export const ACTION_SECTIONS: { name: string; gate?: "resolver" | "admin" | "cre
     keys: ["register", "forfeit", "propose", "dispute", "commit", "reveal", "tally", "slash", "unstake", "claimunbonded"],
   },
   { name: "Admin", gate: "admin", keys: ["create", "finalize", "cancel"] },
+  { name: "Rewards", keys: ["claim_resolver", "claim_builder", "claim_community", "claim_investor", "claim_protocol"] },
 ];
 
 // Reward actions (epoch-based claims)
