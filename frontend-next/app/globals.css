@@ -38,3 +38,9 @@ body::before {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* price tick flash */
+.tick-up { animation: tickUp 0.7s ease; }
+.tick-down { animation: tickDown 0.7s ease; }
+@keyframes tickUp { 0% { transform: scale(1.1); text-shadow: 0 0 14px rgba(0,232,138,0.7); } 100% { transform: scale(1); } }
+@keyframes tickDown { 0% { transform: scale(1.1); text-shadow: 0 0 14px rgba(255,77,107,0.7); } 100% { transform: scale(1); } }

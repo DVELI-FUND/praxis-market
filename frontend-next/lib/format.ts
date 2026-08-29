@@ -45,3 +45,17 @@ export function b64ToHex(b64: string): string {
     return b64;
   }
 }
+
+// Human-readable countdown from block height (~5s/block).
+export function fmtCountdown(expiry: number, height: number): string {
+  if (!expiry) return "—";
+  const blocks = expiry - height;
+  if (blocks <= 0) return "ended";
+  const secs = blocks * 5;
+  const d = Math.floor(secs / 86400);
+  const h = Math.floor((secs % 86400) / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
+}
