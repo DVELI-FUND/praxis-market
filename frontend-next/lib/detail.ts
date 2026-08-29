@@ -176,3 +176,23 @@ export async function fetchMarketActivity(mid: string, holders: Holder[]): Promi
   activities.sort((a, b) => b.height - a.height);
   return activities.slice(0, 20); // Return top 20
 }
+
+export async function fetchPosition(
+  mid: string,
+  addr: string
+): Promise<{ yes: bigint; no: bigint }> {
+  const raw = await pluginFetch<{
+    position?: {
+      shares_yes?: number | string;
+      sharesYes?: number | string;
+      shares_no?: number | string;
+      sharesNo?: number | string;
+    } | null;
+  }>(`/v1/query/position?market=${encodeURIComponent(mid)}&address=${encodeURIComponent(addr)}`);
+  const p = raw.position;
+  if (!p) return { yes: 0n, no: 0n };
+  return {
+    yes: BigInt(p.shares_yes ?? p.sharesYes ?? 0),
+    no: BigInt(p.shares_no ?? p.sharesNo ?? 0),
+  };
+}

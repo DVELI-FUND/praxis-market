@@ -47,6 +47,7 @@ export interface ActionDef {
   sub: string;
   gate?: "resolver" | "admin" | "creator";
   statusCard?: "resolver";
+  planner?: "propose" | "dispute";
   fields: FieldDef[];
   build: (v: Vals, ctx: ActionCtx) => Uint8Array;
   validate?: (v: Vals) => string | null;
@@ -98,12 +99,12 @@ export const ACTIONS: Record<string, ActionDef> = {
     build: (v) => encForfeit(s(v, "mid"), s(v, "addr")),
   },
   propose: {
-    key: "propose", msgType: "propose_outcome", title: "Propose Outcome", eye: "Resolver", sub: "Submit your resolution after market expiry", gate: "resolver",
+    key: "propose", msgType: "propose_outcome", planner: "propose",  title: "Propose Outcome", eye: "Resolver", sub: "Submit your resolution after market expiry", gate: "resolver",
     fields: [ MID, { id: "addr", label: "Resolver Address", type: "wallet" }, { id: "out", label: "Proposed Outcome", type: "outcome" }, { id: "bond", label: "Proposal Bond (PRX)", type: "number", def: 60, scale: W }, FEE ],
     build: (v) => encPropose(s(v, "mid"), s(v, "addr"), b(v, "out"), u(v, "bond")),
   },
   dispute: {
-    key: "dispute", msgType: "file_dispute", title: "File Dispute", eye: "Resolver", sub: "Challenge a proposed outcome during the dispute window", gate: "resolver",
+    key: "dispute", msgType: "file_dispute", planner: "dispute",  title: "File Dispute", eye: "Resolver", sub: "Challenge a proposed outcome during the dispute window", gate: "resolver",
     fields: [ MID, WALLET, { id: "bond", label: "Bond Amount (PRX)", type: "number", def: 60, scale: W, min: 1, hint: "Forfeited if your dispute is rejected" }, FEE ],
     build: (v) => encDispute(s(v, "mid"), s(v, "addr"), u(v, "bond")),
   },

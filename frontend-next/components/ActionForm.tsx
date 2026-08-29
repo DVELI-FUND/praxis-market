@@ -12,6 +12,7 @@ import { useToast } from "@/store/toast";
 import { fmtPRX } from "@/lib/format";
 import ResolverStatusCard from "./ResolverStatusCard";
 import UnstakePlanner from "./UnstakePlanner";
+import ResolutionPlanner from "./ResolutionPlanner";
 
 const CATS = ["crypto", "sports", "politics", "finance", "other"];
 
@@ -153,6 +154,16 @@ export default function ActionForm({ def }: { def: ActionDef }) {
       </div>
 
       {def.statusCard === "resolver" && <ResolverStatusCard hideCta={def.key === "claimunbonded"} />}
+
+      {def.planner && (
+        <ResolutionPlanner
+          mid={String(vals.mid ?? "")}
+          mode={def.planner}
+          wallet={praxisAddress}
+          bondValue={Number(vals.bond) || 0}
+          onBond={(n) => set("bond", n)}
+        />
+      )}
 
       {def.fields.map((f) => (
         <div key={f.id} className="mb-2.5">
