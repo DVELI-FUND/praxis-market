@@ -241,7 +241,9 @@ export default function ActionForm({ def }: { def: ActionDef }) {
       {unstakeBlocked && myResolver && (
         <div className="mt-1.5 text-center font-mono text-[9px] text-amberx">
           {myResolver.unbonding > 0n
-            ? `unbonding pending — claim available at #${myResolver.releaseHeight}`
+            ? (chain?.height ?? 0) >= myResolver.releaseHeight
+              ? "unbonding released — claim it via Claim Unbonded Stake, then you can unstake again"
+              : `unbonding pending — claim available at #${myResolver.releaseHeight}`
             : "resolver inactive — re-register to stake again"}
         </div>
       )}

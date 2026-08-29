@@ -1,9 +1,10 @@
 "use client";
+import Link from "next/link";
 import { useMyResolver, MIN_RESOLVER_STAKE, UNBONDING_BLOCKS, PARTIAL_RRS_HIT } from "@/lib/resolvers";
 import { useHeight } from "@/hooks/useHeight";
 import { fmtPRX } from "@/lib/format";
 
-const PH8_CANARY = "PRAXIS-NEXT-PH8";
+const PH9_CANARY = "PRAXIS-NEXT-PH9";
 
 export default function ResolverStatusCard() {
   const rec = useMyResolver();
@@ -26,7 +27,7 @@ export default function ResolverStatusCard() {
             <span className="text-ink-3">Unbonding</span>
             <span className={`tabular-nums ${released ? "text-up" : "text-amberx"}`}>
               {fmtPRX(rec.unbonding)} PRX{" "}
-              {released ? "— ready to claim" : `— releases #${rec.releaseHeight}`}
+              {released ? "— released, claim now" : `— releases #${rec.releaseHeight}`}
             </span>
           </div>
         )}
@@ -37,12 +38,22 @@ export default function ResolverStatusCard() {
           </span>
         </div>
       </div>
+
+      {released && (
+        <Link
+          href="/action/claimunbonded"
+          className="mt-2 block rounded-card bg-up py-2 text-center font-sans text-[11px] font-bold text-black transition-all hover:brightness-110"
+        >
+          ◎ Claim {fmtPRX(rec.unbonding)} PRX now
+        </Link>
+      )}
+
       <div className="mt-2 border-t border-line pt-2 text-[9px] leading-relaxed text-ink-3">
         min stake {fmtPRX(MIN_RESOLVER_STAKE)} PRX · partial unstake must leave ≥ min · partial =
         RRS −{PARTIAL_RRS_HIT} · full exit resets RRS · unbonding{" "}
         {UNBONDING_BLOCKS.toLocaleString()} blocks · one pending unbonding at a time
       </div>
-      <span className="hidden" aria-hidden="true">{PH8_CANARY}</span>
+      <span className="hidden" aria-hidden="true">{PH9_CANARY}</span>
     </div>
   );
 }
