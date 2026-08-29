@@ -17,113 +17,98 @@ export default function MarketCard({ market, featured = false, bookmarked, onTog
   const noPct = 100 - pct;
   const total = market.qYes + market.qNo;
   const vol = total > 0n ? fmtPRX(total) : "—";
-  const yesMulti = market.qYes > 0n ? (Number(market.qYes + market.qNo) / Number(market.qYes)).toFixed(2) : "—";
-  const noMulti = market.qNo > 0n ? (Number(market.qYes + market.qNo) / Number(market.qNo)).toFixed(2) : "—";
 
   const catKey = extractCat(market.rules);
   const catSymbol = CAT_SYMBOLS[catKey] || "◈";
-  const catName = catKey.charAt(0).toUpperCase() + catKey.slice(1);
   const imgUrl = extractImg(market.rules);
-
   const question = stripCatPrefix(market.question || market.rules || "(no question)");
-  const maxLen = featured ? 120 : 80;
+  const maxLen = featured ? 120 : 88;
   const qTrunc = question.length > maxLen ? question.slice(0, maxLen) + "…" : question;
 
   return (
     <Link
       href={`/market/${market.marketId}`}
-      className="flex h-full flex-col overflow-hidden rounded-card border border-line bg-surface transition-all hover:-translate-y-0.5 hover:border-up/35 hover:shadow-[0_6px_28px_rgba(0,0,0,0.6),0_0_0_1px_rgba(0,232,122,0.1)]"
+      className="group flex h-full flex-col overflow-hidden rounded-card border border-line bg-surface-grad shadow-card transition-all duration-300 hover:-translate-y-1 hover:border-line-2 hover:shadow-cardHover"
     >
-      <div className="flex-1 px-3 pb-2 pt-2.5">
-        <div className="mb-1.5 flex items-center gap-1.5 font-mono text-[8px] uppercase tracking-[1.5px] text-ink-3">
-          {imgUrl ? (
-            <img
-              src={imgUrl}
-              alt=""
-              loading="lazy"
-              className="h-[22px] w-[22px] shrink-0 rounded-[5px] border border-line object-cover"
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-              }}
-            />
-          ) : (
-            <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-[5px] border border-line bg-bg-2 font-mono text-[12px] text-line-2">
-              ◈
-            </span>
-          )}
-          <span>
-            {catSymbol} {catName}
-          </span>
-          <span className="ml-auto">
+      {/* banner */}
+      {imgUrl ? (
+        <div className="relative h-[88px] w-full overflow-hidden">
+          <img
+            src={imgUrl}
+            alt=""
+            loading="lazy"
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            onError={(e) => {
+              e.currentTarget.parentElement!.style.display = "none";
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/40 to-transparent" />
+          <div className="absolute left-3 top-2.5 flex items-center gap-1.5 rounded-pill border border-line-2 bg-bg/70 px-2 py-0.5 font-mono text-[8px] uppercase tracking-[1.5px] text-ink-2 backdrop-blur">
+            <span>{catSymbol}</span> {catKey}
+          </div>
+          <div className="absolute right-3 top-2.5">
             <StatusPill status={market.status} />
-          </span>
+          </div>
         </div>
+      ) : (
+        <div className="flex items-center justify-between px-4 pt-3">
+          <div className="flex items-center gap-1.5 rounded-pill border border-line bg-bg-2 px-2 py-0.5 font-mono text-[8px] uppercase tracking-[1.5px] text-ink-2">
+            <span>{catSymbol}</span> {catKey}
+          </div>
+          <StatusPill status={market.status} />
+        </div>
+      )}
 
+      <div className="flex flex-1 flex-col px-4 pb-3 pt-3">
         <div
-          className={`mb-2.5 font-sans font-semibold leading-[1.35] text-ink ${
-            featured ? "line-clamp-3 text-[14px]" : "line-clamp-2 text-[12px]"
+          className={`mb-3 font-sans font-semibold leading-[1.35] text-ink transition-colors group-hover:text-white ${
+            featured ? "line-clamp-3 text-[15px]" : "line-clamp-2 text-[13px]"
           }`}
         >
           {qTrunc}
         </div>
 
-        <div className="mb-2 overflow-hidden rounded-[4px] border border-line">
-          <div className="flex items-stretch">
-            <div className="flex flex-1 flex-col items-center gap-0.5 border-r border-line bg-up-dim px-2 py-1.5">
-              <div
-                className={`font-mono font-bold leading-none tracking-[-0.5px] text-up tabular-nums ${
-                  featured ? "text-[18px]" : "text-[14px]"
-                }`}
-              >
-                {pct}
-                <span className="text-[9px] opacity-60">¢</span>
-              </div>
-              <div className="mt-0.5 font-mono text-[8px] font-semibold uppercase tracking-[1.5px] text-ink-3">
-                YES <span className="font-normal text-[9px]">{yesMulti}x</span>
-              </div>
-            </div>
-            <div className="flex flex-1 flex-col items-center gap-0.5 bg-down-dim px-2 py-1.5">
-              <div
-                className={`font-mono font-bold leading-none tracking-[-0.5px] text-down tabular-nums ${
-                  featured ? "text-[18px]" : "text-[14px]"
-                }`}
-              >
-                {noPct}
-                <span className="text-[9px] opacity-60">¢</span>
-              </div>
-              <div className="mt-0.5 font-mono text-[8px] font-semibold uppercase tracking-[1.5px] text-ink-3">
-                NO <span className="font-normal text-[9px]">{noMulti}x</span>
-              </div>
-            </div>
+        {/* probability */}
+        <div className="mb-2 flex items-baseline justify-between">
+          <span className={`font-display font-extrabold tracking-[-0.5px] text-up tabular-nums ${featured ? "text-[30px]" : "text-[24px]"}`}>
+            {pct}
+            <span className="text-[12px] opacity-60">%</span>
+          </span>
+          <span className="font-mono text-[9px] uppercase tracking-[1px] text-ink-3">chance</span>
+        </div>
+        <div className="mb-3 h-[4px] overflow-hidden rounded-pill bg-line">
+          <div className="h-full rounded-pill bg-grad-up transition-all duration-500" style={{ width: `${pct}%` }} />
+        </div>
+
+        {/* trade buttons */}
+        <div className="mb-3 grid grid-cols-2 gap-2">
+          <div className="flex items-center justify-between rounded-card border border-up/25 bg-up-dim px-3 py-2 transition-colors group-hover:border-up/50">
+            <span className="font-mono text-[10px] font-bold text-up">YES</span>
+            <span className="font-display text-[14px] font-bold text-up tabular-nums">{pct}¢</span>
+          </div>
+          <div className="flex items-center justify-between rounded-card border border-down/25 bg-down-dim px-3 py-2 transition-colors group-hover:border-down/50">
+            <span className="font-mono text-[10px] font-bold text-down">NO</span>
+            <span className="font-display text-[14px] font-bold text-down tabular-nums">{noPct}¢</span>
           </div>
         </div>
 
-        <div className="h-[2px] overflow-hidden rounded-[1px] bg-line">
-          <div className="h-full bg-up duration-300" style={{ width: `${pct}%`, transitionProperty: "width" }} />
+        <div className="mt-auto flex items-center justify-between border-t border-line pt-2 font-mono text-[9px] text-ink-3">
+          <span>
+            Vol <b className="text-[10px] text-cyanx">{vol}</b>
+          </span>
+          <span className="tabular-nums">{market.expiry ? "#" + market.expiry.toString() : "—"}</span>
+          <button
+            className={`p-0.5 text-[13px] transition-colors ${bookmarked ? "text-amberx" : "text-ink-3 hover:text-amberx"}`}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onToggleBookmark(market.marketId);
+            }}
+            title="Bookmark"
+          >
+            {bookmarked ? "★" : "☆"}
+          </button>
         </div>
-      </div>
-
-      <div
-        className="flex items-center justify-between border-t border-line bg-bg-2 px-3 py-1.5"
-        onClick={(e) => e.preventDefault()}
-      >
-        <div className="font-mono text-[9px] text-ink-3">
-          VOL&nbsp;<b className="text-[10px] text-cyanx">{vol}</b>
-        </div>
-        <div className="font-mono text-[9px] text-ink-3">
-          {market.expiry ? "#" + market.expiry.toString() : "—"}
-        </div>
-        <button
-          className={`p-0.5 text-[13px] transition-colors ${bookmarked ? "text-amberx" : "text-ink-3 hover:text-amberx"}`}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onToggleBookmark(market.marketId);
-          }}
-          title="Bookmark"
-        >
-          {bookmarked ? "★" : "☆"}
-        </button>
       </div>
     </Link>
   );
