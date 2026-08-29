@@ -54,7 +54,7 @@ async function hkdf(ikm: Uint8Array, salt: Uint8Array, info: string, len: number
   return new Uint8Array(bits);
 }
 
-async function aesEncrypt(data: Uint8Array, password: string): Promise<string> {
+export async function aesEncrypt(data: Uint8Array, password: string): Promise<string> {
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const keyMat = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveKey"]);
@@ -73,7 +73,7 @@ async function aesEncrypt(data: Uint8Array, password: string): Promise<string> {
   return b2h(salt) + b2h(iv) + b2h(new Uint8Array(ct));
 }
 
-async function aesDecrypt(hex: string, password: string): Promise<Uint8Array> {
+export async function aesDecrypt(hex: string, password: string): Promise<Uint8Array> {
   const salt = h2b(hex.slice(0, 32));
   const iv = h2b(hex.slice(32, 56));
   const ct = h2b(hex.slice(56));

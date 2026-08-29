@@ -1,5 +1,8 @@
 import { create } from "zustand";
+import { bls12_381 } from "@noble/curves/bls12-381";
+import { b2h, h2b } from "@/lib/format";
 import {
+  addressFromPub,
   connectMetaMask,
   currentEthAccount,
   disconnectWallet,
@@ -23,6 +26,7 @@ interface WalletState {
   disconnect: () => void;
   restore: () => Promise<void>;
   checkDrift: () => Promise<void>;
+  importKey: (hex: string) => Promise<void>;
 }
 
 export const useWallet = create<WalletState>((set, get) => ({
@@ -86,6 +90,7 @@ export const useWallet = create<WalletState>((set, get) => ({
   checkDrift: async () => {
     const st = get();
     if (st.status !== "connected" && st.status !== "drift") return;
+    if (!st.ethAddress) return; // imported-key sessions never drift
     try {
       const acc = await currentEthAccount();
       if (!acc) return;
@@ -94,5 +99,20 @@ export const useWallet = create<WalletState>((set, get) => ({
     } catch {
       // silent
     }
+  },
+
+  importKey: async (hex) => {
+    const priv = h2b(hex);
+    if (priv.length !== 32) throw new Error("Private key must be 32 bytes");
+    const pub = bls12_381.getPublicKey(priv);
+    const addr = await addressFromPub(pub);
+    set({
+      privKey: priv,
+      pubKey: pub,
+      pubHex: b2h(pub),
+      praxisAddress: addr,
+      status: "connected",
+      error: null,
+    });
   },
 }));

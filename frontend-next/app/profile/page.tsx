@@ -4,6 +4,7 @@ import { useWallet } from "@/store/wallet";
 import { queryAccount } from "@/lib/rpc";
 import { fmtPRX } from "@/lib/format";
 import MyPredictions from "@/components/MyPredictions";
+import AdvancedKeys from "@/components/AdvancedKeys";
 
 export default function ProfilePage() {
   const { status, ethAddress, praxisAddress, pubHex, error, connect, disconnect } = useWallet();
@@ -133,6 +134,8 @@ export default function ProfilePage() {
           </div>
         )}
       </section>
+
+      <AdvancedKeys />
 
       <MyPredictions />
 
