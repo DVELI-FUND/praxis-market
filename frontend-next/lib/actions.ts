@@ -3,6 +3,8 @@ import {
   encSend, encCreate, encClaim, encReclaim, encRegister, encPropose, encDispute,
   encCommit, encReveal, encTally, encFinalize, encSlash, encForfeit,
   encUnstakeResolver, encClaimUnbonded, encClaimCreatorFee, encCancelMarket,
+  encRewardResolver, encRewardBuilder, encRewardCommunity, encRewardInvestor,
+  encRewardProtocol,
 } from "@/lib/proto";
 
 const W = 1000000n;
@@ -181,3 +183,64 @@ export const ACTION_SECTIONS: { name: string; gate?: "resolver" | "admin" | "cre
   },
   { name: "Admin", gate: "admin", keys: ["create", "finalize", "cancel"] },
 ];
+
+// Reward actions (epoch-based claims)
+const REWARD_FIELDS_EPOCH: FieldDef[] = [
+  WALLET,
+  { id: "epoch", label: "Epoch", type: "number", def: 0, hint: "0 = auto (current - 1)" },
+  FEE,
+];
+const REWARD_FIELDS: FieldDef[] = [WALLET, FEE];
+
+ACTIONS.claim_resolver = {
+  key: "claim_resolver",
+  msgType: "claim_resolver_reward",
+  title: "Claim Resolver Reward",
+  eye: "Rewards",
+  sub: "Earn 20% of transaction fees for validating markets — claim per epoch",
+  fields: REWARD_FIELDS_EPOCH,
+  build: (v, ctx) => {
+    const epoch = Number(v.epoch) || Math.floor(ctx.height / 1000) - 1;
+    return encRewardResolver(s(v, "addr"), BigInt(epoch));
+  },
+};
+
+ACTIONS.claim_builder = {
+  key: "claim_builder",
+  msgType: "claim_builder_reward",
+  title: "Claim Builder Reward",
+  eye: "Rewards",
+  sub: "Earn 20% of fees as a protocol builder — claim per epoch",
+  fields: REWARD_FIELDS,
+  build: (v) => encRewardBuilder(s(v, "addr")),
+};
+
+ACTIONS.claim_community = {
+  key: "claim_community",
+  msgType: "claim_community_reward",
+  title: "Claim Community Reward",
+  eye: "Rewards",
+  sub: "Earn 20% of fees for community contributions",
+  fields: REWARD_FIELDS,
+  build: (v) => encRewardCommunity(s(v, "addr")),
+};
+
+ACTIONS.claim_investor = {
+  key: "claim_investor",
+  msgType: "claim_investor_reward",
+  title: "Claim Investor Reward",
+  eye: "Rewards",
+  sub: "Earn 20% of fees as an early investor",
+  fields: REWARD_FIELDS,
+  build: (v) => encRewardInvestor(s(v, "addr")),
+};
+
+ACTIONS.claim_protocol = {
+  key: "claim_protocol",
+  msgType: "claim_protocol_reward",
+  title: "Claim Protocol Reward",
+  eye: "Rewards",
+  sub: "Earn 20% of fees for protocol governance",
+  fields: REWARD_FIELDS,
+  build: (v) => encRewardProtocol(s(v, "addr")),
+};

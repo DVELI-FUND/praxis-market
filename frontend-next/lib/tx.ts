@@ -23,6 +23,11 @@ export const TYPE_URLS: Record<string, string> = {
   cancel_market: "type.googleapis.com/types.MessageCancelMarket",
   unstake_resolver: "type.googleapis.com/types.MessageUnstakeResolver",
   claim_unbonded_stake: "type.googleapis.com/types.MessageClaimUnbondedStake",
+  claim_resolver_reward: "type.googleapis.com/types.MessageClaimResolverReward",
+  claim_builder_reward: "type.googleapis.com/types.MessageClaimBuilderReward",
+  claim_community_reward: "type.googleapis.com/types.MessageClaimCommunityReward",
+  claim_investor_reward: "type.googleapis.com/types.MessageClaimInvestorReward",
+  claim_protocol_reward: "type.googleapis.com/types.MessageClaimProtocolReward",
 };
 
 export interface TxMeta {

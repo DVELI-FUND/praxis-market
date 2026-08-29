@@ -5,7 +5,7 @@ import { useUi } from "@/store/ui";
 
 const ITEMS: { href: string | null; icon: string; label: string }[] = [
   { href: "/", icon: "◈", label: "Markets" },
-  { href: "/resolvers", icon: "◉", label: "Resolvers" },
+  { href: "/rewards", icon: "◎", label: "Rewards" },
   { href: "/search", icon: "⌕", label: "Search" },
   { href: "/profile", icon: "◫", label: "Profile" },
   { href: null, icon: "≡", label: "More" },

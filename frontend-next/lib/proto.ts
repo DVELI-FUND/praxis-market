@@ -144,3 +144,19 @@ export function b2b64(bytes: Uint8Array): string {
   for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
   return btoa(s);
 }
+
+export function encRewardResolver(addr: string, epoch: number | bigint): Uint8Array {
+  return cat(bf(1, h2b(addr)), vf(2, epoch));
+}
+export function encRewardBuilder(addr: string): Uint8Array {
+  return cat(bf(1, h2b(addr)));
+}
+export function encRewardCommunity(addr: string): Uint8Array {
+  return cat(bf(1, h2b(addr)));
+}
+export function encRewardInvestor(addr: string): Uint8Array {
+  return cat(bf(1, h2b(addr)));
+}
+export function encRewardProtocol(addr: string): Uint8Array {
+  return cat(bf(1, h2b(addr)));
+}
