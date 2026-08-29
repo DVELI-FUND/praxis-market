@@ -16,25 +16,30 @@ export default function BottomNav() {
   const setMore = useUi((s) => s.setMore);
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-[197] flex h-[60px] items-stretch border-t border-line bg-surface pb-[env(safe-area-inset-bottom)]">
+    <nav className="fixed inset-x-0 bottom-0 z-[197] flex h-[64px] items-stretch border-t border-line/60 bg-bg/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
       {ITEMS.map((it) => {
         const active = it.href !== null && pathname === it.href;
         const isMore = it.label === "More";
-        const cls = `flex flex-1 flex-col items-center justify-center gap-[3px] border-none bg-transparent font-mono text-[8px] uppercase tracking-[0.5px] transition-colors ${
-          active ? "text-up" : "text-ink-3"
+        const cls = `relative flex flex-1 flex-col items-center justify-center gap-[3px] border-none bg-transparent font-mono text-[8px] uppercase tracking-[0.5px] transition-colors ${
+          active ? "text-up" : "text-ink-3 hover:text-ink-2"
         }`;
+        const inner = (
+          <>
+            {active && <span className="absolute top-0 h-[2px] w-8 rounded-pill bg-grad-up shadow-glowUp" />}
+            <span className={`text-[20px] leading-none ${active ? "drop-shadow-[0_0_8px_rgba(0,232,138,0.5)]" : ""}`}>{it.icon}</span>
+            <span>{it.label}</span>
+          </>
+        );
         if (it.href) {
           return (
             <Link key={it.label} href={it.href} className={cls}>
-              <span className="text-[20px] leading-none">{it.icon}</span>
-              <span>{it.label}</span>
+              {inner}
             </Link>
           );
         }
         return (
           <button key={it.label} className={cls} onClick={() => setMore(true)}>
-            <span className="text-[20px] leading-none">{it.icon}</span>
-            <span>{it.label}</span>
+            {inner}
           </button>
         );
       })}

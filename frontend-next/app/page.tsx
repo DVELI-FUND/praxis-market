@@ -14,8 +14,8 @@ export default function Page() {
       <header className="mb-6 flex items-center justify-between gap-3">
         <div>
           <div
-            className="font-display text-lg font-extrabold tracking-widest text-up"
-            style={{ textShadow: "0 0 30px rgba(0,232,122,0.25)" }}
+            className="bg-grad-brand bg-clip-text font-display text-lg font-extrabold tracking-widest text-transparent"
+            style={{ filter: "drop-shadow(0 0 20px rgba(0,232,138,0.35))" }}
           >
             PRAXIS
           </div>
