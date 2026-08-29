@@ -5,6 +5,8 @@ import { queryAccount } from "@/lib/rpc";
 import { fmtPRX } from "@/lib/format";
 import MyPredictions from "@/components/MyPredictions";
 import AdvancedKeys from "@/components/AdvancedKeys";
+import ActionForm from "@/components/ActionForm";
+import { ACTIONS } from "@/lib/actions";
 
 export default function ProfilePage() {
   const { status, ethAddress, praxisAddress, pubHex, error, connect, disconnect } = useWallet();
@@ -135,6 +137,8 @@ export default function ProfilePage() {
         )}
       </section>
 
+      <div className="mb-3.5"><ActionForm def={ACTIONS.send} /></div>
+
       <AdvancedKeys />
 
       <MyPredictions />
@@ -152,7 +156,7 @@ export default function ProfilePage() {
           <br />
           4. address = <em>SHA256(pubKey).slice(0,20)</em>
           <br />
-          5. Keystore cache = <em>AES-256-GCM + PBKDF2 (100k iterations)</em>
+          5. Keystore = <em>AES-GCM + argon2id (Canopy) · legacy PBKDF2 (200k) · cache PBKDF2 (100k)</em>
         </div>
       </section>
     </main>
