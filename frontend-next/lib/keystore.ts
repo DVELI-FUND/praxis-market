@@ -1,9 +1,6 @@
 // Keystore KDFs — ported from Frontend/app.js (Canopy official formats).
 import { b2h, h2b } from "@/lib/format";
 
-type BS = BufferSource;
-const bs = (x: Uint8Array | Uint8Array<ArrayBufferLike>): BS => x as unknown as BS;
-
 declare global {
   interface Window {
     argon2?: {
@@ -46,8 +43,26 @@ async function deriveKeyArgon2id(password: string, salt: Uint8Array): Promise<Cr
   return crypto.subtle.importKey("raw", bs(result.hash), { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
 }
 
+async function deriveKeyArgon2i(password: string, salt: Uint8Array): Promise<CryptoKey> {
+  if (!window.argon2) {
+    throw new Error("Argon2 library not loaded — /argon2-bundled.min.js missing");
+  }
+  const result = await window.argon2.hash({
+    pass: password,
+    salt,
+    time: 3,
+    mem: 32768, // 32 MB (CLI format)
+    hashLen: 32,
+    parallelism: 4,
+    type: window.argon2.ArgonType.Argon2i,
+  });
+  return crypto.subtle.importKey("raw", bs(result.hash), { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
+}
+
 export interface LegacyKeystore {
-  kdf: string;
+  kdf?: string;
+  version?: number; // CLI format marker
+  publicKey?: string; // CLI format: hex pubkey for verification
   salt: string;
   iv: string;
   encrypted: string;
@@ -69,11 +84,19 @@ export async function encryptKeystore(privKeyBytes: Uint8Array, password: string
   };
 }
 
-// Decrypt any of: argon2id (ours/legacy), canopy (Argon2i, nonce=key[:12]), legacy PBKDF2-200k.
+// Decrypt any of: CLI (version:1 Argon2i), argon2id (ours/legacy), canopy (Argon2i, nonce=key[:12]), legacy PBKDF2-200k.
 export async function decryptKeystore(ks: LegacyKeystore, password: string): Promise<Uint8Array> {
   let key: CryptoKey;
   let nonce: Uint8Array;
-  if (ks.kdf === "canopy") {
+
+  // CLI format: version:1, publicKey field, Argon2i, nonce=key[:12]
+  if (ks.version === 1 && ks.publicKey) {
+    if (!window.argon2) throw new Error("Argon2 library not loaded");
+    key = await deriveKeyArgon2i(password, h2b(ks.salt));
+    const keyBytes = new Uint8Array(await crypto.subtle.exportKey("raw", key));
+    nonce = keyBytes.slice(0, 12); // CLI: nonce = key[:12]
+  } else if (ks.kdf === "canopy") {
+    // Legacy UI canopy format (no version field)
     if (!window.argon2) throw new Error("Argon2 library not loaded");
     const result = await window.argon2.hash({
       pass: password,
@@ -84,8 +107,8 @@ export async function decryptKeystore(ks: LegacyKeystore, password: string): Pro
       parallelism: 4,
       type: window.argon2.ArgonType.Argon2i,
     });
-    const keyBytes = result.hash; // 32 bytes
-    nonce = keyBytes.slice(0, 12); // canopy: nonce = key[:12]
+    const keyBytes = result.hash;
+    nonce = keyBytes.slice(0, 12);
     key = await crypto.subtle.importKey("raw", bs(keyBytes), { name: "AES-GCM" }, false, ["decrypt"]);
   } else if (!ks.kdf || ks.kdf === "argon2id") {
     key = await deriveKeyArgon2id(password, h2b(ks.salt));
@@ -93,7 +116,7 @@ export async function decryptKeystore(ks: LegacyKeystore, password: string): Pro
   } else {
     // legacy PBKDF2 fallback — 200k iterations
     const enc = new TextEncoder();
-    const km = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveKey"]);
+    const km = await crypto.subtle.importKey("raw", bs(enc.encode(password)), "PBKDF2", false, ["deriveKey"]);
     key = await crypto.subtle.deriveKey(
       { name: "PBKDF2", salt: bs(h2b(ks.salt)), iterations: 200000, hash: "SHA-256" },
       km,
@@ -103,6 +126,21 @@ export async function decryptKeystore(ks: LegacyKeystore, password: string): Pro
     );
     nonce = h2b(ks.iv);
   }
+
   const dec = await crypto.subtle.decrypt({ name: "AES-GCM", iv: bs(nonce) }, key, bs(h2b(ks.encrypted)));
-  return new Uint8Array(dec);
+  const privKey = new Uint8Array(dec);
+
+  // Verify pubkey if present (CLI format password check)
+  if (ks.version === 1 && ks.publicKey) {
+    const { bls12_381 } = await import("@noble/curves/bls12-381");
+    const pub = bls12_381.getPublicKey(privKey);
+    if (b2h(pub) !== ks.publicKey.toLowerCase()) {
+      throw new Error("Wrong password — decrypted pubkey does not match");
+    }
+  }
+
+  return privKey;
 }
+
+type BS = BufferSource;
+const bs = (x: Uint8Array | Uint8Array<ArrayBufferLike>): BS => x as unknown as BS;
