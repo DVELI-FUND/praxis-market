@@ -20,7 +20,7 @@ export function useRoles() {
   const praxisAddress = useWallet((st) => st.praxisAddress);
   const { data: markets = [] } = useMarkets();
   const { data: resolvers = [] } = useQuery({
-    queryKey: ["resolvers"],
+    queryKey: ["resolvers-raw"],
     queryFn: fetchResolvers,
     staleTime: 60000,
   });

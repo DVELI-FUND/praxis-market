@@ -46,6 +46,7 @@ export interface ActionDef {
   eye: string;
   sub: string;
   gate?: "resolver" | "admin" | "creator";
+  statusCard?: "resolver";
   fields: FieldDef[];
   build: (v: Vals, ctx: ActionCtx) => Uint8Array;
   validate?: (v: Vals) => string | null;
@@ -127,18 +128,18 @@ export const ACTIONS: Record<string, ActionDef> = {
     build: (v) => encSlash(s(v, "mid"), s(v, "addr")),
   },
   register: {
-    key: "register", msgType: "register_resolver", title: "Register as Resolver", eye: "Resolver", sub: "Stake PRX to earn resolution fees — minimum 500,000 PRX",
+    key: "register", msgType: "register_resolver", title: "Register as Resolver", eye: "Resolver", sub: "Stake PRX to earn resolution fees — minimum 500,000 PRX", statusCard: "resolver",
     fields: [ WALLET, { id: "stake", label: "Stake Amount (PRX)", type: "number", def: 500000, scale: W }, FEE ],
     build: (v) => encRegister(s(v, "addr"), u(v, "stake")),
     validate: (v) => (Number(v.stake) < 500000 ? "Stake min 500,000 PRX" : null),
   },
   unstake: {
-    key: "unstake", msgType: "unstake_resolver", title: "Unstake Resolver", eye: "Resolver", sub: "Begin 120,960-block unbonding period — partial or full exit", gate: "resolver",
+    key: "unstake", msgType: "unstake_resolver", title: "Unstake Resolver", eye: "Resolver", sub: "Begin 120,960-block unbonding period — partial or full exit", gate: "resolver", statusCard: "resolver",
     fields: [ WALLET, { id: "amount", label: "Amount (PRX) — 0 = full exit", type: "number", def: 0, scale: W }, FEE ],
     build: (v) => encUnstakeResolver(s(v, "addr"), u(v, "amount")),
   },
   claimunbonded: {
-    key: "claimunbonded", msgType: "claim_unbonded_stake", title: "Claim Unbonded Stake", eye: "Resolver", sub: "Release tokens after the 120,960-block unbonding period", gate: "resolver",
+    key: "claimunbonded", msgType: "claim_unbonded_stake", title: "Claim Unbonded Stake", eye: "Resolver", sub: "Release tokens after the 120,960-block unbonding period", gate: "resolver", statusCard: "resolver",
     fields: [ WALLET, FEE ],
     build: (v) => encClaimUnbonded(s(v, "addr")),
   },

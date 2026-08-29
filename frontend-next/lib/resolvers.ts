@@ -1,5 +1,14 @@
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { getPluginRPC } from "@/lib/rpc";
 import { b64ToHex } from "@/lib/format";
+import { useWallet } from "@/store/wallet";
+
+// Protocol constants — plugin/go/contract (constants_pris.go + handlers)
+export const MIN_RESOLVER_STAKE = 500000000000n; // 500,000 PRX in uPRX
+export const UNBONDING_BLOCKS = 120960; // ~7 days @5s/block
+export const PARTIAL_RRS_HIT = 10; // RRS penalty on partial unstake
+export const RRS_INITIAL = 10;
 
 export interface Resolver {
   address: string;
@@ -28,4 +37,15 @@ export async function fetchResolvers(): Promise<Resolver[]> {
       active: Boolean(x.is_active),
     }))
     .sort((a, b) => Number(b.stake - a.stake));
+}
+
+export function useResolvers() {
+  return useQuery({ queryKey: ["resolvers"], queryFn: fetchResolvers, staleTime: 60000 });
+}
+
+export function useMyResolver(): Resolver | null {
+  const addr = useWallet((s) => s.praxisAddress);
+  const { data: resolvers = [] } = useResolvers();
+  const a = (addr || "").toLowerCase();
+  return useMemo(() => resolvers.find((r) => r.address.toLowerCase() === a) || null, [resolvers, a]);
 }
