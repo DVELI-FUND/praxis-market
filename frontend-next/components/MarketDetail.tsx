@@ -40,95 +40,76 @@ export default function MarketDetail({ mid }: Props) {
 
   return (
     <div className="animate-fadeUp">
-      <Link href="/" className="mb-4 inline-flex items-center gap-1 font-mono text-[10px] text-ink-2 hover:text-up">
+      <Link href="/" className="mb-4 inline-flex items-center gap-1 font-mono text-[10px] text-ink-2 transition-colors hover:text-up">
         ← Back to Markets
       </Link>
 
       <div className="md:grid md:grid-cols-[1fr_340px] md:items-start md:gap-5">
-        {/* left column */}
         <div>
-          {/* Hero */}
-          <div className="relative mb-4 overflow-hidden rounded-card border border-line bg-surface">
+          {/* hero */}
+          <div className="relative mb-4 overflow-hidden rounded-card border border-line bg-surface-grad shadow-card">
             {imgUrl && (
-              <img
-                src={imgUrl}
-                alt=""
-                className="absolute inset-0 h-full w-full object-cover opacity-20"
-                onError={(e) => {
-                  e.currentTarget.style.display = "none";
-                }}
-              />
+              <>
+                <img src={imgUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-25" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/60 to-transparent" />
+              </>
             )}
             <div className="relative p-5">
-              <div className="mb-2 flex items-center gap-2">
+              <div className="mb-3 flex items-center gap-2">
                 <StatusPill status={market.status} />
-                <span className="font-mono text-[9px] uppercase tracking-[1px] text-ink-3">{catKey}</span>
+                <span className="rounded-pill border border-line bg-bg/60 px-2 py-0.5 font-mono text-[8px] uppercase tracking-[1.5px] text-ink-2 backdrop-blur">{catKey}</span>
               </div>
-              <h1 className="mb-3 font-display text-[18px] font-extrabold leading-tight tracking-[-0.2px] md:text-[22px]">
+              <h1 className="mb-4 font-display text-[20px] font-extrabold leading-tight tracking-[-0.3px] text-white md:text-[26px]">
                 {question}
               </h1>
-              <div className="flex flex-wrap items-center gap-3 font-mono text-[11px] text-ink-2">
-                <span>
-                  VOL <b className="text-up tabular-nums">{vol}</b>
-                </span>
+              <div className="flex flex-wrap items-center gap-4 font-mono text-[11px]">
+                <span className="text-ink-2">Vol <b className="text-[13px] text-cyanx tabular-nums">{vol}</b></span>
                 <span className="text-ink-3">·</span>
-                <span className="tabular-nums">#{market.expiry.toString()}</span>
+                <span className="text-ink-2 tabular-nums">ends #{market.expiry.toString()}</span>
               </div>
             </div>
           </div>
 
-          {/* Probability block */}
-          <div className="mb-4 overflow-hidden rounded-card border border-line bg-surface">
-            <div className="flex items-stretch">
-              <div className="flex flex-1 flex-col items-center gap-1 border-r border-line bg-up-dim px-4 py-5">
-                <div className="font-display text-[36px] font-extrabold leading-none tracking-[-0.5px] text-up tabular-nums">
-                  {pct}
-                  <span className="text-[14px] opacity-60">¢</span>
+          {/* probability box */}
+          <div className="mb-4 overflow-hidden rounded-card border border-line bg-surface-grad shadow-card">
+            <div className="grid grid-cols-2">
+              <div className="flex flex-col items-center gap-1 border-r border-line bg-gradient-to-b from-up-dim to-transparent px-4 py-6">
+                <div className="font-display text-[44px] font-extrabold leading-none tracking-[-1px] text-up tabular-nums">
+                  {pct}<span className="text-[16px] opacity-60">%</span>
                 </div>
                 <div className="font-mono text-[10px] font-semibold uppercase tracking-[2px] text-ink-3">YES</div>
                 <div className="font-mono text-[11px] text-ink-2 tabular-nums">{fmtPRX(market.qYes)}</div>
               </div>
-              <div className="flex flex-1 flex-col items-center gap-1 bg-down-dim px-4 py-5">
-                <div className="font-display text-[36px] font-extrabold leading-none tracking-[-0.5px] text-down tabular-nums">
-                  {noPct}
-                  <span className="text-[14px] opacity-60">¢</span>
+              <div className="flex flex-col items-center gap-1 bg-gradient-to-b from-down-dim to-transparent px-4 py-6">
+                <div className="font-display text-[44px] font-extrabold leading-none tracking-[-1px] text-down tabular-nums">
+                  {noPct}<span className="text-[16px] opacity-60">%</span>
                 </div>
                 <div className="font-mono text-[10px] font-semibold uppercase tracking-[2px] text-ink-3">NO</div>
                 <div className="font-mono text-[11px] text-ink-2 tabular-nums">{fmtPRX(market.qNo)}</div>
               </div>
             </div>
-            <div className="h-[3px] overflow-hidden bg-line">
-              <div className="h-full bg-up duration-500" style={{ width: `${pct}%` }} />
+            <div className="h-[5px] bg-line">
+              <div className="h-full bg-grad-up transition-all duration-500" style={{ width: `${pct}%` }} />
             </div>
           </div>
 
-          {/* Status banners */}
+          {/* status banners */}
           {market.status === STATUS.CANCELLED && (
-            <div className="mb-4 rounded-card border border-down/40 bg-down-dim p-4 font-mono text-[11px] text-down">
-              ✕ This market has been cancelled. All bettors can reclaim their stakes.
-            </div>
+            <div className="mb-4 rounded-card border border-down/40 bg-down-dim p-4 font-mono text-[11px] text-down">✕ This market has been cancelled. All bettors can reclaim their stakes.</div>
           )}
           {market.status === STATUS.EXPIRED && (
-            <div className="mb-4 rounded-card border border-amberx/40 bg-amberx/5 p-4 font-mono text-[11px] text-amberx">
-              ⏱ This market has expired and is awaiting resolution.
-            </div>
+            <div className="mb-4 rounded-card border border-amberx/40 bg-amberx/5 p-4 font-mono text-[11px] text-amberx">⏱ This market has expired and is awaiting resolution.</div>
           )}
           {market.status === STATUS.FINALIZED && (
-            <div className="mb-4 rounded-card border border-bluex/40 bg-bluex/5 p-4 font-mono text-[11px] text-bluex">
-              ✓ This market has been finalized.
-            </div>
+            <div className="mb-4 rounded-card border border-bluex/40 bg-bluex/5 p-4 font-mono text-[11px] text-bluex">✓ This market has been finalized.</div>
           )}
           {market.status === STATUS.VOIDED && (
-            <div className="mb-4 rounded-card border border-ink-3/40 bg-ink-3/5 p-4 font-mono text-[11px] text-ink-2">
-              ✕ This market has been voided.
-            </div>
+            <div className="mb-4 rounded-card border border-ink-3/40 bg-ink-3/5 p-4 font-mono text-[11px] text-ink-2">✕ This market has been voided.</div>
           )}
 
-          {/* Tabs */}
           {holders && <DetailTabs mid={mid} market={market} holders={holders} disputeContext={disputeContext} />}
         </div>
 
-        {/* right column — trade panel */}
         <div className="mt-4 md:mt-0">
           <PredictPanel market={market} />
         </div>
