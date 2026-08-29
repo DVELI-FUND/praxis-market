@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useWallet } from "@/store/wallet";
 import { aesDecrypt, aesEncrypt } from "@/lib/wallet";
+import { argon2Available, decryptKeystore, encryptKeystore } from "@/lib/keystore";
 import { useToast } from "@/store/toast";
 import { b2h } from "@/lib/format";
 
@@ -16,6 +17,7 @@ export default function AdvancedKeys() {
   const [pw2, setPw2] = useState("");
   const [ks, setKs] = useState("");
   const [out, setOut] = useState("");
+  const [outKind, setOutKind] = useState("");
   const [busy, setBusy] = useState(false);
 
   const inputCls =
@@ -52,22 +54,39 @@ export default function AdvancedKeys() {
     }
     setBusy(true);
     try {
-      const enc = await aesEncrypt(privKey, pw);
-      setOut(enc);
+      if (argon2Available()) {
+        const ksObj = await encryptKeystore(privKey, pw);
+        setOut(JSON.stringify(ksObj));
+        setOutKind("argon2id JSON — compatible with legacy Praxis & Canopy CLI");
+      } else {
+        const hex = await aesEncrypt(privKey, pw);
+        setOut(hex);
+        setOutKind("PBKDF2-100k hex (argon2 bundle unavailable)");
+      }
       toast("✓ Keystore built — copy and store safely");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : String(e), true);
     } finally {
       setBusy(false);
     }
   };
 
   const doImport = async () => {
-    if (!ks.trim() || !pw) {
+    const text = ks.trim();
+    if (!text || !pw) {
       toast("Paste keystore + password", true);
       return;
     }
     setBusy(true);
     try {
-      const priv = await aesDecrypt(ks.trim(), pw);
+      let priv: Uint8Array;
+      if (text.startsWith("{")) {
+        // legacy / canopy JSON keystore (argon2id | canopy | pbkdf2-200k)
+        priv = await decryptKeystore(JSON.parse(text), pw);
+      } else {
+        // our PBKDF2-100k hex format
+        priv = await aesDecrypt(text, pw);
+      }
       if (priv.length !== 32) throw new Error("bad keystore");
       await importKey(b2h(priv));
       toast("✓ Keystore unlocked");
@@ -89,22 +108,13 @@ export default function AdvancedKeys() {
 
       {mode === null && (
         <div className="grid grid-cols-3 gap-1.5">
-          <button
-            onClick={() => setMode("raw")}
-            className="rounded-card border border-line-2 px-2 py-2 font-mono text-[9px] text-ink-2 transition-colors hover:border-up hover:text-up"
-          >
+          <button onClick={() => setMode("raw")} className="rounded-card border border-line-2 px-2 py-2 font-mono text-[9px] text-ink-2 transition-colors hover:border-up hover:text-up">
             Import raw key
           </button>
-          <button
-            onClick={() => setMode("export")}
-            className="rounded-card border border-line-2 px-2 py-2 font-mono text-[9px] text-ink-2 transition-colors hover:border-up hover:text-up"
-          >
+          <button onClick={() => setMode("export")} className="rounded-card border border-line-2 px-2 py-2 font-mono text-[9px] text-ink-2 transition-colors hover:border-up hover:text-up">
             Export keystore
           </button>
-          <button
-            onClick={() => setMode("import")}
-            className="rounded-card border border-line-2 px-2 py-2 font-mono text-[9px] text-ink-2 transition-colors hover:border-up hover:text-up"
-          >
+          <button onClick={() => setMode("import")} className="rounded-card border border-line-2 px-2 py-2 font-mono text-[9px] text-ink-2 transition-colors hover:border-up hover:text-up">
             Import keystore
           </button>
         </div>
@@ -114,12 +124,8 @@ export default function AdvancedKeys() {
         <div className="space-y-2">
           <input value={raw} onChange={(e) => setRaw(e.target.value)} placeholder="64-hex BLS private key" className={inputCls} />
           <div className="flex gap-1.5">
-            <button onClick={() => void doRaw()} className="flex-1 rounded-card bg-up py-2 font-sans text-[11px] font-bold text-black">
-              Load key
-            </button>
-            <button onClick={() => setMode(null)} className="rounded-card border border-line-2 px-3 py-2 font-mono text-[9px] text-ink-2">
-              Cancel
-            </button>
+            <button onClick={() => void doRaw()} className="flex-1 rounded-card bg-up py-2 font-sans text-[11px] font-bold text-black">Load key</button>
+            <button onClick={() => setMode(null)} className="rounded-card border border-line-2 px-3 py-2 font-mono text-[9px] text-ink-2">Cancel</button>
           </div>
         </div>
       )}
@@ -129,7 +135,10 @@ export default function AdvancedKeys() {
           <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Password (min 8)" className={inputCls} />
           <input type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} placeholder="Repeat password" className={inputCls} />
           {out && (
-            <textarea readOnly value={out} rows={3} className={`${inputCls} break-all opacity-70`} onFocus={(e) => e.currentTarget.select()} />
+            <>
+              <textarea readOnly value={out} rows={4} className={`${inputCls} break-all opacity-70`} onFocus={(e) => e.currentTarget.select()} />
+              <div className="font-mono text-[8px] text-ink-3">{outKind}</div>
+            </>
           )}
           <div className="flex gap-1.5">
             <button onClick={() => void doExport()} disabled={busy} className="flex-1 rounded-card bg-up py-2 font-sans text-[11px] font-bold text-black disabled:opacity-40">
@@ -144,7 +153,7 @@ export default function AdvancedKeys() {
 
       {mode === "import" && (
         <div className="space-y-2">
-          <textarea value={ks} onChange={(e) => setKs(e.target.value)} placeholder="Keystore hex (salt+iv+ciphertext)" rows={3} className={`${inputCls} break-all`} />
+          <textarea value={ks} onChange={(e) => setKs(e.target.value)} placeholder='Keystore — JSON {"kdf":…} or Praxis hex' rows={4} className={`${inputCls} break-all`} />
           <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Password" className={inputCls} />
           <div className="flex gap-1.5">
             <button onClick={() => void doImport()} disabled={busy} className="flex-1 rounded-card bg-up py-2 font-sans text-[11px] font-bold text-black disabled:opacity-40">
@@ -158,7 +167,7 @@ export default function AdvancedKeys() {
       )}
 
       <div className="mt-3 font-mono text-[8px] leading-relaxed text-ink-3">
-        AES-256-GCM + PBKDF2 (100k) keystore · imported keys live in memory only — export a keystore to persist across sessions
+        Formats: Canopy argon2id JSON · canopy Argon2i · legacy PBKDF2-200k · Praxis PBKDF2-100k hex · imported keys live in memory only
       </div>
     </section>
   );
