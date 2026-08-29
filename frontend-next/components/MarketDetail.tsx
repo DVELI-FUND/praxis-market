@@ -2,8 +2,10 @@
 import Link from "next/link";
 import { useMarketDetail } from "@/hooks/useMarketDetail";
 import { extractCat, extractImg, stripCatPrefix, yesPct, STATUS } from "@/lib/markets";
-import { fmtPRX } from "@/lib/format";
+import { fmtPRX, fmtCountdown } from "@/lib/format";
 import StatusPill from "./StatusPill";
+import ShareButton from "./ShareButton";
+import { useHeight } from "@/hooks/useHeight";
 import DetailTabs from "./DetailTabs";
 import PredictPanel from "./PredictPanel";
 
@@ -12,6 +14,7 @@ interface Props {
 }
 
 export default function MarketDetail({ mid }: Props) {
+  const { data: chain } = useHeight();
   const { market, holders, disputeContext, isLoading, isError } = useMarketDetail(mid);
 
   if (isLoading) {
@@ -58,6 +61,7 @@ export default function MarketDetail({ mid }: Props) {
               <div className="mb-3 flex items-center gap-2">
                 <StatusPill status={market.status} />
                 <span className="rounded-pill border border-line bg-bg/60 px-2 py-0.5 font-mono text-[8px] uppercase tracking-[1.5px] text-ink-2 backdrop-blur">{catKey}</span>
+                <ShareButton mid={mid} question={question} />
               </div>
               <h1 className="mb-4 font-display text-[20px] font-extrabold leading-tight tracking-[-0.3px] text-white md:text-[26px]">
                 {question}
@@ -65,7 +69,7 @@ export default function MarketDetail({ mid }: Props) {
               <div className="flex flex-wrap items-center gap-4 font-mono text-[11px]">
                 <span className="text-ink-2">Vol <b className="text-[13px] text-cyanx tabular-nums">{vol}</b></span>
                 <span className="text-ink-3">·</span>
-                <span className="text-ink-2 tabular-nums">ends #{market.expiry.toString()}</span>
+                <span className="text-ink-2">Ends <b className="text-[13px] text-up tabular-nums">{fmtCountdown(Number(market.expiry), chain?.height ?? 0)}</b></span>
               </div>
             </div>
           </div>
