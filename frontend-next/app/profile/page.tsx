@@ -4,7 +4,6 @@ import { useWallet } from "@/store/wallet";
 import { queryAccount } from "@/lib/rpc";
 import { fmtPRX } from "@/lib/format";
 import MyPredictions from "@/components/MyPredictions";
-import AdvancedKeys from "@/components/AdvancedKeys";
 import ActionForm from "@/components/ActionForm";
 import { ACTIONS } from "@/lib/actions";
 
@@ -138,8 +137,6 @@ export default function ProfilePage() {
       </section>
 
       <div className="mb-3.5"><ActionForm def={ACTIONS.send} /></div>
-
-      <AdvancedKeys />
 
       <MyPredictions />
 
