@@ -4,6 +4,7 @@ import { useWallet } from "@/store/wallet";
 import { useQuery } from "@tanstack/react-query";
 import { b64ToHex, fmtPRX } from "@/lib/format";
 import { useMarkets } from "@/hooks/useMarkets";
+import { getRPC } from "@/lib/rpc";
 import { stripCatPrefix, yesPct, CAT_SYMBOLS, extractCat } from "@/lib/markets";
 
 interface Position {
@@ -29,6 +30,19 @@ async function fetchPositions(addr: string): Promise<Position[]> {
   }
 }
 
+async function fetchBalance(addr: string): Promise<bigint> {
+  try {
+    const url = getRPC() + `/v1/query/account?address=${encodeURIComponent(addr)}`;
+    const res = await fetch(url);
+    if (!res.ok) return 0n;
+    const raw = await res.json();
+    const bal = raw?.account?.balance ?? raw?.balance ?? raw?.result?.balance ?? raw?.account?.amount ?? 0;
+    return BigInt(bal || 0);
+  } catch {
+    return 0n;
+  }
+}
+
 export default function ProfilePage() {
   const { praxisAddress } = useWallet();
   const { data: markets = [] } = useMarkets();
@@ -38,6 +52,14 @@ export default function ProfilePage() {
     queryFn: () => fetchPositions(praxisAddress as string),
     enabled: !!praxisAddress,
     staleTime: 30000,
+  });
+
+  const { data: balance = 0n } = useQuery({
+    queryKey: ["balance", praxisAddress],
+    queryFn: () => fetchBalance(praxisAddress as string),
+    enabled: !!praxisAddress,
+    staleTime: 15000,
+    refetchInterval: 15000,
   });
 
   const enriched = useMemo(() => {
@@ -53,7 +75,8 @@ export default function ProfilePage() {
     });
   }, [positions, markets]);
 
-  const netWorth = useMemo(() => enriched.reduce((sum, p) => sum + p.value, 0n), [enriched]);
+  const positionsValue = useMemo(() => enriched.reduce((sum, p) => sum + p.value, 0n), [enriched]);
+  const netWorth = balance + positionsValue;
 
   const byCategory = useMemo(() => {
     const acc: Record<string, bigint> = {};
@@ -87,8 +110,10 @@ export default function ProfilePage() {
           <div className="font-display text-[36px] font-extrabold text-up tabular-nums">
             {fmtPRX(netWorth)} <span className="text-[16px] text-ink-3">PRX</span>
           </div>
-          <div className="mt-2 font-mono text-[10px] text-ink-2">
-            {enriched.length} active position{enriched.length !== 1 ? "s" : ""}
+          <div className="mt-2 flex flex-wrap gap-4 font-mono text-[10px] text-ink-2">
+            <span>Balance <b className="text-cyanx tabular-nums">{fmtPRX(balance)}</b></span>
+            <span>Positions <b className="text-up tabular-nums">{fmtPRX(positionsValue)}</b></span>
+            <span>{enriched.length} active position{enriched.length !== 1 ? "s" : ""}</span>
           </div>
         </div>
 
