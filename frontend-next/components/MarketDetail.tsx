@@ -7,6 +7,8 @@ import StatusPill from "./StatusPill";
 import ShareButton from "./ShareButton";
 import { useHeight } from "@/hooks/useHeight";
 import DetailTabs from "./DetailTabs";
+import PriceChart from "./PriceChart";
+import ActivityFeed from "./ActivityFeed";
 import PredictPanel from "./PredictPanel";
 
 interface Props {
@@ -101,6 +103,12 @@ export default function MarketDetail({ mid }: Props) {
             <div className="h-[5px] bg-line">
               <div className="h-full bg-grad-up transition-all duration-500" style={{ width: `${pct}%` }} />
             </div>
+          </div>
+
+          {/* price chart + activity (activate when market-txs endpoint lands) */}
+          <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+            <PriceChart mid={mid} initialYes={market.qYes} initialNo={market.qNo} />
+            <ActivityFeed mid={mid} />
           </div>
 
           {/* status banners */}
