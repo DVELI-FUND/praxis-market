@@ -1,6 +1,7 @@
 "use client";
 import MarketsBoard from "@/components/MarketsBoard";
 import HomeSidebar from "@/components/HomeSidebar";
+import LogoMark from "@/components/LogoMark";
 import { useHeight } from "@/hooks/useHeight";
 
 const PH13B_CANARY = "PRAXIS-NEXT-PH13B";
@@ -13,8 +14,13 @@ export default function Page() {
     <main className="relative z-10 mx-auto min-h-screen max-w-[1280px] px-4 py-6 pb-24 md:px-8">
       <header className="mb-6 flex items-center justify-between gap-3">
         <div className="md:hidden">
-          <div className="bg-grad-brand bg-clip-text font-display text-lg font-extrabold tracking-widest text-transparent">
-            PRAXIS
+          <div className="flex items-center gap-2">
+            <span className="text-ink">
+              <LogoMark className="h-6 w-6" />
+            </span>
+            <div className="bg-grad-brand bg-clip-text font-display text-lg font-extrabold tracking-widest text-transparent">
+              PRAXIS
+            </div>
           </div>
           <div className="font-mono text-[9px] tracking-[2px] text-ink-3">$PRX · NEXT</div>
         </div>
