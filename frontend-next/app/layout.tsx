@@ -1,9 +1,8 @@
 import TopNav from "@/components/TopNav";
+import ThemeSync from "@/components/ThemeSync";
 import type { Metadata } from "next";
 import { Syne, DM_Mono, DM_Sans } from "next/font/google";
 import type { ReactNode } from "react";
-import { useEffect } from "react";
-import { useTheme } from "@/store/theme";
 import Providers from "./providers";
 import Chrome from "@/components/Chrome";
 import "./globals.css";
@@ -20,10 +19,6 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
-  const { theme } = useTheme();
-  useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-  }, [theme]);
   return (
     <html lang="en" data-theme="dark">
       <body className={`${syne.variable} ${dmMono.variable} ${dmSans.variable} bg-bg text-ink font-sans`}>
@@ -31,6 +26,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <meta httpEquiv="Pragma" content="no-cache" />
         <meta httpEquiv="Expires" content="0" />
         <Providers>
+          <ThemeSync />
           <Chrome><TopNav />
           
           {children}</Chrome>
