@@ -4,7 +4,7 @@ import { useWallet } from "@/store/wallet";
 import { useQuery } from "@tanstack/react-query";
 import { b64ToHex, fmtPRX } from "@/lib/format";
 import { useMarkets } from "@/hooks/useMarkets";
-import { getRPC } from "@/lib/rpc";
+import { queryAccount } from "@/lib/rpc";
 import { stripCatPrefix, yesPct, CAT_SYMBOLS, extractCat } from "@/lib/markets";
 
 interface Position {
@@ -32,12 +32,8 @@ async function fetchPositions(addr: string): Promise<Position[]> {
 
 async function fetchBalance(addr: string): Promise<bigint> {
   try {
-    const url = getRPC() + `/v1/query/account?address=${encodeURIComponent(addr)}`;
-    const res = await fetch(url);
-    if (!res.ok) return 0n;
-    const raw = await res.json();
-    const bal = raw?.account?.balance ?? raw?.balance ?? raw?.result?.balance ?? raw?.account?.amount ?? 0;
-    return BigInt(bal || 0);
+    const r = await queryAccount(addr);
+    return BigInt(r?.amount || 0);
   } catch {
     return 0n;
   }
