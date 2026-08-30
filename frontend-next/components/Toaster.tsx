@@ -16,7 +16,8 @@ export default function Toaster() {
   if (!msg) return null;
   return (
     <div
-      className={`fixed bottom-[70px] left-1/2 z-[220] -translate-x-1/2 whitespace-nowrap rounded-card border px-4 py-2 font-mono text-[10px] ${
+      key={msg}
+      className={`toast-in fixed bottom-[70px] left-1/2 z-[220] -translate-x-1/2 whitespace-nowrap rounded-card border px-4 py-2 font-mono text-[10px] md:bottom-6 ${
         kind === "err" ? "border-down/40 bg-[#1a0810] text-down" : "border-up/40 bg-[#081a10] text-up"
       }`}
     >

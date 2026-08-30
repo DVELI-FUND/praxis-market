@@ -19,8 +19,14 @@ export default function MarketDetail({ mid }: Props) {
 
   if (isLoading) {
     return (
-      <div className="py-10 text-center font-mono text-[11px] text-ink-3">
-        <span className="animate-pulseDot">▪ ▪ ▪</span>&nbsp;&nbsp;loading market
+      <div className="animate-pulse space-y-4">
+        <div className="h-4 w-28 rounded-card bg-surface-2" />
+        <div className="h-[160px] rounded-card bg-surface-grad" />
+        <div className="grid grid-cols-2 gap-0 overflow-hidden rounded-card">
+          <div className="h-[120px] bg-surface-2" />
+          <div className="h-[120px] bg-surface-3" />
+        </div>
+        <div className="h-[200px] rounded-card bg-surface-grad" />
       </div>
     );
   }

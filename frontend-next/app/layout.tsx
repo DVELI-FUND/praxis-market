@@ -1,6 +1,7 @@
 import TopNav from "@/components/TopNav";
 import ThemeSync from "@/components/ThemeSync";
 import Hotkeys from "@/components/Hotkeys";
+import Footer from "@/components/Footer";
 import type { Metadata } from "next";
 import { Syne, DM_Mono, DM_Sans } from "next/font/google";
 import type { ReactNode } from "react";
@@ -31,7 +32,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <Hotkeys />
           <Chrome><TopNav />
           
-          {children}</Chrome>
+          {children}<Footer />
+        </Chrome>
         </Providers>
       </body>
     </html>
