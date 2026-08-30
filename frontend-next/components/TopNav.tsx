@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import WalletPill from "./WalletPill";
+import ThemeToggle from "./ThemeToggle";
 
 const LINKS = [
   { href: "/", label: "Markets" },
@@ -36,6 +37,7 @@ export default function TopNav() {
           <Link href="/search" className="flex items-center gap-2 rounded-pill border border-line bg-surface px-3 py-1.5 font-mono text-[10px] text-ink-3 transition-colors hover:border-line-2 hover:text-ink">
             ⌕ Search Markets
           </Link>
+          <ThemeToggle />
           <WalletPill />
         </div>
       </div>
