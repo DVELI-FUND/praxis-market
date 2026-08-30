@@ -94,7 +94,7 @@ export default function MarketCard({ market, featured = false, bookmarked, onTog
           <span className="font-mono text-[9px] uppercase tracking-[1px] text-ink-3">chance</span>
         </div>
         <div className="mb-3 h-[4px] overflow-hidden rounded-pill bg-line">
-          <div className="h-full rounded-pill bg-grad-up transition-all duration-500" style={{ width: `${pct}%` }} />
+          <div className="h-full rounded-pill bg-up transition-all duration-500" style={{ width: `${pct}%` }} />
         </div>
 
         <div className="mb-3 grid grid-cols-2 gap-2">

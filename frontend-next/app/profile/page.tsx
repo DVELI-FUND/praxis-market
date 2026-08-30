@@ -113,7 +113,7 @@ export default function ProfilePage() {
 
       {/* net worth + assets */}
       <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="rounded-card bg-grad-brand p-[1px] shadow-glowUp">
+        <div className="rounded-card border border-line shadow-card">
           <div className="rounded-card bg-surface-grad p-6">
             <div className="mb-1 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">Net Worth</div>
             <div className="font-display text-[34px] font-extrabold text-up tabular-nums">
@@ -175,7 +175,7 @@ export default function ProfilePage() {
         <div className="mb-6 rounded-card border border-line bg-surface-grad p-5 shadow-card">
           <div className="mb-2 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">Your PRX address</div>
           <div className="mb-3 break-all rounded-card border border-line bg-bg p-3 font-mono text-[11px] text-cyanx">{praxisAddress}</div>
-          <button onClick={copyAddr} className="w-full rounded-card bg-grad-up py-2.5 font-sans text-[12px] font-extrabold text-black shadow-glowUp hover:brightness-110">
+          <button onClick={copyAddr} className="w-full rounded-card bg-up py-2.5 font-sans text-[12px] font-extrabold text-black shadow-glowUp hover:brightness-110">
             {copied ? "✓ Copied" : "⎘ Copy address"}
           </button>
           <div className="mt-2 font-mono text-[8px] text-ink-3">Share this address to receive PRX</div>
@@ -196,7 +196,7 @@ export default function ProfilePage() {
                   <span className="w-[60px] font-mono text-[10px] text-ink-2">{cat}</span>
                   <div className="flex-1">
                     <div className="h-[6px] overflow-hidden rounded-pill bg-line">
-                      <div className="h-full bg-grad-up" style={{ width: `${pct}%` }} />
+                      <div className="h-full bg-up" style={{ width: `${pct}%` }} />
                     </div>
                   </div>
                   <span className="w-[80px] text-right font-mono text-[10px] text-ink tabular-nums">{fmtPRX(val)}</span>

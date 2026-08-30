@@ -22,7 +22,7 @@ export default function TopNav() {
           <span className="text-ink">
             <LogoMark className="h-[22px] w-[22px]" />
           </span>
-          <span className="bg-grad-brand bg-clip-text font-display text-[16px] font-extrabold tracking-widest text-transparent">
+          <span className="font-display text-[16px] font-extrabold tracking-widest text-ink">
             PRAXIS
           </span>
         </Link>

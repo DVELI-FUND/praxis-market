@@ -69,7 +69,7 @@ export default function SettingsPage() {
             <br />
             default plugin: {DEFAULT_PLUGIN_RPC}
           </div>
-          <button onClick={saveRpc} className="mt-3 w-full rounded-card bg-grad-up py-2.5 font-sans text-[12px] font-extrabold text-black shadow-glowUp hover:brightness-110">
+          <button onClick={saveRpc} className="mt-3 w-full rounded-card bg-up py-2.5 font-sans text-[12px] font-extrabold text-black shadow-glowUp hover:brightness-110">
             Save endpoints
           </button>
         </div>

@@ -9,7 +9,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
           A client-side exception occurred. If this persists after retrying, clear site data (stale cache) and reload.
         </p>
         <div className="flex justify-center gap-2">
-          <button onClick={() => reset()} className="rounded-card bg-grad-up px-4 py-2 font-sans text-[12px] font-extrabold text-black shadow-glowUp hover:brightness-110">
+          <button onClick={() => reset()} className="rounded-card bg-up px-4 py-2 font-sans text-[12px] font-extrabold text-black shadow-glowUp hover:brightness-110">
             ↻ Retry
           </button>
           <button onClick={() => window.location.reload()} className="rounded-card border border-line-2 px-4 py-2 font-mono text-[10px] text-ink-2 hover:border-up hover:text-up">

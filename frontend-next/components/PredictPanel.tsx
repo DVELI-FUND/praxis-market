@@ -152,7 +152,7 @@ export default function PredictPanel({ market }: Props) {
         <button
           onClick={() => void submit()}
           disabled={pending || over || !connected}
-          className="w-full rounded-card bg-grad-up py-3 font-sans text-[13px] font-extrabold text-black shadow-glowUp transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+          className="w-full rounded-card bg-up py-3 font-sans text-[13px] font-extrabold text-black shadow-glowUp transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {pending ? "▪▪▪ broadcasting…" : `⚡ Buy ${outcome ? "YES" : "NO"} · ${bd.maxCost} PRX max`}
         </button>

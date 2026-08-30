@@ -267,7 +267,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
         <button
           onClick={() => void submit()}
           disabled={pending || !connected || unstakeBlocked}
-          className="flex-1 rounded-card bg-grad-up py-2.5 font-sans text-[12px] font-extrabold text-black shadow-glowUp transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex-1 rounded-card bg-up py-2.5 font-sans text-[12px] font-extrabold text-black shadow-glowUp transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {pending ? "▪▪▪ broadcasting…" : "⚡ Sign & Submit"}
         </button>

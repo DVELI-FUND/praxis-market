@@ -101,7 +101,7 @@ export default function MarketDetail({ mid }: Props) {
               </div>
             </div>
             <div className="h-[5px] bg-line">
-              <div className="h-full bg-grad-up transition-all duration-500" style={{ width: `${pct}%` }} />
+              <div className="h-full bg-up transition-all duration-500" style={{ width: `${pct}%` }} />
             </div>
           </div>
 

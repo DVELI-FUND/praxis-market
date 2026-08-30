@@ -25,7 +25,7 @@ export default function BottomNav() {
         }`;
         const inner = (
           <>
-            {active && <span className="absolute top-0 h-[2px] w-8 rounded-pill bg-grad-up shadow-glowUp" />}
+            {active && <span className="absolute top-0 h-[2px] w-8 rounded-pill bg-up shadow-glowUp" />}
             <span className={`text-[20px] leading-none ${active ? "drop-shadow-[0_0_8px_rgba(0,232,138,0.5)]" : ""}`}>{it.icon}</span>
             <span>{it.label}</span>
           </>

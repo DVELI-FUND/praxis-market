@@ -100,7 +100,7 @@ export default function FeaturedCarousel() {
           </div>
           <Link
             href={`/market/${m.marketId}`}
-            className="rounded-card bg-grad-up px-4 py-2 font-sans text-[11px] font-extrabold text-black shadow-glowUp hover:brightness-110"
+            className="rounded-card bg-up px-4 py-2 font-sans text-[11px] font-extrabold text-black shadow-glowUp hover:brightness-110"
           >
             Trade →
           </Link>

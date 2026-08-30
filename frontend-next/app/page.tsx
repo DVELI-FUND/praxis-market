@@ -20,7 +20,7 @@ export default function Page() {
             <span className="text-ink">
               <LogoMark className="h-6 w-6" />
             </span>
-            <div className="bg-grad-brand bg-clip-text font-display text-lg font-extrabold tracking-widest text-transparent">
+            <div className="font-display text-lg font-extrabold tracking-widest text-ink">
               PRAXIS
             </div>
           </div>

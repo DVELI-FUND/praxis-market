@@ -86,7 +86,7 @@ export default function MoreSheet() {
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-ink"><LogoMark className="h-6 w-6" /></span>
-            <span className="bg-grad-brand bg-clip-text font-display text-[15px] font-extrabold tracking-widest text-transparent">PRAXIS</span>
+            <span className="font-display text-[15px] font-extrabold tracking-widest text-ink">PRAXIS</span>
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
