@@ -16,7 +16,7 @@ export default function BottomNav() {
   const setMore = useUi((s) => s.setMore);
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-[197] flex h-[64px] items-stretch border-t border-line/60 bg-bg/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
+    <nav className="fixed inset-x-0 bottom-0 z-[197] flex h-[64px] md:hidden items-stretch border-t border-line/60 bg-bg/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
       {ITEMS.map((it) => {
         const active = it.href !== null && pathname === it.href;
         const isMore = it.label === "More";

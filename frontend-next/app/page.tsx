@@ -12,7 +12,7 @@ export default function Page() {
   return (
     <main className="relative z-10 mx-auto min-h-screen max-w-[1280px] px-4 py-6 pb-24 md:px-8">
       <header className="mb-6 flex items-center justify-between gap-3">
-        <div>
+        <div className="md:hidden">
           <div className="bg-grad-brand bg-clip-text font-display text-lg font-extrabold tracking-widest text-transparent">
             PRAXIS
           </div>
