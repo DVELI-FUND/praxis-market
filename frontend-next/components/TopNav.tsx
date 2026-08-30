@@ -10,7 +10,7 @@ const LINKS = [
   { href: "/rewards", label: "Rewards" },
   { href: "/resolvers", label: "Resolvers" },
   { href: "/resolution", label: "Resolution" },
-  { href: "/portfolio", label: "Portfolio" },
+  { href: "/profile", label: "Portfolio" },
 ];
 
 export default function TopNav() {

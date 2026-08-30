@@ -2,11 +2,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useWallet } from "@/store/wallet";
 import { useMarkets } from "@/hooks/useMarkets";
-import { useHeight } from "@/hooks/useHeight";
-import { getPluginRPC } from "@/lib/rpc";
-import { b64ToHex } from "@/lib/format";
+import { getRPC, getPluginRPC } from "@/lib/rpc";
+import { b64ToHex, fmtPRX } from "@/lib/format";
 import { yesPct, stripCatPrefix } from "@/lib/markets";
-import { fmtPRX } from "@/lib/format";
 
 interface Position {
   marketId: string;
@@ -16,29 +14,53 @@ interface Position {
 }
 
 async function fetchPositions(addr: string): Promise<Position[]> {
-  const url = getPluginRPC() + `/v1/query/positions?address=${encodeURIComponent(addr)}`;
-  const res = await fetch(url);
-  if (!res.ok) return [];
-  const raw = (await res.json()) as { positions?: Record<string, unknown>[] };
-  if (!raw.positions) return [];
-  return raw.positions.map((p: Record<string, unknown>) => ({
-    marketId: b64ToHex(String(p.marketId || p.market_id || "")),
-    bettorAddress: b64ToHex(String(p.bettorAddress || p.bettor_address || "")),
-    sharesYes: BigInt((p.sharesYes || p.shares_yes || 0) as number | string),
-    sharesNo: BigInt((p.sharesNo || p.shares_no || 0) as number | string),
-  }));
+  try {
+    const url = getPluginRPC() + `/v1/query/positions?address=${encodeURIComponent(addr)}`;
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const raw = (await res.json()) as { positions?: Record<string, unknown>[] };
+    if (!raw.positions) return [];
+    return raw.positions.map((p: Record<string, unknown>) => ({
+      marketId: b64ToHex(String(p.marketId || p.market_id || "")),
+      bettorAddress: b64ToHex(String(p.bettorAddress || p.bettor_address || "")),
+      sharesYes: BigInt((p.sharesYes || p.shares_yes || 0) as number | string),
+      sharesNo: BigInt((p.sharesNo || p.shares_no || 0) as number | string),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+async function fetchBalance(addr: string): Promise<bigint> {
+  try {
+    const url = getRPC() + `/v1/query/account?address=${encodeURIComponent(addr)}`;
+    const res = await fetch(url);
+    if (!res.ok) return 0n;
+    const raw = await res.json();
+    const bal = raw?.account?.balance ?? raw?.balance ?? raw?.result?.balance ?? raw?.account?.amount ?? 0;
+    return BigInt(bal || 0);
+  } catch {
+    return 0n;
+  }
 }
 
 export default function PortfolioPage() {
   const { praxisAddress } = useWallet();
   const { data: markets = [] } = useMarkets();
-  const { data: chain } = useHeight();
 
   const { data: positions = [] } = useQuery({
     queryKey: ["positions", praxisAddress],
     queryFn: () => fetchPositions(praxisAddress as string),
     enabled: !!praxisAddress,
     staleTime: 30000,
+    refetchInterval: 15000,
+  });
+
+  const { data: balance = 0n } = useQuery({
+    queryKey: ["balance", praxisAddress],
+    queryFn: () => fetchBalance(praxisAddress as string),
+    enabled: !!praxisAddress,
+    staleTime: 15000,
     refetchInterval: 15000,
   });
 
@@ -61,6 +83,9 @@ export default function PortfolioPage() {
     return { ...pos, market, value: yesValue + noValue };
   });
 
+  const positionsValue = enriched.reduce((s, p) => s + p.value, 0n);
+  const netWorth = balance + positionsValue;
+
   return (
     <main className="relative z-10 mx-auto min-h-screen max-w-[980px] px-4 py-6 pb-24 md:px-8">
       <div className="mb-6">
@@ -71,6 +96,27 @@ export default function PortfolioPage() {
         <p className="mt-1 text-[13px] text-ink-2">
           {enriched.length} active position{enriched.length !== 1 ? "s" : ""} · current value based on live prices
         </p>
+      </div>
+
+      <div className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="rounded-card border border-line bg-surface-grad p-4 shadow-card">
+          <div className="mb-1 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">Spot Balance</div>
+          <div className="font-display text-[22px] font-extrabold text-cyanx tabular-nums">
+            {fmtPRX(balance)} <span className="text-[12px] text-ink-3">PRX</span>
+          </div>
+        </div>
+        <div className="rounded-card border border-line bg-surface-grad p-4 shadow-card">
+          <div className="mb-1 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">Positions Value</div>
+          <div className="font-display text-[22px] font-extrabold text-up tabular-nums">
+            {fmtPRX(positionsValue)} <span className="text-[12px] text-ink-3">PRX</span>
+          </div>
+        </div>
+        <div className="rounded-card border border-line bg-surface-grad p-4 shadow-card">
+          <div className="mb-1 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">Net Worth</div>
+          <div className="font-display text-[22px] font-extrabold text-ink tabular-nums">
+            {fmtPRX(netWorth)} <span className="text-[12px] text-ink-3">PRX</span>
+          </div>
+        </div>
       </div>
 
       {enriched.length === 0 ? (
