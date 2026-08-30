@@ -6,7 +6,7 @@ import { fmtPRX } from "@/lib/format";
 
 export default function LiveTicker() {
   const { data: markets = [] } = useMarkets();
-  const live = markets.filter((m) => m.qYes + m.qNo > 0n);
+  const live = markets.filter((m) => m.qYes + m.qNo >= 100_000000n); // >= 100 PRX, skip test junk
   if (live.length === 0) return null;
   const items = [...live, ...live]; // duplicate for seamless loop
 

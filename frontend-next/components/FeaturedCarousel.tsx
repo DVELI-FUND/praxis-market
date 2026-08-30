@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useMarkets } from "@/hooks/useMarkets";
 import { useHeight } from "@/hooks/useHeight";
@@ -11,6 +11,7 @@ export default function FeaturedCarousel() {
   const { data: markets = [] } = useMarkets();
   const { data: chain } = useHeight();
   const [idx, setIdx] = useState(0);
+  const [paused, setPaused] = useState(false);
 
   const featured = useMemo(() => {
     // top 3 by volume from live/proposed markets
@@ -19,6 +20,12 @@ export default function FeaturedCarousel() {
       .sort((a, b) => Number((b.qYes + b.qNo) - (a.qYes + a.qNo)))
       .slice(0, 3);
   }, [markets]);
+
+  useEffect(() => {
+    if (paused || featured.length < 2) return;
+    const t = setInterval(() => setIdx((i) => (i + 1) % featured.length), 6000);
+    return () => clearInterval(t);
+  }, [paused, featured.length]);
 
   if (featured.length === 0) return null;
   const m = featured[idx];
@@ -33,7 +40,7 @@ export default function FeaturedCarousel() {
   const next = () => setIdx((i) => (i + 1) % featured.length);
 
   return (
-    <div className="relative mb-5 overflow-hidden rounded-card border border-line bg-surface-grad shadow-card">
+    <div className="relative mb-5 overflow-hidden rounded-card border border-line bg-surface-grad shadow-card" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
       {imgUrl && (
         <>
           <img src={imgUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-25" onError={(e) => { e.currentTarget.style.display = "none"; }} />
