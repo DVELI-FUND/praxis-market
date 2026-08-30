@@ -2,6 +2,8 @@
 import Link from "next/link";
 import { useUi } from "@/store/ui";
 import { useRoles } from "@/lib/roles";
+import LogoMark from "./LogoMark";
+import ThemeToggle from "./ThemeToggle";
 
 type Badge = "RESOLVER" | "ADMIN" | null;
 interface NavItem { href: string; label: string; icon: string; badge?: Badge }
@@ -82,8 +84,14 @@ export default function MoreSheet() {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-center justify-between">
-          <div className="font-display text-[15px] font-extrabold">Menu</div>
-          <button className="font-mono text-[14px] text-ink-2" onClick={() => setMore(false)}>✕</button>
+          <div className="flex items-center gap-2">
+            <span className="text-ink"><LogoMark className="h-6 w-6" /></span>
+            <span className="bg-grad-brand bg-clip-text font-display text-[15px] font-extrabold tracking-widest text-transparent">PRAXIS</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <button className="font-mono text-[14px] text-ink-2" onClick={() => setMore(false)}>✕</button>
+          </div>
         </div>
 
         {SECTIONS.map((sec) => (
