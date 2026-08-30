@@ -1,5 +1,6 @@
 import TopNav from "@/components/TopNav";
 import ThemeSync from "@/components/ThemeSync";
+import Hotkeys from "@/components/Hotkeys";
 import type { Metadata } from "next";
 import { Syne, DM_Mono, DM_Sans } from "next/font/google";
 import type { ReactNode } from "react";
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <meta httpEquiv="Expires" content="0" />
         <Providers>
           <ThemeSync />
+          <Hotkeys />
           <Chrome><TopNav />
           
           {children}</Chrome>
