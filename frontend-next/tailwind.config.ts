@@ -5,16 +5,32 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        bg: { DEFAULT: "#05070b", 2: "#0a0e15" },
-        surface: { DEFAULT: "#0d131d", 2: "#131b29", 3: "#1a2436" },
-        line: { DEFAULT: "#1c2940", 2: "#2a3b58" },
-        ink: { DEFAULT: "#eef4ff", 2: "#8aa0c4", 3: "#41506d" },
-        up: { DEFAULT: "#00e88a", dim: "rgba(0,232,138,0.08)", glow: "rgba(0,232,138,0.35)" },
-        down: { DEFAULT: "#ff4d6b", dim: "rgba(255,77,107,0.08)", glow: "rgba(255,77,107,0.3)" },
-        amberx: "#ffb020",
-        bluex: "#4f8cff",
-        cyanx: "#22d3ee",
-        tealx: "#2dd4bf",
+        bg: { DEFAULT: "rgb(var(--bg) / <alpha-value>)", 2: "rgb(var(--bg-2) / <alpha-value>)" },
+        surface: {
+          DEFAULT: "rgb(var(--surface) / <alpha-value>)",
+          2: "rgb(var(--surface-2) / <alpha-value>)",
+          3: "rgb(var(--surface-3) / <alpha-value>)",
+        },
+        line: { DEFAULT: "rgb(var(--line) / <alpha-value>)", 2: "rgb(var(--line-2) / <alpha-value>)" },
+        ink: {
+          DEFAULT: "rgb(var(--ink) / <alpha-value>)",
+          2: "rgb(var(--ink-2) / <alpha-value>)",
+          3: "rgb(var(--ink-3) / <alpha-value>)",
+        },
+        up: {
+          DEFAULT: "rgb(var(--up) / <alpha-value>)",
+          dim: "rgb(var(--up) / 0.08)",
+          glow: "rgb(var(--up) / 0.35)",
+        },
+        down: {
+          DEFAULT: "rgb(var(--down) / <alpha-value>)",
+          dim: "rgb(var(--down) / 0.08)",
+          glow: "rgb(var(--down) / 0.3)",
+        },
+        amberx: "rgb(var(--amberx) / <alpha-value>)",
+        bluex: "rgb(var(--bluex) / <alpha-value>)",
+        cyanx: "rgb(var(--cyanx) / <alpha-value>)",
+        tealx: "rgb(var(--tealx) / <alpha-value>)",
       },
       fontFamily: {
         display: ["var(--font-display)", "sans-serif"],
@@ -32,7 +48,7 @@ const config: Config = {
         "grad-up": "linear-gradient(135deg, #00e88a 0%, #00b8d4 100%)",
         "grad-down": "linear-gradient(135deg, #ff4d6b 0%, #ff8a3d 100%)",
         "grad-brand": "linear-gradient(120deg, #00e88a 0%, #22d3ee 60%, #4f8cff 100%)",
-        "surface-grad": "linear-gradient(180deg, #131b29 0%, #0d131d 100%)",
+        "surface-grad": "linear-gradient(180deg, rgb(var(--surface-2)) 0%, rgb(var(--surface)) 100%)",
       },
       keyframes: {
         fadeUp: { "0%": { opacity: "0", transform: "translateY(10px)" }, "100%": { opacity: "1", transform: "translateY(0)" } },

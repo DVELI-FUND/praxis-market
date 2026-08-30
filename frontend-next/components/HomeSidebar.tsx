@@ -47,7 +47,7 @@ export default function HomeSidebar() {
                   href={`/market/${m.marketId}`}
                   className="group block rounded-card border border-line bg-bg-2 p-2.5 transition-colors hover:border-line-2 hover:bg-surface-2"
                 >
-                  <div className="mb-1.5 line-clamp-2 font-sans text-[11px] font-semibold leading-tight text-ink group-hover:text-white">
+                  <div className="mb-1.5 line-clamp-2 font-sans text-[11px] font-semibold leading-tight text-ink group-hover:text-ink">
                     {stripCatPrefix(m.question || m.rules || "").slice(0, 60)}
                   </div>
                   <div className="flex items-center justify-between font-mono text-[9px]">

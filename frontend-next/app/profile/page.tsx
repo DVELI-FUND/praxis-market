@@ -76,7 +76,7 @@ export default function ProfilePage() {
   return (
     <main className="relative z-10 mx-auto min-h-screen max-w-[1100px] px-4 py-8 pb-24 md:px-8">
       <div className="mb-6">
-        <h1 className="font-display text-[28px] font-extrabold tracking-[-0.5px] text-white">Profile</h1>
+        <h1 className="font-display text-[28px] font-extrabold tracking-[-0.5px] text-ink">Profile</h1>
         <p className="mt-1 font-mono text-[10px] text-ink-3">{praxisAddress.slice(0, 10)}…{praxisAddress.slice(-6)}</p>
       </div>
 

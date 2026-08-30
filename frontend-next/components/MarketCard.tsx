@@ -65,7 +65,7 @@ export default function MarketCard({ market, featured = false, bookmarked, onTog
       )}
 
       <div className="flex flex-1 flex-col px-4 pb-3 pt-3">
-        <div className={`mb-3 font-sans font-semibold leading-[1.35] text-ink transition-colors group-hover:text-white ${featured ? "line-clamp-3 text-[15px]" : "line-clamp-2 text-[13px]"}`}>
+        <div className={`mb-3 font-sans font-semibold leading-[1.35] text-ink transition-colors group-hover:text-ink ${featured ? "line-clamp-3 text-[15px]" : "line-clamp-2 text-[13px]"}`}>
           {qTrunc}
         </div>
 

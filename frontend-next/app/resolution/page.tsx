@@ -27,7 +27,7 @@ export default function ResolutionPage() {
 
   return (
     <main className="relative z-10 mx-auto min-h-screen max-w-[1100px] px-4 py-8 pb-24 md:px-8">
-      <div className="mb-2 font-display text-[26px] font-extrabold tracking-[-0.5px] text-white">Market Resolution</div>
+      <div className="mb-2 font-display text-[26px] font-extrabold tracking-[-0.5px] text-ink">Market Resolution</div>
       <p className="mb-6 max-w-[560px] text-[13px] leading-relaxed text-ink-2">
         Disagree with an outcome? Stake PRX to challenge it. If the challenge is accepted your stake is returned plus a reward; if rejected it is forfeited.
       </p>
@@ -44,7 +44,7 @@ export default function ResolutionPage() {
           >
             <div className="mb-2 flex items-center justify-between">
               <span className="font-display text-[14px] font-bold text-ink">{s.label}</span>
-              <span className="font-display text-[22px] font-extrabold text-white tabular-nums">{s.count}</span>
+              <span className="font-display text-[22px] font-extrabold text-ink tabular-nums">{s.count}</span>
             </div>
             <p className="font-mono text-[9px] leading-relaxed text-ink-3">{s.desc}</p>
           </button>

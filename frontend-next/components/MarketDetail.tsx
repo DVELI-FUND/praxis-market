@@ -63,7 +63,7 @@ export default function MarketDetail({ mid }: Props) {
                 <span className="rounded-pill border border-line bg-bg/60 px-2 py-0.5 font-mono text-[8px] uppercase tracking-[1.5px] text-ink-2 backdrop-blur">{catKey}</span>
                 <ShareButton mid={mid} question={question} />
               </div>
-              <h1 className="mb-4 font-display text-[20px] font-extrabold leading-tight tracking-[-0.3px] text-white md:text-[26px]">
+              <h1 className="mb-4 font-display text-[20px] font-extrabold leading-tight tracking-[-0.3px] text-ink md:text-[26px]">
                 {question}
               </h1>
               <div className="flex flex-wrap items-center gap-4 font-mono text-[11px]">
