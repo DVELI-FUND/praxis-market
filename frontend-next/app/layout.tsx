@@ -1,3 +1,4 @@
+import TopNav from "@/components/TopNav";
 import type { Metadata } from "next";
 import { Syne, DM_Mono, DM_Sans } from "next/font/google";
 import type { ReactNode } from "react";
@@ -24,7 +25,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <meta httpEquiv="Pragma" content="no-cache" />
         <meta httpEquiv="Expires" content="0" />
         <Providers>
-          <Chrome>{children}</Chrome>
+          <Chrome><TopNav />
+          
+          {children}</Chrome>
         </Providers>
       </body>
     </html>
