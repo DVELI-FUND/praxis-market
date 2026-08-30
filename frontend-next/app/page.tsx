@@ -1,6 +1,7 @@
 "use client";
 import MarketsBoard from "@/components/MarketsBoard";
 import HomeSidebar from "@/components/HomeSidebar";
+import LiveTicker from "@/components/LiveTicker";
 import LogoMark from "@/components/LogoMark";
 import { useHeight } from "@/hooks/useHeight";
 
@@ -30,6 +31,8 @@ export default function Page() {
           <span className="text-ink-3">#{data?.height ?? "—"}</span>
         </div>
       </header>
+
+      <LiveTicker />
 
       <div className="flex gap-6">
         <div className="min-w-0 flex-1">
