@@ -86,6 +86,7 @@ message MarketTxEntry {
   bool   outcome  = 4;  // YES/NO side; meaningful for submit_prediction/propose_outcome/finalize_market
   uint64 shares   = 5;  // shares transacted; submit_prediction only, else 0
   uint64 cost     = 6;  // PRX trade cost; submit_prediction only, else 0 -- drives price chart
+  string tx_hash  = 7;  // hex tx hash from the host, threaded through PluginDeliverRequest.tx_hash
 }
 
 message PositionState {

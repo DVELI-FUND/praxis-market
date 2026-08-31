@@ -28,7 +28,7 @@ AuthorizedSigners: [][]byte{msg.CreatorAddress},
 }
 }
 
-func (c *Contract) DeliverMessageCancelMarket(msg *MessageCancelMarket, fee uint64) *PluginDeliverResponse {
+func (c *Contract) DeliverMessageCancelMarket(msg *MessageCancelMarket, fee uint64, txHash string) *PluginDeliverResponse {
 now := GetGlobalHeight()
 if now == 0 {
 return &PluginDeliverResponse{Error: ErrHeightNotSet()}
@@ -164,7 +164,7 @@ gTreasury.Amount  += fee - fee/2
 	}
 
 	// ── Marshal ───────────────────────────────────────────────────────────
-txLogOp, pe := buildMarketTxLogOp(market, msg.MarketId, "cancel_market", msg.CreatorAddress, now, false, 0, 0)
+txLogOp, pe := buildMarketTxLogOp(market, msg.MarketId, "cancel_market", msg.CreatorAddress, now, false, 0, 0, txHash)
 if pe != nil { return &PluginDeliverResponse{Error: pe} }
 
 rawMarket, pe := SafeMarshal(market)

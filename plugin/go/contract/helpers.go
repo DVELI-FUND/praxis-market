@@ -127,7 +127,7 @@ return newTotal > cap
 // `sets` slice alongside the market/other writes -- same atomic StateWrite call.
 // Only called from the 6 market-affecting handlers (create/predict/propose/dispute/
 // finalize/cancel); claim/resolver-only handlers do not log to this feed.
-func buildMarketTxLogOp(market *MarketState, marketId []byte, txType string, actor []byte, height uint64, outcome bool, shares, cost uint64) (*PluginSetOp, *PluginError) {
+func buildMarketTxLogOp(market *MarketState, marketId []byte, txType string, actor []byte, height uint64, outcome bool, shares, cost uint64, txHash string) (*PluginSetOp, *PluginError) {
 seq := market.TxCount
 market.TxCount++
 entry := &MarketTxEntry{
@@ -137,6 +137,7 @@ Height:  height,
 Outcome: outcome,
 Shares:  shares,
 Cost:    cost,
+TxHash:  txHash,
 }
 raw, pe := SafeMarshal(entry)
 if pe != nil {

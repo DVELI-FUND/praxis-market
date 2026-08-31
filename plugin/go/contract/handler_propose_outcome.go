@@ -36,7 +36,7 @@ AuthorizedSigners: [][]byte{msg.ResolverAddress},
 }
 }
 
-func (c *Contract) DeliverMessageProposeOutcome(msg *MessageProposeOutcome, fee uint64) *PluginDeliverResponse {
+func (c *Contract) DeliverMessageProposeOutcome(msg *MessageProposeOutcome, fee uint64, txHash string) *PluginDeliverResponse {
 now := GetGlobalHeight()
 if now == 0 {
 return &PluginDeliverResponse{Error: ErrHeightNotSet()}
@@ -175,7 +175,7 @@ Status:          PROPOSAL_OPEN,
 resolverState := &ResolverState{ResolverAddress: msg.ResolverAddress}
 
 // ── Marshal all ───────────────────────────────────────────────────────────
-txLogOp, pe := buildMarketTxLogOp(market, msg.MarketId, "propose_outcome", msg.ResolverAddress, now, msg.ProposedOutcome, 0, 0)
+txLogOp, pe := buildMarketTxLogOp(market, msg.MarketId, "propose_outcome", msg.ResolverAddress, now, msg.ProposedOutcome, 0, 0, txHash)
 if pe != nil {
 return &PluginDeliverResponse{Error: pe}
 }

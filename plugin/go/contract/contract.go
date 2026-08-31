@@ -222,17 +222,17 @@ switch m := msg.(type) {
 case *MessageSend:
 return c.DeliverMessageSend(m, fee)
 case *MessageCreateMarket:
-return c.DeliverMessageCreateMarket(m, fee)
+return c.DeliverMessageCreateMarket(m, fee, req.TxHash)
 case *MessageSubmitPrediction:
-return c.DeliverMessageSubmitPrediction(m, fee)
+return c.DeliverMessageSubmitPrediction(m, fee, req.TxHash)
 case *MessageClaimWinnings:
 return c.DeliverMessageClaimWinnings(m, fee)
 case *MessageRegisterResolver:
 return c.DeliverMessageRegisterResolver(m, fee)
 case *MessageProposeOutcome:
-return c.DeliverMessageProposeOutcome(m, fee)
+return c.DeliverMessageProposeOutcome(m, fee, req.TxHash)
 case *MessageFileDispute:
-return c.DeliverMessageFileDispute(m, fee)
+return c.DeliverMessageFileDispute(m, fee, req.TxHash)
 case *MessageCommitVote:
 return c.DeliverMessageCommitVote(m, fee)
 case *MessageRevealVote:
@@ -240,7 +240,7 @@ return c.DeliverMessageRevealVote(m, fee)
 case *MessageTallyVotes:
 return c.DeliverMessageTallyVotes(m, fee)
 case *MessageFinalizeMarket:
-return c.DeliverMessageFinalizeMarket(m, fee)
+return c.DeliverMessageFinalizeMarket(m, fee, req.TxHash)
 case *MessageClaimSlash:
 return c.DeliverMessageClaimSlash(m, fee)
 case *MessageReclaimStake:
@@ -262,7 +262,7 @@ return c.DeliverMessageClaimProtocolReward(m, fee)
 case *MessageUnstakeResolver:
 return c.DeliverMessageUnstakeResolver(m, fee)
 case *MessageCancelMarket:
-return c.DeliverMessageCancelMarket(m, fee)
+return c.DeliverMessageCancelMarket(m, fee, req.TxHash)
 case *MessageClaimUnbondedStake:
 return c.DeliverMessageClaimUnbondedStake(m, fee)
 default:

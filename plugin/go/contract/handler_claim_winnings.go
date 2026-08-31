@@ -188,6 +188,12 @@ market.ClaimedCount++
 marketPool.Amount   -= payout
 claimantAcc.Amount  += payout
 
+// Pay fee — same pattern as claim_unbonded_stake; fee is burned (no destination pool).
+if claimantAcc.Amount < fee {
+return &PluginDeliverResponse{Error: ErrInsufficientFunds()}
+}
+claimantAcc.Amount -= fee
+
 rawPos, pe := SafeMarshal(position)
 if pe != nil { return &PluginDeliverResponse{Error: pe} }
 rawMkt, pe := SafeMarshal(market)

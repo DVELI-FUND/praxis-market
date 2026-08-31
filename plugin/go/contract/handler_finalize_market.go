@@ -12,7 +12,7 @@ AuthorizedSigners: [][]byte{msg.CallerAddr},
 }
 }
 
-func (c *Contract) DeliverMessageFinalizeMarket(msg *MessageFinalizeMarket, fee uint64) *PluginDeliverResponse {
+func (c *Contract) DeliverMessageFinalizeMarket(msg *MessageFinalizeMarket, fee uint64, txHash string) *PluginDeliverResponse {
 now := GetGlobalHeight()
 if now == 0 {
 return &PluginDeliverResponse{Error: ErrHeightNotSet()}
@@ -243,7 +243,7 @@ resolverFeePool.Amount   = 0
 }
 }
 
-txLogOp, pe := buildMarketTxLogOp(market, msg.MarketId, "finalize_market", msg.CallerAddr, now, proposal.ProposedOutcome, 0, 0)
+txLogOp, pe := buildMarketTxLogOp(market, msg.MarketId, "finalize_market", msg.CallerAddr, now, proposal.ProposedOutcome, 0, 0, txHash)
 if pe != nil { return &PluginDeliverResponse{Error: pe} }
 
 rawM, pe := SafeMarshal(market)

@@ -55,3 +55,4 @@ node_modules
 
 # Hardhat
 cache/solidity-files-cache.json
+plugin/go/tutorial/test_config.json

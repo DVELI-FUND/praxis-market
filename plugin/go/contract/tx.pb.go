@@ -499,11 +499,12 @@ type MarketTxEntry struct {
 	state  protoimpl.MessageState `protogen:"open.v1"`
 	TxType string                 `protobuf:"bytes,1,opt,name=tx_type,json=txType,proto3" json:"tx_type,omitempty"` // "create_market" | "submit_prediction" | "propose_outcome" |
 	// "file_dispute" | "finalize_market" | "cancel_market"
-	Actor         []byte `protobuf:"bytes,2,opt,name=actor,proto3" json:"actor,omitempty"`      // address that submitted the tx
-	Height        uint64 `protobuf:"varint,3,opt,name=height,proto3" json:"height,omitempty"`   // block height at delivery
-	Outcome       bool   `protobuf:"varint,4,opt,name=outcome,proto3" json:"outcome,omitempty"` // YES/NO side; meaningful for submit_prediction/propose_outcome/finalize_market
-	Shares        uint64 `protobuf:"varint,5,opt,name=shares,proto3" json:"shares,omitempty"`   // shares transacted; submit_prediction only, else 0
-	Cost          uint64 `protobuf:"varint,6,opt,name=cost,proto3" json:"cost,omitempty"`       // PRX trade cost; submit_prediction only, else 0 -- drives price chart
+	Actor         []byte `protobuf:"bytes,2,opt,name=actor,proto3" json:"actor,omitempty"`                 // address that submitted the tx
+	Height        uint64 `protobuf:"varint,3,opt,name=height,proto3" json:"height,omitempty"`              // block height at delivery
+	Outcome       bool   `protobuf:"varint,4,opt,name=outcome,proto3" json:"outcome,omitempty"`            // YES/NO side; meaningful for submit_prediction/propose_outcome/finalize_market
+	Shares        uint64 `protobuf:"varint,5,opt,name=shares,proto3" json:"shares,omitempty"`              // shares transacted; submit_prediction only, else 0
+	Cost          uint64 `protobuf:"varint,6,opt,name=cost,proto3" json:"cost,omitempty"`                  // PRX trade cost; submit_prediction only, else 0 -- drives price chart
+	TxHash        string `protobuf:"bytes,7,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"` // hex tx hash from the host, threaded through PluginDeliverRequest.tx_hash
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -578,6 +579,13 @@ func (x *MarketTxEntry) GetCost() uint64 {
 		return x.Cost
 	}
 	return 0
+}
+
+func (x *MarketTxEntry) GetTxHash() string {
+	if x != nil {
+		return x.TxHash
+	}
+	return ""
 }
 
 type PositionState struct {
@@ -2758,14 +2766,15 @@ const file_tx_proto_rawDesc = "" +
 	"\x15finalized_pool_amount\x18\v \x01(\x04R\x13finalizedPoolAmount\x12\x1a\n" +
 	"\bquestion\x18\f \x01(\tR\bquestion\x12\x14\n" +
 	"\x05rules\x18\r \x01(\tR\x05rules\x12\x19\n" +
-	"\btx_count\x18\x0e \x01(\x04R\atxCount\"\x9c\x01\n" +
+	"\btx_count\x18\x0e \x01(\x04R\atxCount\"\xb5\x01\n" +
 	"\rMarketTxEntry\x12\x17\n" +
 	"\atx_type\x18\x01 \x01(\tR\x06txType\x12\x14\n" +
 	"\x05actor\x18\x02 \x01(\fR\x05actor\x12\x16\n" +
 	"\x06height\x18\x03 \x01(\x04R\x06height\x12\x18\n" +
 	"\aoutcome\x18\x04 \x01(\bR\aoutcome\x12\x16\n" +
 	"\x06shares\x18\x05 \x01(\x04R\x06shares\x12\x12\n" +
-	"\x04cost\x18\x06 \x01(\x04R\x04cost\"\x82\x01\n" +
+	"\x04cost\x18\x06 \x01(\x04R\x04cost\x12\x17\n" +
+	"\atx_hash\x18\a \x01(\tR\x06txHash\"\x82\x01\n" +
 	"\rPositionState\x12\x1d\n" +
 	"\n" +
 	"shares_yes\x18\x01 \x01(\x04R\tsharesYes\x12\x1b\n" +

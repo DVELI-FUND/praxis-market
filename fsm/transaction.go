@@ -40,7 +40,7 @@ func (s *StateMachine) ApplyTransaction(index uint64, transaction []byte, txHash
 	if result.plugin && s.Plugin != nil {
 		// route to plugin
 		pluginDeliverStartTime := time.Now()
-		resp, e := s.Plugin.DeliverTx(s, &lib.PluginDeliverRequest{Tx: result.tx, Height: s.Height()})
+		resp, e := s.Plugin.DeliverTx(s, &lib.PluginDeliverRequest{Tx: result.tx, Height: s.Height(), TxHash: txHash})
 		// handle error
 		if e != nil {
 			return nil, nil, e

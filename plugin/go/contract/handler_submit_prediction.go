@@ -18,7 +18,7 @@ AuthorizedSigners: [][]byte{msg.BettorAddress},
 }
 }
 
-func (c *Contract) DeliverMessageSubmitPrediction(msg *MessageSubmitPrediction, fee uint64) *PluginDeliverResponse {
+func (c *Contract) DeliverMessageSubmitPrediction(msg *MessageSubmitPrediction, fee uint64, txHash string) *PluginDeliverResponse {
 now := GetGlobalHeight()
 if now == 0 {
 return &PluginDeliverResponse{Error: ErrHeightNotSet()}
@@ -186,7 +186,7 @@ market.TotalPositions++
 
 market.ElevatedRisk = IsElevatedRisk(mPool.Amount)
 
-txLogOp, pe := buildMarketTxLogOp(market, msg.MarketId, "submit_prediction", msg.BettorAddress, now, msg.Outcome, msg.Shares, tradeCost)
+txLogOp, pe := buildMarketTxLogOp(market, msg.MarketId, "submit_prediction", msg.BettorAddress, now, msg.Outcome, msg.Shares, tradeCost, txHash)
 if pe != nil { return &PluginDeliverResponse{Error: pe} }
 
 rawMarket, pe := SafeMarshal(market)

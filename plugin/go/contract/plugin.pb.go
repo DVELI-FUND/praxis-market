@@ -934,6 +934,7 @@ type PluginDeliverRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Tx            *Transaction           `protobuf:"bytes,1,opt,name=tx,proto3" json:"tx,omitempty"`
 	Height        uint64                 `protobuf:"varint,2,opt,name=height,proto3" json:"height,omitempty"`
+	TxHash        string                 `protobuf:"bytes,3,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -980,6 +981,13 @@ func (x *PluginDeliverRequest) GetHeight() uint64 {
 		return x.Height
 	}
 	return 0
+}
+
+func (x *PluginDeliverRequest) GetTxHash() string {
+	if x != nil {
+		return x.TxHash
+	}
+	return ""
 }
 
 // PluginDeliverResponse acknowledges transaction delivery
@@ -1924,10 +1932,11 @@ const file_plugin_proto_rawDesc = "" +
 	"\x13PluginCheckResponse\x12-\n" +
 	"\x12authorized_signers\x18\x01 \x03(\fR\x11authorizedSigners\x12\x1c\n" +
 	"\trecipient\x18\x02 \x01(\fR\trecipient\x12(\n" +
-	"\x05error\x18c \x01(\v2\x12.types.PluginErrorR\x05error\"R\n" +
+	"\x05error\x18c \x01(\v2\x12.types.PluginErrorR\x05error\"k\n" +
 	"\x14PluginDeliverRequest\x12\"\n" +
 	"\x02tx\x18\x01 \x01(\v2\x12.types.TransactionR\x02tx\x12\x16\n" +
-	"\x06height\x18\x02 \x01(\x04R\x06height\"g\n" +
+	"\x06height\x18\x02 \x01(\x04R\x06height\x12\x17\n" +
+	"\atx_hash\x18\x03 \x01(\tR\x06txHash\"g\n" +
 	"\x15PluginDeliverResponse\x12$\n" +
 	"\x06events\x18\x01 \x03(\v2\f.types.EventR\x06events\x12(\n" +
 	"\x05error\x18c \x01(\v2\x12.types.PluginErrorR\x05error\"U\n" +

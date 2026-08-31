@@ -1,6 +1,7 @@
 package contract
 
 import (
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"log"
@@ -8,6 +9,19 @@ import (
 	"sort"
 	"strconv"
 )
+
+// marketTxActorField maps each logged market-tx type to the JSON field name its
+// original message used for the actor address, so the reconstructed msg object
+// below uses real field names instead of a generic placeholder (matching what
+// txs-by-sender's decoder already expects per message type).
+var marketTxActorField = map[string]string{
+	"create_market":     "creatorAddress",
+	"submit_prediction": "bettorAddress",
+	"propose_outcome":   "resolverAddress",
+	"file_dispute":      "disputerAddress",
+	"finalize_market":   "callerAddr",
+	"cancel_market":     "creatorAddress",
+}
 
 // StartRPCServer() launches the plugin's own HTTP server.
 func (p *Plugin) StartRPCServer() {
@@ -198,13 +212,22 @@ func (p *Plugin) StartRPCServer() {
 			return
 		}
 
+		// Shape matches /v1/query/txs-by-sender: top-level sender/messageType/height/txHash
+		// (node-indexer conventions, hex-encoded), nested transaction.type/msg (proto-marshal
+		// conventions, msg addresses base64-encoded). msg is reconstructed from MarketTxEntry's
+		// stored fields, not a full replay of the original message -- create_market/cancel_market
+		// entries won't carry fields MarketTxEntry never logs (e.g. question, rules, b0); those
+		// live on the market's own state, not this activity log.
 		type txEntry struct {
-			TxType string `json:"txType"`
-			Actor  string `json:"actor"`
-			Height uint64 `json:"height"`
-			Outcome bool  `json:"outcome"`
-			Shares uint64 `json:"shares"`
-			Cost   uint64 `json:"cost"`
+			Sender      string         `json:"sender"`
+			MessageType string         `json:"messageType"`
+			Height      uint64         `json:"height"`
+			TxHash      string         `json:"txHash"`
+			Transaction map[string]any `json:"transaction"`
+			// Cost is settled trade cost, computed at delivery -- not an input field of the
+			// original MessageSubmitPrediction, so it lives here rather than inside msg.
+			// uPRX string, submit_prediction only; omitted for every other tx type.
+			Cost string `json:"cost,omitempty"`
 		}
 		txs := []txEntry{}
 		if len(resp.Results) > 0 {
@@ -213,17 +236,39 @@ func (p *Plugin) StartRPCServer() {
 				if perr := Unmarshal(entry.Value, e); perr != nil {
 					continue
 				}
+				msg := map[string]any{
+					"marketId": base64.StdEncoding.EncodeToString(marketId),
+				}
+				actorField := marketTxActorField[e.TxType]
+				if actorField == "" {
+					actorField = "actorAddress" // fallback for any future logged type not in the map
+				}
+				msg[actorField] = base64.StdEncoding.EncodeToString(e.Actor)
+				var cost string
+				switch e.TxType {
+				case "submit_prediction":
+					msg["outcome"] = e.Outcome
+					msg["shares"] = strconv.FormatUint(e.Shares, 10)
+					cost = strconv.FormatUint(e.Cost, 10)
+				case "propose_outcome":
+					msg["proposedOutcome"] = e.Outcome
+				case "finalize_market":
+					// finalize_market's real message carries no outcome field; the resolved
+					// outcome lives on the proposal/market state, not this entry's Outcome bit.
+				}
 				txs = append(txs, txEntry{
-					TxType:  e.TxType,
-					Actor:   hex.EncodeToString(e.Actor),
-					Height:  e.Height,
-					Outcome: e.Outcome,
-					Shares:  e.Shares,
-					Cost:    e.Cost,
+					Sender:      hex.EncodeToString(e.Actor),
+					MessageType: e.TxType,
+					Height:      e.Height,
+					TxHash:      e.TxHash,
+					Transaction: map[string]any{
+						"type": e.TxType,
+						"msg":  msg,
+					},
+					Cost: cost,
 				})
 			}
 		}
-
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(txs)
 	})
@@ -962,7 +1007,141 @@ func (p *Plugin) StartRPCServer() {
 		json.NewEncoder(w).Encode(result)
 	})
 
-	log.Printf("plugin RPC server listening on %s (routes: /v1/query/markets, /v1/query/positions, /v1/query/resolvers, /v1/query/proposals, /v1/query/disputes, /v1/query/votes, /v1/query/outcomes, /v1/query/slashes, /v1/query/position, /v1/query/account, /v1/query/unbonding, /v1/query/dispute-context)", addr)
+	// GET /v1/query/reward-context?address=<hex>&epoch=<n>
+	// Powers the reward claim page: epoch pool, global weighted-resolution total,
+	// the resolver's own record, and the computed payout share -- same formula as
+	// the real claim handler (handler_claim_resolver_reward.go), read-only.
+	mux.HandleFunc("/v1/query/reward-context", func(w http.ResponseWriter, r *http.Request) {
+		addrHex := r.URL.Query().Get("address")
+		epochStr := r.URL.Query().Get("epoch")
+		if addrHex == "" {
+			http.Error(w, "missing required query param: address", http.StatusBadRequest)
+			return
+		}
+		if epochStr == "" {
+			http.Error(w, "missing required query param: epoch", http.StatusBadRequest)
+			return
+		}
+		addr, err := hex.DecodeString(addrHex)
+		if err != nil {
+			http.Error(w, "invalid address: must be hex-encoded", http.StatusBadRequest)
+			return
+		}
+		epoch, err := strconv.ParseUint(epochStr, 10, 64)
+		if err != nil {
+			http.Error(w, "invalid epoch: must be a non-negative integer", http.StatusBadRequest)
+			return
+		}
+
+		resp, qErr := p.QueryState(0, &PluginStateReadRequest{
+			Keys: []*PluginKeyRead{
+				{QueryId: 1, Key: KeyForResolverRecord(addr)},
+				{QueryId: 2, Key: KeyForResolverEpochPool(epoch)},
+				{QueryId: 3, Key: KeyForGlobalStats()},
+			},
+		})
+		if qErr != nil {
+			http.Error(w, qErr.Msg, http.StatusInternalServerError)
+			return
+		}
+
+		getEntry := func(qid uint64) []byte {
+			for _, res := range resp.Results {
+				if res.QueryId == qid && len(res.Entries) > 0 {
+					return res.Entries[0].Value
+				}
+			}
+			return nil
+		}
+
+		if getEntry(1) == nil {
+			http.Error(w, "resolver not found", http.StatusNotFound)
+			return
+		}
+		rec := &ResolverRecord{}
+		if err := Unmarshal(getEntry(1), rec); err != nil {
+			http.Error(w, "failed to decode resolver record", http.StatusInternalServerError)
+			return
+		}
+
+		// Missing epoch-pool / global-stats entries are not errors -- they just mean
+		// no pool has been funded / no resolutions weighted yet for that epoch, and
+		// the zero-value Pool/GlobalStats below fall through to the eligibility
+		// checks naturally (empty pool, zero weighted resolutions).
+		pool := &Pool{}
+		if v := getEntry(2); v != nil {
+			Unmarshal(v, pool)
+		}
+		stats := &GlobalStats{}
+		if v := getEntry(3); v != nil {
+			Unmarshal(v, stats)
+		}
+
+		// Same formula as DeliverMessageClaimResolverReward, using the same rrsWeight
+		// tier function -- kept as the single source of truth for the tier curve.
+		weight := uint64(rrsWeight(rec.RrsScore))
+		myScore := rec.SuccessfulResolutions * weight
+		var payout uint64
+		if stats.TotalWeightedResolutions > 0 {
+			payout = pool.Amount * myScore / stats.TotalWeightedResolutions
+			if payout > pool.Amount {
+				payout = pool.Amount
+			}
+		}
+
+		currentEpoch := uint64(0)
+		if h := GetGlobalHeight(); h > 0 {
+			currentEpoch = h / PRIS_EPOCH_BLOCKS
+		}
+
+		// Mirrors the exact qualification checks in DeliverMessageClaimResolverReward,
+		// so the frontend can show why a claim would fail before spending a tx fee on it.
+		eligible := true
+		reason := ""
+		switch {
+		case rec.RrsScore == 0:
+			eligible = false
+			reason = "resolver RRS is 0 -- not qualified"
+		case rec.SuccessfulResolutions == 0:
+			eligible = false
+			reason = "no successful resolutions on record"
+		case rec.LastClaimedEpoch >= epoch:
+			eligible = false
+			reason = "epoch already claimed"
+		case epoch >= currentEpoch:
+			eligible = false
+			reason = "epoch not yet finalized -- can only claim past epochs"
+		case pool.Amount == 0:
+			eligible = false
+			reason = "epoch pool is empty"
+		case stats.TotalWeightedResolutions == 0:
+			eligible = false
+			reason = "no weighted resolutions recorded for this epoch"
+		case payout == 0:
+			eligible = false
+			reason = "computed payout is zero"
+		}
+
+		result := map[string]interface{}{
+			"address":                    addrHex,
+			"epoch":                      epoch,
+			"current_epoch":              currentEpoch,
+			"epoch_pool_amount":          strconv.FormatUint(pool.Amount, 10),
+			"total_weighted_resolutions": strconv.FormatUint(stats.TotalWeightedResolutions, 10),
+			"successful_resolutions":     rec.SuccessfulResolutions,
+			"rrs_score":                  rec.RrsScore,
+			"tier_weight":                weight,
+			"last_claimed_epoch":         rec.LastClaimedEpoch,
+			"computed_payout":            strconv.FormatUint(payout, 10),
+			"eligible":                   eligible,
+			"eligible_reason":            reason,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(result)
+	})
+
+	log.Printf("plugin RPC server listening on %s (routes: /v1/query/markets, /v1/query/positions, /v1/query/market-txs, /v1/query/resolvers, /v1/query/proposals, /v1/query/disputes, /v1/query/votes, /v1/query/outcomes, /v1/query/slashes, /v1/query/position, /v1/query/account, /v1/query/unbonding, /v1/query/dispute-context, /v1/query/reward-context)", addr)
 	if err := http.ListenAndServe(addr, mux); err != nil {
 		log.Printf("plugin RPC server error: %v", err)
 	}

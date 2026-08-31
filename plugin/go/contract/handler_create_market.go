@@ -24,7 +24,7 @@ AuthorizedSigners: [][]byte{msg.CreatorAddress},
 }
 }
 
-func (c *Contract) DeliverMessageCreateMarket(msg *MessageCreateMarket, fee uint64) *PluginDeliverResponse {
+func (c *Contract) DeliverMessageCreateMarket(msg *MessageCreateMarket, fee uint64, txHash string) *PluginDeliverResponse {
 now := GetGlobalHeight()
 if now == 0 {
 return &PluginDeliverResponse{Error: ErrHeightNotSet()}
@@ -150,7 +150,7 @@ Rules:         msg.Rules,
 pool := &Pool{Id: c.Config.ChainId, Amount: lmsrSeed}
 treasury := &TreasuryReserve{LockedReserve: FINALIZATION_BOUNTY, CreatorBond: CREATOR_BOND}
 
-txLogOp, pe := buildMarketTxLogOp(market, marketId, "create_market", msg.CreatorAddress, now, false, 0, 0)
+txLogOp, pe := buildMarketTxLogOp(market, marketId, "create_market", msg.CreatorAddress, now, false, 0, 0, txHash)
 if pe != nil { return &PluginDeliverResponse{Error: pe} }
 
 rawMarket, pe := SafeMarshal(market)

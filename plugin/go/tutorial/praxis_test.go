@@ -78,7 +78,7 @@ func keystoreGetKey(address, password string) (*keyGroup, error) {
 	if kg, ok := known[address]; ok {
 		return &kg, nil
 	}
-	body := fmt.Sprintf(`{"addressOrNickname":%q,"password":%q}`, address, password)
+	body := fmt.Sprintf(`{"address":%q,"password":%q}`, address, password)
 	data, err := postJSON(adminRPCURL+"/v1/admin/keystore-get", body)
 	if err != nil {
 		return nil, err
@@ -612,6 +612,35 @@ func TestPORSFullFlow(t *testing.T) {
         t.Log("========================================")
         t.Log("PORS FULL FLOW COMPLETE")
         t.Log("========================================")
+}
+
+func TestGenerateTestConfig(t *testing.T) {
+suffix := fmt.Sprintf("%d", time.Now().UnixMicro()%9999999)
+addr, err := keystoreNewKey("predictor_"+suffix, testPassword)
+if err != nil {
+t.Fatalf("keystoreNewKey: %v", err)
+}
+kg, err := keystoreGetKey(addr, testPassword)
+if err != nil {
+t.Fatalf("keystoreGetKey: %v", err)
+}
+out := struct {
+PredictorAddress string `json:"predictor_address"`
+PredictorPrivKey string `json:"predictor_privkey"`
+PredictorPubKey  string `json:"predictor_pubkey"`
+}{
+PredictorAddress: kg.Address,
+PredictorPrivKey: kg.PrivateKey,
+PredictorPubKey:  kg.PublicKey,
+}
+data, err := json.MarshalIndent(out, "", "  ")
+if err != nil {
+t.Fatalf("marshal: %v", err)
+}
+if err := os.WriteFile("test_config.json", data, 0644); err != nil {
+t.Fatalf("write test_config.json: %v", err)
+}
+t.Logf("wrote test_config.json for address %s", kg.Address)
 }
 
 func TestNonValidatorPredict(t *testing.T) {

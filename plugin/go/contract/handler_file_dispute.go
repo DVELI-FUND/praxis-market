@@ -15,7 +15,7 @@ AuthorizedSigners: [][]byte{msg.DisputerAddress},
 }
 }
 
-func (c *Contract) DeliverMessageFileDispute(msg *MessageFileDispute, fee uint64) *PluginDeliverResponse {
+func (c *Contract) DeliverMessageFileDispute(msg *MessageFileDispute, fee uint64, txHash string) *PluginDeliverResponse {
 now := GetGlobalHeight()
 if now == 0 {
 return &PluginDeliverResponse{Error: ErrHeightNotSet()}
@@ -238,7 +238,7 @@ PanelSize:       uint32(len(panel)),
 PanelMembers:    panel,
 }
 
-txLogOp, pe := buildMarketTxLogOp(market, msg.MarketId, "file_dispute", msg.DisputerAddress, now, false, 0, 0)
+txLogOp, pe := buildMarketTxLogOp(market, msg.MarketId, "file_dispute", msg.DisputerAddress, now, false, 0, 0, txHash)
 if pe != nil { return &PluginDeliverResponse{Error: pe} }
 
 rawM, pe := SafeMarshal(market)

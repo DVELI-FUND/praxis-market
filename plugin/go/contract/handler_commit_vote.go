@@ -24,12 +24,14 @@ return &PluginDeliverResponse{Error: ErrHeightNotSet()}
 marketQId  := nextQueryId()
 disputeQId := nextQueryId()
 commitQId  := nextQueryId()
+accQId     := nextQueryId()
 
 resp, err := c.plugin.StateRead(c, &PluginStateReadRequest{
 Keys: []*PluginKeyRead{
 {QueryId: marketQId,  Key: KeyForMarket(msg.MarketId)},
 {QueryId: disputeQId, Key: KeyForDispute(msg.MarketId)},
 {QueryId: commitQId,  Key: KeyForVoteCommit(msg.MarketId, msg.VoterAddr)},
+{QueryId: accQId,     Key: KeyForAccount(msg.VoterAddr)},
 },
 })
 if err != nil {
@@ -41,6 +43,7 @@ return &PluginDeliverResponse{Error: resp.Error}
 
 var market  *MarketState
 var dispute *DisputeRecord
+acc := &Account{}
 
 for _, r := range resp.Results {
 switch r.QueryId {
@@ -63,6 +66,12 @@ return &PluginDeliverResponse{Error: pe}
 case commitQId:
 if len(r.Entries) > 0 && len(r.Entries[0].Value) > 0 {
 return &PluginDeliverResponse{Error: ErrAlreadyCommitted()}
+}
+case accQId:
+if len(r.Entries) > 0 && len(r.Entries[0].Value) > 0 {
+if pe := Unmarshal(r.Entries[0].Value, acc); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
 }
 }
 }
@@ -96,9 +105,20 @@ if pe != nil {
 return &PluginDeliverResponse{Error: pe}
 }
 
+// Pay fee — same pattern as claim_unbonded_stake; fee is burned (no destination pool).
+if acc.Amount < fee {
+return &PluginDeliverResponse{Error: ErrInsufficientFunds()}
+}
+acc.Amount -= fee
+rawAcc, pe := SafeMarshal(acc)
+if pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
+
 wr, werr := c.plugin.StateWrite(c, &PluginStateWriteRequest{
 Sets: []*PluginSetOp{
 {Key: KeyForVoteCommit(msg.MarketId, msg.VoterAddr), Value: rawVC},
+{Key: KeyForAccount(msg.VoterAddr),                  Value: rawAcc},
 },
 })
 if pe := errCheckWrite(wr, werr); pe != nil {

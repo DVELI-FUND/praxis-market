@@ -116,7 +116,7 @@ message PluginCheckResponse {
 }
 
 // PluginDeliverRequest carries a transaction and its execution height to be processed
-message PluginDeliverRequest {Transaction tx = 1; uint64 height = 2;}
+message PluginDeliverRequest {Transaction tx = 1; uint64 height = 2; string tx_hash = 3;}
 
 // PluginDeliverResponse acknowledges transaction delivery
 message PluginDeliverResponse {

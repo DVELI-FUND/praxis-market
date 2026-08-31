@@ -56,6 +56,12 @@ return &PluginDeliverResponse{Error: ErrEmptyPool()}
 acc.Amount  += pool.Amount
 pool.Amount  = 0
 
+// Pay fee — same pattern as claim_unbonded_stake; fee is burned (no destination pool).
+if acc.Amount < fee {
+return &PluginDeliverResponse{Error: ErrInsufficientFunds()}
+}
+acc.Amount -= fee
+
 rawPool, pe := SafeMarshal(pool)
 if pe != nil { return &PluginDeliverResponse{Error: pe} }
 rawAcc, pe := SafeMarshal(acc)

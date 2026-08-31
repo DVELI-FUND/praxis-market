@@ -128,6 +128,12 @@ acc.Amount          += payout
 pool.Amount         -= payout
 rec.LastClaimedEpoch = claimEpoch
 
+// Pay fee — same pattern as claim_unbonded_stake; fee is burned (no destination pool).
+if acc.Amount < fee {
+return &PluginDeliverResponse{Error: ErrInsufficientFunds()}
+}
+acc.Amount -= fee
+
 rawRec, pe := SafeMarshal(rec)
 if pe != nil { return &PluginDeliverResponse{Error: pe} }
 rawPool, pe := SafeMarshal(pool)
