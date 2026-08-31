@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Praxis — Prediction Markets on Canopy</title>
+  <meta name="description" content="Predict the future. Earn on your conviction. A prediction market terminal on Canopy — binary AMM, bonded resolvers, $PRX staking." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="nav">
+    <div class="nav-inner">
+      <a href="/" class="brand">
+        <svg class="logo" viewBox="0 0 40 40" fill="none">
+          <circle cx="20" cy="20" r="17" stroke="currentColor" stroke-width="2.2" />
+          <path d="M9 25 C 14 12, 26 28, 31 15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none" />
+          <circle cx="31" cy="15" r="2.2" fill="#00b877" />
+        </svg>
+        <span class="brand-text">PRAXIS</span>
+      </a>
+      <nav class="nav-links">
+        <a href="#how">How it works</a>
+        <a href="#features">Features</a>
+        <a href="#token">PRX</a>
+        <a href="#roadmap">Roadmap</a>
+      </nav>
+      <div class="nav-actions">
+        <a href="https://github.com/DVELI-FUND/praxis-market" target="_blank" rel="noreferrer" class="btn-ghost">GitHub</a>
+        <a href="/app" class="btn-primary">Launch App →</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="container hero-inner">
+      <div class="badge">
+        <span class="dot"></span> live on Canopy
+      </div>
+      <svg class="logo-hero" viewBox="0 0 40 40" fill="none">
+        <circle cx="20" cy="20" r="17" stroke="currentColor" stroke-width="2.2" />
+        <path d="M9 25 C 14 12, 26 28, 31 15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none" />
+        <circle cx="31" cy="15" r="2.2" fill="#00b877" />
+      </svg>
+      <h1>Predict the future.<br /><span class="ink-2">Earn on your conviction.</span></h1>
+      <p class="hero-sub">
+        Praxis is a prediction market terminal built on Canopy. Trade binary outcomes, stake on your beliefs, and earn rewards when the market resolves correctly — all from your browser, keys never leave your device.
+      </p>
+      <div class="hero-actions">
+        <a href="/app" class="btn-primary btn-lg">Launch App →</a>
+        <a href="#how" class="btn-ghost btn-lg">How it works</a>
+      </div>
+      <div class="feature-badges">
+        <span class="feature-badge"><span class="dot-small"></span> Self-custody</span>
+        <span class="feature-badge"><span class="dot-small"></span> Binary AMM</span>
+        <span class="feature-badge"><span class="dot-small"></span> Bonded resolvers</span>
+        <span class="feature-badge"><span class="dot-small"></span> Open source</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="how" class="section">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">
+          <span class="line"></span> How it works
+        </div>
+        <h2>Three steps from prediction to payout</h2>
+      </div>
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-num">STEP 01</div>
+          <h3>Pick a market</h3>
+          <p>Browse live prediction markets — crypto, politics, sports, finance, esports. Each market has a YES/NO binary outcome and a closing block height.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">STEP 02</div>
+          <h3>Take a position</h3>
+          <p>Buy YES or NO shares with $PRX. The price reflects the market's current probability (e.g. YES at 68¢ means 68% implied odds). Your stake is locked until resolution.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">STEP 03</div>
+          <h3>Resolve & earn</h3>
+          <p>When the market closes, bonded resolvers stake $PRX to propose the outcome. If your side wins, your shares pay out 100¢ each — plus a share of the resolver reward pool.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="features" class="section">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">
+          <span class="line"></span> Features
+        </div>
+        <h2>Built for traders, resolvers, and builders</h2>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <h3>Self-custody wallet</h3>
+          <p>Connect your Canopy wallet. Keys never leave your device. Full control over your $PRX and positions.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Binary AMM markets</h3>
+          <p>Every market is a YES/NO outcome. Prices move as traders buy each side, reflecting real-time probability.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Bonded resolvers</h3>
+          <p>Resolvers stake $PRX to propose outcomes. Correct proposals earn rewards; incorrect ones are disputed and forfeited.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Resolution center</h3>
+          <p>Vote on disputed outcomes, file disputes, and participate in decentralized governance of market resolution.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Reward pools</h3>
+          <p>Earn $PRX rewards from builder, community, investor, protocol, and resolver pools based on participation.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Watchlist & portfolio</h3>
+          <p>Bookmark markets, track positions, and monitor net worth in real-time from your profile.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="token" class="section">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">
+          <span class="line"></span> PRX token
+        </div>
+        <h2>Utility at every layer</h2>
+      </div>
+      <div class="token-grid">
+        <div class="token-card">
+          <h3>Trading</h3>
+          <p>Buy YES/NO shares with $PRX. Pay market fees (2%) that fund creator and resolver rewards.</p>
+        </div>
+        <div class="token-card">
+          <h3>Staking</h3>
+          <p>Resolvers stake 500,000 $PRX to participate in market resolution. Higher stakes earn more weight.</p>
+        </div>
+        <div class="token-card">
+          <h3>Governance</h3>
+          <p>Vote on disputes, propose market parameters, and shape protocol upgrades through on-chain governance.</p>
+        </div>
+        <div class="token-card">
+          <h3>Rewards</h3>
+          <p>Earn from 5 reward pools: builder, community, investor, protocol, and resolver (tiered 1x/3x/7x by RRS).</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="roadmap" class="section">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">
+          <span class="line"></span> Roadmap
+        </div>
+        <h2>Building the future of prediction markets</h2>
+      </div>
+      <div class="roadmap-list">
+        <div class="roadmap-item">
+          <div class="roadmap-phase">Phase 1</div>
+          <h3>Core protocol</h3>
+          <p>Binary AMM markets, bonded resolvers, self-custody wallet, and basic trading interface.</p>
+        </div>
+        <div class="roadmap-item">
+          <div class="roadmap-phase">Phase 2</div>
+          <h3>Resolution & rewards</h3>
+          <p>Full resolution center with disputes, 5 reward pools, resolver tier system, and governance voting.</p>
+        </div>
+        <div class="roadmap-item">
+          <div class="roadmap-phase">Phase 3</div>
+          <h3>Advanced trading</h3>
+          <p>Historical charts, activity feeds, advanced analytics, and institutional-grade portfolio management.</p>
+        </div>
+        <div class="roadmap-item">
+          <div class="roadmap-phase">Phase 4</div>
+          <h3>Ecosystem growth</h3>
+          <p>Market creation API, third-party integrations, mobile apps, and cross-chain bridges.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <svg class="logo" viewBox="0 0 40 40" fill="none">
+          <circle cx="20" cy="20" r="17" stroke="currentColor" stroke-width="2.2" />
+          <path d="M9 25 C 14 12, 26 28, 31 15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none" />
+          <circle cx="31" cy="15" r="2.2" fill="#00b877" />
+        </svg>
+        <span class="brand-text">PRAXIS</span>
+        <span class="footer-tag">· prediction markets on Canopy</span>
+      </div>
+      <nav class="footer-links">
+        <a href="/app">App</a>
+        <a href="https://github.com/DVELI-FUND/praxis-market" target="_blank" rel="noreferrer">GitHub</a>
+        <a href="#how">How it works</a>
+        <a href="#features">Features</a>
+        <a href="#token">PRX</a>
+      </nav>
+      <div class="footer-copy">© 2026 Praxis · DVELI Fund</div>
+    </div>
+  </footer>
+</body>
+</html>
