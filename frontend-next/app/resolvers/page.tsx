@@ -6,9 +6,9 @@ import { fmtPRX } from "@/lib/format";
 import { useHeight } from "@/hooks/useHeight";
 
 function tier(rrs: number): { name: string; cls: string; ring: string } {
-  if (rrs >= 200) return { name: "Gold", cls: "bg-amberx/10 text-amberx border-amberx/40", ring: "border-amberx" };
-  if (rrs >= 50) return { name: "Silver", cls: "bg-surface-2 text-ink-2 border-line-2", ring: "border-[#9ca3af]" };
-  return { name: "Bronze", cls: "bg-[#cd7f32]/10 text-[#cd7f32] border-[#cd7f32]/40", ring: "border-[#cd7f32]" };
+  if (rrs >= 200) return { name: "Gold", cls: "border-[#d4a017]/40 bg-[#d4a017]/10 text-[#d4a017]", ring: "border-[#d4a017]" };
+  if (rrs >= 50) return { name: "Silver", cls: "border-[#a8b3c4]/40 bg-[#a8b3c4]/10 text-[#a8b3c4]", ring: "border-[#a8b3c4]" };
+  return { name: "Bronze", cls: "border-[#b08968]/40 bg-[#b08968]/10 text-[#b08968]", ring: "border-line-2" };
 }
 
 function fmtAge(blocks: number): string {
@@ -23,7 +23,7 @@ function fmtAge(blocks: number): string {
   return months > 0 ? `${years}y ${months}mo` : `${years}y`;
 }
 
-const MEDAL = ["bg-amberx text-black", "bg-[#9ca3af] text-black", "bg-[#cd7f32] text-black"];
+const MEDAL = ["bg-[#d4a017] text-black", "bg-[#a8b3c4] text-black", "bg-[#b08968] text-black"];
 
 export default function ResolversPage() {
   const { data: chain } = useHeight();
@@ -59,6 +59,13 @@ export default function ResolversPage() {
         </div>
         <h1 className="font-display text-[22px] font-extrabold tracking-[-0.3px]">Browse Resolvers</h1>
         <p className="mt-1 text-[13px] text-ink-2">Active resolvers staking $PRX to guarantee market outcomes</p>
+      </div>
+
+      {/* tier legend */}
+      <div className="mb-4 flex flex-wrap items-center gap-4 font-mono text-[9px] text-ink-3">
+        <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#d4a017]" /> Gold · RRS 200+ · 7x rewards</span>
+        <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#a8b3c4]" /> Silver · RRS 50+ · 3x</span>
+        <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#b08968]" /> Bronze · 1x</span>
       </div>
 
       {/* stat widgets */}
@@ -124,6 +131,9 @@ export default function ResolversPage() {
                         <div className="mt-1 flex flex-wrap items-center gap-1.5">
                           <span className={`rounded-pill border px-2 py-0.5 font-mono text-[8px] font-bold uppercase tracking-[1px] ${t.cls}`}>
                             {t.name}
+                          </span>
+                          <span className="rounded-pill border border-line bg-bg-2 px-2 py-0.5 font-mono text-[8px] text-ink-3">
+                            RRS {r.rrsScore}
                           </span>
                           <span className="rounded-pill border border-line bg-bg-2 px-2 py-0.5 font-mono text-[8px] text-ink-3">
                             {fmtAge(r.age)}
