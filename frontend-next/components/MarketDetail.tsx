@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useMarketDetail } from "@/hooks/useMarketDetail";
 import { useHeight } from "@/hooks/useHeight";
@@ -18,6 +18,23 @@ export default function MarketDetail({ mid }: Props) {
   const { market, holders, disputeContext, isLoading, isError } = useMarketDetail(mid);
   const [rulesOpen, setRulesOpen] = useState(false);
   const [outcome, setOutcome] = useState(true);
+  const [bookmarked, setBookmarked] = useState(false);
+
+  useEffect(() => {
+    try { setBookmarked((JSON.parse(window.localStorage.getItem("praxis_bookmarks") || "[]") as string[]).includes(mid)); } catch { setBookmarked(false); }
+  }, [mid]);
+
+  const toggleBm = () => {
+    setBookmarked((b) => {
+      const n = !b;
+      try {
+        const arr = JSON.parse(window.localStorage.getItem("praxis_bookmarks") || "[]") as string[];
+        const next = n ? [...new Set([...arr, mid])] : arr.filter((x) => x !== mid);
+        window.localStorage.setItem("praxis_bookmarks", JSON.stringify(next));
+      } catch {}
+      return n;
+    });
+  };
 
   if (isLoading) {
     return (
@@ -58,6 +75,7 @@ export default function MarketDetail({ mid }: Props) {
                 <StatusPill status={market.status} />
                 <span className="rounded-pill border border-line bg-bg px-2 py-0.5 font-mono text-[8px] uppercase tracking-[1.5px] text-ink-2">{catKey}</span>
                 <ShareButton mid={mid} question={question} />
+                <button onClick={toggleBm} className={`rounded-pill border border-line bg-bg px-2 py-0.5 font-mono text-[11px] transition-colors ${bookmarked ? "text-amberx" : "text-ink-3 hover:text-amberx"}`}>{bookmarked ? "★" : "☆"}</button>
               </div>
               <h1 className="font-display text-[20px] font-extrabold leading-tight tracking-[-0.3px] text-ink md:text-[24px]">{question}</h1>
               <div className="mt-2 flex flex-wrap items-center gap-4 font-mono text-[11px]">
@@ -139,6 +157,8 @@ export default function MarketDetail({ mid }: Props) {
 
           {/* tabs */}
           {holders && <DetailTabs mid={mid} market={market} holders={holders} disputeContext={disputeContext} />}
+
+          <FaqSection pct={pct} ends={fmtCountdown(Number(market.expiry), chain?.height ?? 0)} />
         </div>
 
         <div className="mt-4 md:mt-0">
@@ -151,4 +171,30 @@ export default function MarketDetail({ mid }: Props) {
 
 interface Props {
   mid: string;
+}
+
+function FaqSection({ pct, ends }: { pct: number; ends: string }) {
+  const [open, setOpen] = useState<number | null>(0);
+  const faqs = [
+    { q: "What are the current odds?", a: `YES is priced at ${pct}% and NO at ${100 - pct}%. Prices move as traders buy each side.` },
+    { q: `What does a YES price of ${pct}¢ mean?`, a: "It means the market currently assigns a " + pct + "% probability to the outcome resolving YES. Buying YES at this price pays 100¢ per share if correct." },
+    { q: "When does this market resolve?", a: `Trading ends in ${ends}. After expiry, a resolver proposes the outcome and it finalizes unless disputed.` },
+    { q: "How is resolution decided?", a: "Bonded resolvers stake PRX to propose the outcome. Anyone can dispute by staking; a correct challenge is rewarded, a rejected one is forfeited." },
+  ];
+  return (
+    <div className="mt-4">
+      <div className="mb-2 font-display text-[15px] font-bold text-ink">Frequently Asked Questions</div>
+      <div className="overflow-hidden rounded-card border border-line bg-surface-grad shadow-card">
+        {faqs.map((f, i) => (
+          <div key={i} className="border-b border-line last:border-b-0">
+            <button onClick={() => setOpen(open === i ? null : i)} className="flex w-full items-center justify-between px-4 py-3 text-left">
+              <span className="font-sans text-[12px] font-semibold text-ink">{f.q}</span>
+              <span className="font-mono text-[12px] text-ink-3">{open === i ? "−" : "+"}</span>
+            </button>
+            {open === i && <div className="border-t border-line bg-bg-2 px-4 py-3 font-sans text-[11px] leading-relaxed text-ink-2">{f.a}</div>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }

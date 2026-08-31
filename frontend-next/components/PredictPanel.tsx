@@ -22,7 +22,7 @@ export default function PredictPanel({ market, outcome, onOutcome }: Props) {
   const toast = useToast((s) => s.show);
 
   const [shares, setShares] = useState(1);
-  const [slip, setSlip] = useState(5);
+  const [slip, setSlip] = useState(2);
   const [fee] = useState(10000);
   const [pending, setPending] = useState(false);
 
@@ -111,10 +111,22 @@ export default function PredictPanel({ market, outcome, onOutcome }: Props) {
 
         <div className="mb-3">
           <div className="mb-1 flex justify-between font-mono text-[9px] uppercase tracking-[2px] text-ink-2">
-            <span>Slippage</span>
-            <span className="text-up">{slip.toFixed(1)}%</span>
+            <span>Execution</span>
+            <span className="text-up">{slip.toFixed(1)}% max impact</span>
           </div>
-          <input type="range" min={1} max={10} step={0.5} value={slip} onChange={(e) => setSlip(parseFloat(e.target.value))} className="w-full accent-[#00e88a]" />
+          <div className="grid grid-cols-4 gap-1.5">
+            {[{ l: "Tight", v: 0.5 }, { l: "Bal", v: 2 }, { l: "Std", v: 5 }, { l: "Fast", v: 10 }].map((o) => (
+              <button
+                key={o.v}
+                onClick={() => setSlip(o.v)}
+                className={`rounded-card border py-1.5 font-mono text-[9px] transition-colors ${
+                  slip === o.v ? "border-up bg-up-dim font-bold text-up" : "border-line bg-bg-2 text-ink-3 hover:border-up hover:text-up"
+                }`}
+              >
+                {o.l}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="mb-3 space-y-1 rounded-card border border-line bg-bg-2 p-2.5 font-mono text-[9px]">
