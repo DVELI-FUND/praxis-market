@@ -55,6 +55,6 @@ export default async function Image({ params }: { params: { mid: string } }) {
         </div>
       </div>
     ),
-    { ...size, alt: question }
+    { ...size }
   );
 }

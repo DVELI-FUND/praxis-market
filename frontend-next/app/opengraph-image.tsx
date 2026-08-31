@@ -25,6 +25,6 @@ export default function Image() {
         <div style={{ color: "#00e88a", fontSize: 22, letterSpacing: 6 }}>PREDICTION MARKETS ON CANOPY</div>
       </div>
     ),
-    { ...size, alt }
+    { ...size }
   );
 }
