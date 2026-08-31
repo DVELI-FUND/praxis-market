@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useWallet } from "@/store/wallet";
 import { useMarkets } from "@/hooks/useMarkets";
 import { getPluginRPC, queryAccount } from "@/lib/rpc";
+import LogoMark from "@/components/LogoMark";
+import WalletPill from "@/components/WalletPill";
 import { b64ToHex, fmtPRX } from "@/lib/format";
 import { yesPct, stripCatPrefix } from "@/lib/markets";
 
@@ -63,8 +65,13 @@ export default function PortfolioPage() {
   if (!praxisAddress) {
     return (
       <main className="relative z-10 mx-auto min-h-screen max-w-[980px] px-4 py-6 pb-24 md:px-8">
-        <div className="rounded-card border border-line bg-surface p-6 text-center">
-          <div className="font-mono text-[11px] text-ink-3">Connect wallet to view portfolio</div>
+        <div className="flex flex-col items-center gap-4 rounded-card border border-line bg-surface-grad p-10 text-center shadow-card">
+          <span className="text-ink"><LogoMark className="h-10 w-10" /></span>
+          <div>
+            <div className="font-display text-[16px] font-extrabold text-ink">Your portfolio awaits</div>
+            <div className="mt-1 font-mono text-[10px] text-ink-3">Connect your wallet to view balance, assets and positions</div>
+          </div>
+          <WalletPill />
         </div>
       </main>
     );
