@@ -4,6 +4,7 @@ import { useUi } from "@/store/ui";
 import { useRoles } from "@/lib/roles";
 import LogoMark from "./LogoMark";
 import ThemeToggle from "./ThemeToggle";
+import WalletPill from "./WalletPill";
 
 type Badge = "RESOLVER" | "ADMIN" | null;
 interface NavItem { href: string; label: string; icon: string; badge?: Badge }
@@ -92,6 +93,10 @@ export default function MoreSheet() {
             <ThemeToggle />
             <button className="font-mono text-[14px] text-ink-2" onClick={() => setMore(false)}>✕</button>
           </div>
+        </div>
+
+        <div className="mb-3">
+          <WalletPill />
         </div>
 
         {SECTIONS.map((sec) => (
