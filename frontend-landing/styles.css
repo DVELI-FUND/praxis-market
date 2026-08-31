@@ -506,3 +506,8 @@ body {
 .stats-strip.on { display: flex; }
 .stat { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border: 1px solid var(--line); background: var(--surface); border-radius: 14px; font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink-3); }
 .stat b { font-family: var(--font-mono); font-size: 11px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--up); }
+
+/* accurate logo + overflow guards */
+html, body { overflow-x: hidden; }
+@media (max-width: 1100px) { .nav-links { display: none; } }
+@media (max-width: 900px) { .brand-tag { display: none; } }
