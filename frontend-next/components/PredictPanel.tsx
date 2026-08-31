@@ -22,7 +22,7 @@ export default function PredictPanel({ market }: Props) {
   const [outcome, setOutcome] = useState(true);
   const [shares, setShares] = useState(1);
   const [slip, setSlip] = useState(5);
-  const [fee, setFee] = useState(10000);
+  const [fee] = useState(10000);
   const [pending, setPending] = useState(false);
 
   const connected = status === "connected" || status === "drift";
@@ -34,26 +34,19 @@ export default function PredictPanel({ market }: Props) {
     const resolverFee = Math.ceil(shares * 0.01);
     const total = tradeCost + creatorFee + resolverFee;
     const maxCost = Math.ceil(total * (1 + slip / 100));
-    return { tradeCost, creatorFee, resolverFee, maxCost };
-  }, [shares, slip]);
+    const toWin = shares * 100 / (outcome ? pct : 100 - pct);
+    return { tradeCost, creatorFee, resolverFee, maxCost, toWin };
+  }, [shares, slip, outcome, pct]);
 
   const pool = market.qYes + market.qNo;
   const cap = pool > 0n ? (pool * 2000n) / 10000n : 0n;
   const over = pool > 0n && BigInt(bd.maxCost) > cap;
 
   const submit = async () => {
-    if (!connected || !privKey || !pubKey || !praxisAddress) {
-      toast("Connect wallet first", true);
-      return;
-    }
-    if (!chain?.height) {
-      toast("Node not connected", true);
-      return;
-    }
-    if (shares < 1) {
-      toast("Shares min 1 PRX", true);
-      return;
-    }
+    if (!connected || !privKey || !pubKey || !praxisAddress) { toast("Connect wallet first", true); return; }
+    if (!chain?.height) { toast("Node not connected", true); return; }
+    if (shares < 1) { toast("Shares min 1 PRX", true); return; }
+
     const ok = await showConfirm("Submit Prediction", [
       ["Market ID", market.marketId.slice(0, 16) + "…", ""],
       ["Outcome", outcome ? "YES" : "NO", outcome ? "g" : "r"],
@@ -64,18 +57,9 @@ export default function PredictPanel({ market }: Props) {
 
     setPending(true);
     try {
-      const inner = encPredict(
-        market.marketId,
-        praxisAddress,
-        outcome,
-        BigInt(shares) * 1000000n,
-        BigInt(bd.maxCost) * 1000000n
-      );
+      const inner = encPredict(market.marketId, praxisAddress, outcome, BigInt(shares) * 1000000n, BigInt(bd.maxCost) * 1000000n);
       const tx = await buildSigned(privKey, pubKey, "submit_prediction", TYPE_URLS.submit_prediction, inner, {
-        fee,
-        height: chain.height,
-        netId: chain.networkId,
-        chainId: chain.chainId,
+        fee, height: chain.height, netId: chain.networkId, chainId: chain.chainId,
       });
       const hash = await submitTxRPC(tx);
       toast("⏳ Broadcasting — confirming in ~25s…");
@@ -88,8 +72,7 @@ export default function PredictPanel({ market }: Props) {
     }
   };
 
-  const inputCls =
-    "w-full rounded-card border border-line-2 bg-bg px-3 py-2.5 font-mono text-[12px] text-ink outline-none transition-colors focus:border-up";
+  const inputCls = "w-full rounded-card border border-line-2 bg-bg px-3 py-2.5 font-mono text-[12px] text-ink outline-none transition-colors focus:border-up";
 
   return (
     <div className="overflow-hidden rounded-card border border-line bg-surface-grad shadow-card">
@@ -103,21 +86,11 @@ export default function PredictPanel({ market }: Props) {
       <div className="p-4">
         {/* outcome segmented */}
         <div className="mb-3 grid grid-cols-2 gap-2">
-          <button
-            onClick={() => setOutcome(true)}
-            className={`flex items-center justify-between rounded-card border px-3 py-2.5 transition-all ${
-              outcome ? "border-up bg-up-dim shadow-glowUp" : "border-line opacity-50 hover:opacity-80"
-            }`}
-          >
+          <button onClick={() => setOutcome(true)} className={`flex items-center justify-between rounded-card border px-3 py-2.5 transition-all ${outcome ? "border-up bg-up-dim shadow-glowUp" : "border-line opacity-50 hover:opacity-80"}`}>
             <span className="font-mono text-[10px] font-bold text-up">YES</span>
             <span className="font-display text-[15px] font-bold text-up tabular-nums">{pct}¢</span>
           </button>
-          <button
-            onClick={() => setOutcome(false)}
-            className={`flex items-center justify-between rounded-card border px-3 py-2.5 transition-all ${
-              !outcome ? "border-down bg-down-dim shadow-glowDown" : "border-line opacity-50 hover:opacity-80"
-            }`}
-          >
+          <button onClick={() => setOutcome(false)} className={`flex items-center justify-between rounded-card border px-3 py-2.5 transition-all ${!outcome ? "border-down bg-down-dim shadow-glowDown" : "border-line opacity-50 hover:opacity-80"}`}>
             <span className="font-mono text-[10px] font-bold text-down">NO</span>
             <span className="font-display text-[15px] font-bold text-down tabular-nums">{100 - pct}¢</span>
           </button>
@@ -126,6 +99,13 @@ export default function PredictPanel({ market }: Props) {
         <div className="mb-3">
           <div className="mb-1 font-mono text-[9px] uppercase tracking-[2px] text-ink-2">Shares (PRX)</div>
           <input type="number" value={shares} min={1} onChange={(e) => setShares(parseInt(e.target.value) || 0)} className={inputCls} />
+          <div className="mt-2 grid grid-cols-4 gap-1.5">
+            {[10, 50, 100, Math.max(1, shares + 50)].map((v) => (
+              <button key={v} onClick={() => setShares(v)} className="rounded-card border border-line bg-bg-2 py-1.5 font-mono text-[10px] text-ink-2 transition-colors hover:border-up hover:text-up">
+                {v}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="mb-3">
@@ -141,6 +121,7 @@ export default function PredictPanel({ market }: Props) {
           <div className="flex justify-between"><span className="text-ink-3">Market fee (2%)</span><span className="text-ink-2">{(bd.creatorFee + bd.resolverFee).toLocaleString()} PRX</span></div>
           <div className="flex justify-between"><span className="text-ink-3">TX fee</span><span className="text-ink-2">{fee.toLocaleString()} uPRX</span></div>
           <div className="flex justify-between border-t border-line pt-1"><span className="text-ink">Max cost</span><span className="text-up">{bd.maxCost.toLocaleString()} PRX</span></div>
+          <div className="flex justify-between border-t border-line pt-1"><span className="text-ink">To Win</span><span className="text-cyanx">{bd.toWin.toFixed(0)} PRX</span></div>
         </div>
 
         {pool > 0n && (
@@ -149,11 +130,7 @@ export default function PredictPanel({ market }: Props) {
           </div>
         )}
 
-        <button
-          onClick={() => void submit()}
-          disabled={pending || over || !connected}
-          className="w-full rounded-card bg-up py-3 font-sans text-[13px] font-extrabold text-black shadow-glowUp transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
-        >
+        <button onClick={() => void submit()} disabled={pending || over || !connected} className="w-full rounded-card bg-up py-3 font-sans text-[13px] font-extrabold text-black shadow-glowUp transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40">
           {pending ? "▪▪▪ broadcasting…" : `⚡ Buy ${outcome ? "YES" : "NO"} · ${bd.maxCost} PRX max`}
         </button>
         {!connected && <div className="mt-2 text-center font-mono text-[9px] text-ink-3">connect wallet to trade</div>}

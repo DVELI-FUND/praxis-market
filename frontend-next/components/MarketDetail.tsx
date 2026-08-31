@@ -1,44 +1,36 @@
 "use client";
+import { useState } from "react";
 import Link from "next/link";
 import { useMarketDetail } from "@/hooks/useMarketDetail";
-import { extractCat, extractImg, stripCatPrefix, yesPct, STATUS } from "@/lib/markets";
+import { useHeight } from "@/hooks/useHeight";
+import { extractCat, stripCatPrefix, yesPct, STATUS } from "@/lib/markets";
 import { fmtPRX, fmtCountdown } from "@/lib/format";
 import StatusPill from "./StatusPill";
 import ShareButton from "./ShareButton";
-import { useHeight } from "@/hooks/useHeight";
 import DetailTabs from "./DetailTabs";
 import PriceChart from "./PriceChart";
 import ActivityFeed from "./ActivityFeed";
 import PredictPanel from "./PredictPanel";
-
-interface Props {
-  mid: string;
-}
+import PositionCard from "./PositionCard";
+import LogoMark from "./LogoMark";
 
 export default function MarketDetail({ mid }: Props) {
   const { data: chain } = useHeight();
   const { market, holders, disputeContext, isLoading, isError } = useMarketDetail(mid);
+  const [rulesOpen, setRulesOpen] = useState(false);
 
   if (isLoading) {
     return (
       <div className="animate-pulse space-y-4">
-        <div className="h-4 w-28 rounded-card bg-surface-2" />
-        <div className="h-[160px] rounded-card bg-surface-grad" />
-        <div className="grid grid-cols-2 gap-0 overflow-hidden rounded-card">
-          <div className="h-[120px] bg-surface-2" />
-          <div className="h-[120px] bg-surface-3" />
-        </div>
+        <div className="h-6 w-40 rounded-card bg-surface-2" />
         <div className="h-[200px] rounded-card bg-surface-grad" />
+        <div className="h-[300px] rounded-card bg-surface-grad" />
       </div>
     );
   }
 
   if (isError || !market) {
-    return (
-      <div className="rounded-card border border-down/40 bg-down-dim p-4 font-mono text-[11px] text-down">
-        ⚠ Market not found
-      </div>
-    );
+    return <div className="rounded-card border border-down/40 bg-down-dim p-4 font-mono text-[11px] text-down">⚠ Market not found</div>;
   }
 
   const pct = yesPct(market);
@@ -46,35 +38,29 @@ export default function MarketDetail({ mid }: Props) {
   const total = market.qYes + market.qNo;
   const vol = total > 0n ? fmtPRX(total) : "—";
   const catKey = extractCat(market.rules);
-  const imgUrl = extractImg(market.rules);
   const question = stripCatPrefix(market.question || market.rules || "(no question)");
+  const rules = market.rules || "";
+  const rulesText = rules.replace(/^\[.*?\]\s*/, "").trim();
 
   return (
     <div className="animate-fadeUp">
-      <Link href="/" className="mb-4 inline-flex items-center gap-1 font-mono text-[10px] text-ink-2 transition-colors hover:text-up">
-        ← Back to Markets
-      </Link>
+      <Link href="/" className="mb-4 inline-flex items-center gap-1 font-mono text-[10px] text-ink-2 transition-colors hover:text-up">← Back</Link>
 
       <div className="md:grid md:grid-cols-[1fr_340px] md:items-start md:gap-5">
         <div>
-          {/* hero */}
-          <div className="relative mb-4 overflow-hidden rounded-card border border-line bg-surface-grad shadow-card">
-            {imgUrl && (
-              <>
-                <img src={imgUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-25" onError={(e) => { e.currentTarget.style.display = "none"; }} />
-                <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/60 to-transparent" />
-              </>
-            )}
-            <div className="relative p-5">
-              <div className="mb-3 flex items-center gap-2">
+          {/* icon + title header */}
+          <div className="mb-4 flex items-start gap-3">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-card border border-line-2 bg-surface text-ink">
+              <LogoMark className="h-7 w-7" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="mb-2 flex items-center gap-2">
                 <StatusPill status={market.status} />
-                <span className="rounded-pill border border-line bg-bg/60 px-2 py-0.5 font-mono text-[8px] uppercase tracking-[1.5px] text-ink-2 backdrop-blur">{catKey}</span>
+                <span className="rounded-pill border border-line bg-bg px-2 py-0.5 font-mono text-[8px] uppercase tracking-[1.5px] text-ink-2">{catKey}</span>
                 <ShareButton mid={mid} question={question} />
               </div>
-              <h1 className="mb-4 font-display text-[20px] font-extrabold leading-tight tracking-[-0.3px] text-ink md:text-[26px]">
-                {question}
-              </h1>
-              <div className="flex flex-wrap items-center gap-4 font-mono text-[11px]">
+              <h1 className="font-display text-[20px] font-extrabold leading-tight tracking-[-0.3px] text-ink md:text-[24px]">{question}</h1>
+              <div className="mt-2 flex flex-wrap items-center gap-4 font-mono text-[11px]">
                 <span className="text-ink-2">Vol <b className="text-[13px] text-cyanx tabular-nums">{vol}</b></span>
                 <span className="text-ink-3">·</span>
                 <span className="text-ink-2">Ends <b className="text-[13px] text-up tabular-nums">{fmtCountdown(Number(market.expiry), chain?.height ?? 0)}</b></span>
@@ -82,49 +68,77 @@ export default function MarketDetail({ mid }: Props) {
             </div>
           </div>
 
-          {/* probability box */}
+          {/* rules accordion */}
+          {rulesText && (
+            <div className="mb-4 overflow-hidden rounded-card border border-line bg-surface-grad shadow-card">
+              <button onClick={() => setRulesOpen(!rulesOpen)} className="flex w-full items-center justify-between px-4 py-3 text-left">
+                <span className="font-mono text-[10px] font-bold uppercase tracking-[2px] text-ink-3">Rules</span>
+                <span className="font-mono text-[14px] text-ink-3">{rulesOpen ? "−" : "+"}</span>
+              </button>
+              {rulesOpen && (
+                <div className="border-t border-line px-4 py-3">
+                  <p className="font-sans text-[12px] leading-relaxed text-ink-2 whitespace-pre-wrap">{rulesText}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* outcome row */}
           <div className="mb-4 overflow-hidden rounded-card border border-line bg-surface-grad shadow-card">
-            <div className="grid grid-cols-2">
-              <div className="flex flex-col items-center gap-1 border-r border-line bg-gradient-to-b from-up-dim to-transparent px-4 py-6">
-                <div className="font-display text-[44px] font-extrabold leading-none tracking-[-1px] text-up tabular-nums">
-                  {pct}<span className="text-[16px] opacity-60">%</span>
-                </div>
-                <div className="font-mono text-[10px] font-semibold uppercase tracking-[2px] text-ink-3">YES</div>
-                <div className="font-mono text-[11px] text-ink-2 tabular-nums">{fmtPRX(market.qYes)}</div>
+            <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-3 border-b border-line px-4 py-2.5 font-mono text-[8px] uppercase tracking-[1.5px] text-ink-3">
+              <span>Outcome</span>
+              <span className="w-[80px] text-right">Chance</span>
+              <span className="w-[80px] text-right">Change</span>
+              <span className="w-[120px] text-right">Action</span>
+            </div>
+            <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-3 px-4 py-4">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-up" />
+                <span className="font-display text-[14px] font-bold text-ink">YES</span>
               </div>
-              <div className="flex flex-col items-center gap-1 bg-gradient-to-b from-down-dim to-transparent px-4 py-6">
-                <div className="font-display text-[44px] font-extrabold leading-none tracking-[-1px] text-down tabular-nums">
-                  {noPct}<span className="text-[16px] opacity-60">%</span>
-                </div>
-                <div className="font-mono text-[10px] font-semibold uppercase tracking-[2px] text-ink-3">NO</div>
-                <div className="font-mono text-[11px] text-ink-2 tabular-nums">{fmtPRX(market.qNo)}</div>
+              <div className="w-[80px] text-right font-display text-[18px] font-extrabold text-up tabular-nums">{pct}%</div>
+              <div className="w-[80px] text-right font-mono text-[11px] text-up tabular-nums">+0.0%</div>
+              <div className="w-[120px] text-right">
+                <button className="rounded-card bg-up px-4 py-1.5 font-sans text-[11px] font-extrabold text-black transition-all hover:brightness-110">Buy YES</button>
               </div>
             </div>
-            <div className="h-[5px] bg-line">
-              <div className="h-full bg-up transition-all duration-500" style={{ width: `${pct}%` }} />
+            <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-3 border-t border-line px-4 py-4">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-down" />
+                <span className="font-display text-[14px] font-bold text-ink">NO</span>
+              </div>
+              <div className="w-[80px] text-right font-display text-[18px] font-extrabold text-down tabular-nums">{noPct}%</div>
+              <div className="w-[80px] text-right font-mono text-[11px] text-down tabular-nums">+0.0%</div>
+              <div className="w-[120px] text-right">
+                <button className="rounded-card bg-down px-4 py-1.5 font-sans text-[11px] font-extrabold text-black transition-all hover:brightness-110">Buy NO</button>
+              </div>
             </div>
           </div>
 
-          {/* price chart + activity (activate when market-txs endpoint lands) */}
+          {/* status banners */}
+          {market.status === STATUS.CANCELLED && (
+            <div className="mb-4 rounded-card border border-down/40 bg-down-dim p-4 font-mono text-[11px] text-down">✕ This market has been cancelled.</div>
+          )}
+          {market.status === STATUS.EXPIRED && (
+            <div className="mb-4 rounded-card border border-amberx/40 bg-amberx/5 p-4 font-mono text-[11px] text-amberx">⏱ Expired and awaiting resolution.</div>
+          )}
+          {market.status === STATUS.FINALIZED && (
+            <div className="mb-4 rounded-card border border-bluex/40 bg-bluex/5 p-4 font-mono text-[11px] text-bluex">✓ Finalized.</div>
+          )}
+          {market.status === STATUS.VOIDED && (
+            <div className="mb-4 rounded-card border border-ink-3/40 bg-ink-3/5 p-4 font-mono text-[11px] text-ink-2">✕ Voided.</div>
+          )}
+
+          {/* position card */}
+          {holders && <PositionCard market={market} holders={holders} />}
+
+          {/* chart + activity */}
           <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
             <PriceChart mid={mid} initialYes={market.qYes} initialNo={market.qNo} />
             <ActivityFeed mid={mid} />
           </div>
 
-          {/* status banners */}
-          {market.status === STATUS.CANCELLED && (
-            <div className="mb-4 rounded-card border border-down/40 bg-down-dim p-4 font-mono text-[11px] text-down">✕ This market has been cancelled. All bettors can reclaim their stakes.</div>
-          )}
-          {market.status === STATUS.EXPIRED && (
-            <div className="mb-4 rounded-card border border-amberx/40 bg-amberx/5 p-4 font-mono text-[11px] text-amberx">⏱ This market has expired and is awaiting resolution.</div>
-          )}
-          {market.status === STATUS.FINALIZED && (
-            <div className="mb-4 rounded-card border border-bluex/40 bg-bluex/5 p-4 font-mono text-[11px] text-bluex">✓ This market has been finalized.</div>
-          )}
-          {market.status === STATUS.VOIDED && (
-            <div className="mb-4 rounded-card border border-ink-3/40 bg-ink-3/5 p-4 font-mono text-[11px] text-ink-2">✕ This market has been voided.</div>
-          )}
-
+          {/* tabs */}
           {holders && <DetailTabs mid={mid} market={market} holders={holders} disputeContext={disputeContext} />}
         </div>
 
@@ -134,4 +148,8 @@ export default function MarketDetail({ mid }: Props) {
       </div>
     </div>
   );
+}
+
+interface Props {
+  mid: string;
 }
