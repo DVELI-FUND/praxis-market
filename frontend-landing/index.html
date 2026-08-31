@@ -14,12 +14,12 @@
   <header class="nav">
     <div class="nav-inner">
       <a href="/" class="brand">
-        <svg class="logo" viewBox="0 0 40 40" fill="none">
-          <circle cx="20" cy="20" r="17" stroke="currentColor" stroke-width="2.2" />
-          <path d="M9 25 C 14 12, 26 28, 31 15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none" />
-          <circle cx="31" cy="15" r="2.2" fill="#00b877" />
+        <svg class="logo" viewBox="0 0 200 200" fill="none">
+          <path d="M20 140 C60 40, 80 40, 100 100 S140 160, 180 60" stroke="currentColor" stroke-width="16" stroke-linecap="round" fill="none" />
+          <circle cx="100" cy="100" r="16" fill="#00e88a" />
         </svg>
         <span class="brand-text">PRAXIS</span>
+        <span class="brand-tag">$PRX · NEXT</span>
       </a>
       <nav class="nav-links">
         <a href="#how">How it works</a>
@@ -39,7 +39,7 @@
       <div class="badge">
         <span class="dot"></span> live on Canopy
       </div>
-      <svg class="logo-hero" viewBox="0 0 40 40" fill="none">
+      <svg class="logo-hero" viewBox="0 0 200 200" fill="none">
         <circle cx="20" cy="20" r="17" stroke="currentColor" stroke-width="2.2" />
         <path d="M9 25 C 14 12, 26 28, 31 15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none" />
         <circle cx="31" cy="15" r="2.2" fill="#00b877" />
@@ -57,6 +57,12 @@
         <span class="feature-badge"><span class="dot-small"></span> Binary AMM</span>
         <span class="feature-badge"><span class="dot-small"></span> Bonded resolvers</span>
         <span class="feature-badge"><span class="dot-small"></span> Open source</span>
+      </div>
+      <div class="stats-strip" id="stats">
+        <span class="stat"><span class="stat-label">Markets</span><b id="st-markets">—</b></span>
+        <span class="stat"><span class="stat-label">Volume</span><b id="st-vol">—</b></span>
+        <span class="stat"><span class="stat-label">Resolvers</span><b id="st-res">—</b></span>
+        <span class="stat"><span class="stat-label">Block</span><b id="st-block">—</b></span>
       </div>
     </div>
   </section>
@@ -191,10 +197,9 @@
   <footer class="footer">
     <div class="container footer-inner">
       <div class="footer-brand">
-        <svg class="logo" viewBox="0 0 40 40" fill="none">
-          <circle cx="20" cy="20" r="17" stroke="currentColor" stroke-width="2.2" />
-          <path d="M9 25 C 14 12, 26 28, 31 15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none" />
-          <circle cx="31" cy="15" r="2.2" fill="#00b877" />
+        <svg class="logo" viewBox="0 0 200 200" fill="none">
+          <path d="M20 140 C60 40, 80 40, 100 100 S140 160, 180 60" stroke="currentColor" stroke-width="16" stroke-linecap="round" fill="none" />
+          <circle cx="100" cy="100" r="16" fill="#00e88a" />
         </svg>
         <span class="brand-text">PRAXIS</span>
         <span class="footer-tag">· prediction markets on Canopy</span>
@@ -209,5 +214,29 @@
       <div class="footer-copy">© 2026 Praxis · DVELI Fund</div>
     </div>
   </footer>
+
+<script>
+(async () => {
+  const PLUGIN = "https://prax.val-a.grad.dev.app.canopynetwork.org/plugin";
+  const NODE = "https://prax.val-a.grad.dev.app.canopynetwork.org/rpc";
+  const $ = (id) => document.getElementById(id);
+  const fmt = (n) => n >= 1e6 ? (n / 1e6).toFixed(2) + "M" : n >= 1e3 ? (n / 1e3).toFixed(2) + "k" : String(Math.round(n));
+  try {
+    const [mk, rs, ht] = await Promise.all([
+      fetch(PLUGIN + "/v1/query/markets").then((r) => (r.ok ? r.json() : [])),
+      fetch(PLUGIN + "/v1/query/resolvers").then((r) => (r.ok ? r.json() : [])),
+      fetch(NODE + "/v1/query/height", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })
+        .then((r) => (r.ok ? r.json() : null)).catch(() => null),
+    ]);
+    const markets = Array.isArray(mk) ? mk : (mk && mk.markets) || [];
+    const vol = markets.reduce((t, m) => t + (Number(m.q_yes || 0) + Number(m.q_no || 0)), 0) / 1e6;
+    $("st-markets").textContent = markets.length;
+    $("st-vol").textContent = fmt(vol) + " PRX";
+    $("st-res").textContent = Array.isArray(rs) ? rs.length : 0;
+    $("st-block").textContent = ht && ht.height ? "#" + ht.height : "—";
+    document.getElementById("stats").classList.add("on");
+  } catch (e) { /* stay hidden */ }
+})();
+</script>
 </body>
 </html>
