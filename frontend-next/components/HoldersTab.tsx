@@ -3,61 +3,39 @@ import { useState } from "react";
 import type { Holder } from "@/lib/detail";
 import { fmtPRX } from "@/lib/format";
 
-interface Props {
-  holders: Holder[];
-}
+const MEDAL = ["bg-amberx text-black", "bg-[#9ca3af] text-black", "bg-[#b45309] text-black"];
 
-export default function HoldersTab({ holders }: Props) {
+export default function HoldersTab({ holders }: { holders: Holder[] }) {
   const [side, setSide] = useState<"yes" | "no">("yes");
 
-  if (!holders.length) {
-    return <div className="py-5 text-center font-mono text-[11px] text-ink-3">No holders yet</div>;
-  }
-
-  const filtered = holders
-    .filter((h) => (side === "yes" ? h.sharesYes > 0n : h.sharesNo > 0n))
-    .sort((a, b) => Number((side === "yes" ? b.sharesYes - a.sharesYes : b.sharesNo - a.sharesNo)))
+  const rows = holders
+    .map((h) => ({ addr: String(h.address || ""), amt: BigInt(Math.round(Number(side === "yes" ? h.sharesYes : h.sharesNo) || 0)) }))
+    .filter((r) => r.addr && r.amt > 0n)
+    .sort((a, b) => Number(b.amt - a.amt))
     .slice(0, 10);
 
-  if (!filtered.length) {
-    return <div className="py-5 text-center font-mono text-[11px] text-ink-3">No {side.toUpperCase()} holders yet</div>;
-  }
-
   return (
-    <div>
-      <div className="flex gap-1 border-b border-line px-4 py-2">
-        <button
-          onClick={() => setSide("yes")}
-          className={`rounded px-3 py-1 font-mono text-[9px] uppercase tracking-[1px] ${
-            side === "yes" ? "bg-up-dim text-up" : "text-ink-3 hover:text-ink-2"
-          }`}
-        >
-          YES
-        </button>
-        <button
-          onClick={() => setSide("no")}
-          className={`rounded px-3 py-1 font-mono text-[9px] uppercase tracking-[1px] ${
-            side === "no" ? "bg-down-dim text-down" : "text-ink-3 hover:text-ink-2"
-          }`}
-        >
-          NO
-        </button>
+    <div className="p-4">
+      <div className="mb-3 grid grid-cols-2 gap-1 rounded-card border border-line bg-bg-2 p-1">
+        {(["yes", "no"] as const).map((s) => (
+          <button key={s} onClick={() => setSide(s)} className={`rounded-card py-1.5 font-mono text-[10px] font-bold uppercase transition-colors ${side === s ? (s === "yes" ? "bg-up text-black" : "bg-down text-black") : "text-ink-3 hover:text-ink-2"}`}>
+            {s}
+          </button>
+        ))}
       </div>
-      {filtered.map((h, i) => {
-        const shortAddr = h.address.slice(0, 6) + "…" + h.address.slice(-4);
-        const amt = side === "yes" ? h.sharesYes : h.sharesNo;
-        const color = side === "yes" ? "text-up" : "text-down";
-        return (
-          <div key={h.address} className="flex items-center gap-2 border-b border-line px-4 py-2.5 last:border-b-0">
-            <span className="font-mono text-[9px] text-ink-3">#{i + 1}</span>
-            <div className="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-surface-2 font-mono text-[10px] text-up">
-              {h.address.slice(0, 2).toUpperCase()}
+      {rows.length === 0 ? (
+        <div className="py-6 text-center font-mono text-[10px] text-ink-3">No {side.toUpperCase()} holders yet</div>
+      ) : (
+        <div className="space-y-1.5">
+          {rows.map((r, i) => (
+            <div key={r.addr} className="flex items-center gap-3 rounded-card border border-line bg-bg-2 px-3 py-2">
+              <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-mono text-[9px] font-bold ${i < 3 ? MEDAL[i] : "bg-surface-3 text-ink-3"}`}>{i + 1}</span>
+              <span className="min-w-0 flex-1 truncate font-mono text-[10px] text-ink-2">{r.addr.slice(0, 10)}…{r.addr.slice(-4)}</span>
+              <span className={`font-mono text-[11px] font-bold tabular-nums ${side === "yes" ? "text-up" : "text-down"}`}>{fmtPRX(r.amt)}</span>
             </div>
-            <span className="font-mono text-[10px] text-ink-2">{shortAddr}</span>
-            <span className={`ml-auto font-mono text-[11px] font-bold tabular-nums ${color}`}>{fmtPRX(amt)}</span>
-          </div>
-        );
-      })}
+          ))}
+        </div>
+      )}
     </div>
   );
 }
