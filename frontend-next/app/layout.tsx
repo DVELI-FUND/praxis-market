@@ -14,6 +14,7 @@ const dmMono = DM_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "
 const dmSans = DM_Sans({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://praxis-market-ieel-one.vercel.app"),
   title: "Praxis — Prediction Markets",
   description:
     "Client-side prediction market terminal for the Canopy network. All reads against public RPC; keys never leave your browser.",
