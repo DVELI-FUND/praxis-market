@@ -12,14 +12,15 @@ import type { MarketDetail } from "@/lib/detail";
 
 interface Props {
   market: MarketDetail;
+  outcome: boolean;
+  onOutcome: (v: boolean) => void;
 }
 
-export default function PredictPanel({ market }: Props) {
+export default function PredictPanel({ market, outcome, onOutcome }: Props) {
   const { status, praxisAddress, privKey, pubKey } = useWallet();
   const { data: chain } = useHeight();
   const toast = useToast((s) => s.show);
 
-  const [outcome, setOutcome] = useState(true);
   const [shares, setShares] = useState(1);
   const [slip, setSlip] = useState(5);
   const [fee] = useState(10000);
@@ -86,11 +87,11 @@ export default function PredictPanel({ market }: Props) {
       <div className="p-4">
         {/* outcome segmented */}
         <div className="mb-3 grid grid-cols-2 gap-2">
-          <button onClick={() => setOutcome(true)} className={`flex items-center justify-between rounded-card border px-3 py-2.5 transition-all ${outcome ? "border-up bg-up-dim shadow-glowUp" : "border-line opacity-50 hover:opacity-80"}`}>
+          <button onClick={() => onOutcome(true)} className={`flex items-center justify-between rounded-card border px-3 py-2.5 transition-all ${outcome ? "border-up bg-up-dim shadow-glowUp" : "border-line opacity-50 hover:opacity-80"}`}>
             <span className="font-mono text-[10px] font-bold text-up">YES</span>
             <span className="font-display text-[15px] font-bold text-up tabular-nums">{pct}¢</span>
           </button>
-          <button onClick={() => setOutcome(false)} className={`flex items-center justify-between rounded-card border px-3 py-2.5 transition-all ${!outcome ? "border-down bg-down-dim shadow-glowDown" : "border-line opacity-50 hover:opacity-80"}`}>
+          <button onClick={() => onOutcome(false)} className={`flex items-center justify-between rounded-card border px-3 py-2.5 transition-all ${!outcome ? "border-down bg-down-dim shadow-glowDown" : "border-line opacity-50 hover:opacity-80"}`}>
             <span className="font-mono text-[10px] font-bold text-down">NO</span>
             <span className="font-display text-[15px] font-bold text-down tabular-nums">{100 - pct}¢</span>
           </button>
@@ -100,7 +101,7 @@ export default function PredictPanel({ market }: Props) {
           <div className="mb-1 font-mono text-[9px] uppercase tracking-[2px] text-ink-2">Shares (PRX)</div>
           <input type="number" value={shares} min={1} onChange={(e) => setShares(parseInt(e.target.value) || 0)} className={inputCls} />
           <div className="mt-2 grid grid-cols-4 gap-1.5">
-            {[10, 50, 100, Math.max(1, shares + 50)].map((v) => (
+            {[10, 50, 100, 500].map((v) => (
               <button key={v} onClick={() => setShares(v)} className="rounded-card border border-line bg-bg-2 py-1.5 font-mono text-[10px] text-ink-2 transition-colors hover:border-up hover:text-up">
                 {v}
               </button>

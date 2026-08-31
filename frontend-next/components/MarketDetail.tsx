@@ -9,7 +9,6 @@ import StatusPill from "./StatusPill";
 import ShareButton from "./ShareButton";
 import DetailTabs from "./DetailTabs";
 import PriceChart from "./PriceChart";
-import ActivityFeed from "./ActivityFeed";
 import PredictPanel from "./PredictPanel";
 import PositionCard from "./PositionCard";
 import LogoMark from "./LogoMark";
@@ -18,6 +17,7 @@ export default function MarketDetail({ mid }: Props) {
   const { data: chain } = useHeight();
   const { market, holders, disputeContext, isLoading, isError } = useMarketDetail(mid);
   const [rulesOpen, setRulesOpen] = useState(false);
+  const [outcome, setOutcome] = useState(true);
 
   if (isLoading) {
     return (
@@ -99,7 +99,7 @@ export default function MarketDetail({ mid }: Props) {
               <div className="w-[80px] text-right font-display text-[18px] font-extrabold text-up tabular-nums">{pct}%</div>
               <div className="w-[80px] text-right font-mono text-[11px] text-up tabular-nums">+0.0%</div>
               <div className="w-[120px] text-right">
-                <button className="rounded-card bg-up px-4 py-1.5 font-sans text-[11px] font-extrabold text-black transition-all hover:brightness-110">Buy YES</button>
+                <button onClick={() => setOutcome(true)} className="rounded-card bg-up px-4 py-1.5 font-sans text-[11px] font-extrabold text-black transition-all hover:brightness-110">Buy YES</button>
               </div>
             </div>
             <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-3 border-t border-line px-4 py-4">
@@ -110,7 +110,7 @@ export default function MarketDetail({ mid }: Props) {
               <div className="w-[80px] text-right font-display text-[18px] font-extrabold text-down tabular-nums">{noPct}%</div>
               <div className="w-[80px] text-right font-mono text-[11px] text-down tabular-nums">+0.0%</div>
               <div className="w-[120px] text-right">
-                <button className="rounded-card bg-down px-4 py-1.5 font-sans text-[11px] font-extrabold text-black transition-all hover:brightness-110">Buy NO</button>
+                <button onClick={() => setOutcome(false)} className="rounded-card bg-down px-4 py-1.5 font-sans text-[11px] font-extrabold text-black transition-all hover:brightness-110">Buy NO</button>
               </div>
             </div>
           </div>
@@ -132,10 +132,9 @@ export default function MarketDetail({ mid }: Props) {
           {/* position card */}
           {holders && <PositionCard market={market} holders={holders} />}
 
-          {/* chart + activity */}
-          <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+          {/* price chart */}
+          <div className="mb-4">
             <PriceChart mid={mid} initialYes={market.qYes} initialNo={market.qNo} />
-            <ActivityFeed mid={mid} />
           </div>
 
           {/* tabs */}
@@ -143,7 +142,7 @@ export default function MarketDetail({ mid }: Props) {
         </div>
 
         <div className="mt-4 md:mt-0">
-          <PredictPanel market={market} />
+          <PredictPanel market={market} outcome={outcome} onOutcome={setOutcome} />
         </div>
       </div>
     </div>
