@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import WalletPill from "./WalletPill";
 import ThemeToggle from "./ThemeToggle";
+import { useUi } from "@/store/ui";
 import LogoMark from "./LogoMark";
 
 const LINKS = [
@@ -44,6 +45,9 @@ export default function TopNav() {
             ⌕ Search Markets
           </Link>
           <ThemeToggle />
+          <button onClick={() => useUi.getState().setMore(true)} className="rounded-pill border border-line-2 bg-surface px-3 py-1.5 font-mono text-[10px] text-ink-2 transition-colors hover:border-up hover:text-up">
+            ≡ More
+          </button>
           <WalletPill />
         </div>
       </div>
