@@ -2,7 +2,7 @@
 import { bls12_381 } from "@noble/curves/bls12-381";
 import { b2h } from "@/lib/format";
 import { decVarint, encSignBytes } from "@/lib/proto";
-import { rpc, submitTxRPC } from "@/lib/rpc";
+import { rpc, submitTxRPC, queryHeight } from "@/lib/rpc";
 
 export const TYPE_URLS: Record<string, string> = {
   send: "type.googleapis.com/types.MessageSend",
@@ -47,7 +47,20 @@ export async function buildSigned(
   meta: TxMeta
 ): Promise<Record<string, unknown>> {
   const txTime = BigInt(Date.now()) * 1000n;
-  const p = { txTime, fee: meta.fee || 10000, height: meta.height, memo: "", netId: meta.netId, chainId: meta.chainId };
+  
+  // Fallback to live query if meta values are missing (matches old frontend behavior)
+  let height = meta.height;
+  let netId = meta.netId;
+  let chainId = meta.chainId;
+  
+  if (!height || !netId || !chainId) {
+    const live = await queryHeight();
+    height = height || live.height;
+    netId = netId || live.networkId || 1;
+    chainId = chainId || live.chainId || 1;
+  }
+  
+  const p = { txTime, fee: meta.fee || 10000, height, memo: "", netId, chainId };
   const sb = encSignBytes(msgType, typeUrl, inner, p);
   const sig = await bls12_381.sign(sb, privKey);
   const base = {
@@ -56,8 +69,8 @@ export async function buildSigned(
     time: Number(txTime),
     fee: p.fee,
     memo: "",
-    networkID: meta.netId,
-    chainID: meta.chainId,
+    networkID: p.netId,
+    chainID: p.chainId,
   };
   if (msgType === "send") {
     let pos = 0;
@@ -82,7 +95,8 @@ export async function buildSigned(
         if (fn === 3) amt = v;
       }
     }
-    return { ...base, type: "send", msg: { fromAddress: b2h(fromB), toAddress: b2h(toB), amount: Number(amt) } };
+    const toHex = (b: Uint8Array) => Array.from(b).map(x => x.toString(16).padStart(2, "0")).join("");
+    return { ...base, type: "send", msg: { fromAddress: toHex(fromB), toAddress: toHex(toB), amount: Number(amt) } };
   }
   return { ...base, type: msgType, msgTypeUrl: typeUrl, msgBytes: b2h(inner) };
 }
