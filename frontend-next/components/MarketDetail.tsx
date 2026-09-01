@@ -182,6 +182,7 @@ function FaqSection({ pct, ends }: { pct: number; ends: string }) {
     { q: "How is resolution decided?", a: "Bonded resolvers stake PRX to propose the outcome. Anyone can dispute by staking; a correct challenge is rewarded, a rejected one is forfeited." },
   ];
   return (
+
     <div className="mt-4">
       <div className="mb-2 font-display text-[15px] font-bold text-ink">Frequently Asked Questions</div>
       <div className="overflow-hidden rounded-card border border-line bg-surface-grad shadow-card">

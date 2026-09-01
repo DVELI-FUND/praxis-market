@@ -31,7 +31,17 @@ export async function GET(req: Request) {
       html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ||
       html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i) ||
       html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i);
-    if (!m) return new Response("no og:image found", { status: 404 });
+    if (!m) {
+      try {
+        const mr = await fetch("https://api.microlink.io/?url=" + encodeURIComponent(target.href));
+        const mj = (await mr.json()) as { data?: { image?: { url?: string } } };
+        const mi = mj?.data?.image?.url;
+        if (mi) return new Response(null, { status: 302, headers: { ...cache, Location: mi } });
+      } catch {
+        // fall through to 404
+      }
+      return new Response("no og:image found", { status: 404 });
+    }
     let img = m[1];
     if (img.startsWith("//")) img = "https:" + img;
     return new Response(null, { status: 302, headers: { ...cache, Location: img } });

@@ -2,7 +2,8 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { Market } from "@/lib/markets";
-import { CAT_SYMBOLS, extractCat, extractImg, stripCatPrefix, yesPct } from "@/lib/markets";
+import { CAT_SYMBOLS, extractCat, stripCatPrefix, yesPct } from "@/lib/markets";
+import BannerImg from "./BannerImg";
 import { fmtPRX, fmtCountdown } from "@/lib/format";
 import { useHeight } from "@/hooks/useHeight";
 import StatusPill from "./StatusPill";
@@ -32,10 +33,8 @@ export default function MarketCard({ market, featured = false, bookmarked, onTog
     }
   }, [pct]);
 
-  const [imgOk, setImgOk] = useState(true);
   const catKey = extractCat(market.rules);
   const catSymbol = CAT_SYMBOLS[catKey] || "◈";
-  const imgUrl = extractImg(market.rules);
   const question = stripCatPrefix(market.question || market.rules || "(no question)");
   const maxLen = featured ? 140 : 96;
   const qTrunc = question.length > maxLen ? question.slice(0, maxLen) + "…" : question;
@@ -48,19 +47,15 @@ export default function MarketCard({ market, featured = false, bookmarked, onTog
       {/* icon-style header */}
       <div className="relative flex items-start gap-3 px-4 pt-4">
         <div className="h-[54px] w-[54px] shrink-0 overflow-hidden rounded-card border border-line-2 bg-surface-2">
-          {imgUrl && imgOk ? (
-            <img
-              src={imgUrl}
-              alt=""
-              loading="lazy"
-              className="h-full w-full object-cover"
-              onError={() => setImgOk(false)}
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-[22px] text-ink-2">
-              {catSymbol}
-            </div>
-          )}
+          <BannerImg
+            rules={market.rules}
+            className="h-full w-full object-cover"
+            fallback={
+              <div className="flex h-full w-full items-center justify-center text-[22px] text-ink-2">
+                {catSymbol}
+              </div>
+            }
+          />
         </div>
 
         <div className="min-w-0 flex-1 pr-2">
