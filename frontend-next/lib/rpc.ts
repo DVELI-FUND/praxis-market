@@ -51,29 +51,43 @@ export interface HeightInfo {
   chainId?: number;
 }
 
-// Mirrors legacy checkRPC: height + networkID from /v1/query/height,
-// chainID from block-by-height → lastQuorumCertificate.header.
-export async function queryHeight(): Promise<HeightInfo> {
-  const d = await rpc<{ height?: number | string; network_id?: number; networkID?: number }>(
-    "/v1/query/height",
-    {}
-  );
-  const height = Number(d.height || 0);
-  let networkId = d.network_id ?? d.networkID;
-  let chainId: number | undefined;
-  try {
-    const blk = await rpc<{
-      blockHeader?: {
-        lastQuorumCertificate?: {
-          header?: { chainId?: number; chainID?: number; networkID?: number; networkId?: number };
-        };
-      };
-    }>("/v1/query/block-by-height", { height });
-    const hdr = blk?.blockHeader?.lastQuorumCertificate?.header;
-    if (hdr) {
-      chainId = hdr.chainId ?? hdr.chainID;
-      networkId = hdr.networkID ?? hdr.networkId ?? networkId;
+// Case/underscore-insensitive deep scan: finds "chainId" / "chain_id" / "chainID"
+// / "networkID" / "network_id" anywhere in the response, at any nesting depth.
+function dig(obj: unknown, want: string): number | undefined {
+  if (obj === null || typeof obj !== "object") return undefined;
+  if (Array.isArray(obj)) {
+    for (const v of obj) {
+      const r = dig(v, want);
+      if (r !== undefined) return r;
     }
+    return undefined;
+  }
+  const rec = obj as Record<string, unknown>;
+  for (const [k, v] of Object.entries(rec)) {
+    if (k.replace(/[^a-z0-9]/gi, "").toLowerCase() === want) {
+      if (typeof v === "number") return v;
+      if (typeof v === "string" && /^\d+$/.test(v)) return Number(v);
+    }
+  }
+  for (const v of Object.values(rec)) {
+    const r = dig(v, want);
+    if (r !== undefined) return r;
+  }
+  return undefined;
+}
+
+// Mirrors legacy checkRPC: height + networkID from /v1/query/height,
+// chainID + networkID from block-by-height → lastQuorumCertificate.header.
+// dig() makes extraction robust to casing/nesting differences vs the old frontend.
+export async function queryHeight(): Promise<HeightInfo> {
+  const d = await rpc<unknown>("/v1/query/height", {});
+  const height = dig(d, "height") ?? 0;
+  let networkId = dig(d, "networkid");
+  let chainId = dig(d, "chainid");
+  try {
+    const blk = await rpc<unknown>("/v1/query/block-by-height", { height });
+    chainId = dig(blk, "chainid") ?? chainId;
+    networkId = dig(blk, "networkid") ?? networkId;
   } catch {
     // chainId optional — encSignBytes falls back to 1
   }
