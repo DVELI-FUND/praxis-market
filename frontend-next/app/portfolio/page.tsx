@@ -1,6 +1,7 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
 import { useWallet } from "@/store/wallet";
+import { usePositions } from "@/lib/positions";
 import { useMarkets } from "@/hooks/useMarkets";
 import { getPluginRPC, queryAccount } from "@/lib/rpc";
 import LogoMark from "@/components/LogoMark";
@@ -46,15 +47,7 @@ export default function PortfolioPage() {
   const { praxisAddress } = useWallet();
   const { data: markets = [] } = useMarkets();
 
-  const { data: positions = [] } = useQuery({
-    queryKey: ["positions", praxisAddress],
-    queryFn: () => fetchPositions(praxisAddress as string),
-    enabled: !!praxisAddress,
-    staleTime: 30000,
-    refetchInterval: 15000,
-  });
-
-  const { data: balance = 0n } = useQuery({
+const { data: positions = [] } = usePositions();const { data: balance = 0n } = useQuery({
     queryKey: ["balance", praxisAddress],
     queryFn: () => fetchBalance(praxisAddress as string),
     enabled: !!praxisAddress,

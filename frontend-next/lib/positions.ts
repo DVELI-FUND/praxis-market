@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { getPluginRPC } from "@/lib/rpc";
-import { b64ToHex } from "@/lib/format";
 import { useWallet } from "@/store/wallet";
 
 export interface Position {
@@ -13,49 +12,42 @@ export interface Position {
 
 export async function fetchPositions(address: string): Promise<Position[]> {
   if (!address) return [];
-  
-  // 1) Fetch all markets
   const r = await fetch(getPluginRPC() + "/v1/query/markets");
   if (!r.ok) return [];
   const raw = (await r.json()) as Record<string, unknown>[];
-  const markets = raw.map((m) => ({
-    id: String(m.id || m.market_id || ""),
-  }));
-  
-  // 2) For each market, check if this address has a position
-  const positions: Position[] = [];
-  const concurrency = 5; // max 5 parallel requests
-  
-  for (let i = 0; i < markets.length; i += concurrency) {
-    const batch = markets.slice(i, i + concurrency);
-    const results = await Promise.all(
-      batch.map(async (m) => {
+  const mids = raw.map((m) => String(m.id || "")).filter(Boolean);
+
+  const out: Position[] = [];
+  for (let i = 0; i < mids.length; i += 5) {
+    const batch = mids.slice(i, i + 5);
+    const res = await Promise.all(
+      batch.map(async (mid) => {
         try {
-          const url = `${getPluginRPC()}/v1/query/position?market=${encodeURIComponent(m.id)}&address=${encodeURIComponent(address)}`;
-          const r = await fetch(url);
-          if (!r.ok) return null;
-          const d = (await r.json()) as { position?: Record<string, unknown> };
+          const rr = await fetch(
+            `${getPluginRPC()}/v1/query/position?market=${encodeURIComponent(mid)}&address=${encodeURIComponent(address)}`
+          );
+          if (!rr.ok) return null;
+          const d = (await rr.json()) as { position?: Record<string, unknown> | null };
           const p = d.position;
           if (!p) return null;
-          const sy = BigInt((p.shares_yes ?? p.sharesYes ?? 0) as string | number);
-          const sn = BigInt((p.shares_no ?? p.sharesNo ?? 0) as string | number);
+          const sy = BigInt((p.shares_yes ?? p.sharesYes ?? 0) as string | number || 0);
+          const sn = BigInt((p.shares_no ?? p.sharesNo ?? 0) as string | number || 0);
           if (sy === 0n && sn === 0n) return null;
           return {
-            marketId: m.id,
+            marketId: mid,
             sharesYes: sy,
             sharesNo: sn,
-            costPaid: BigInt((p.cost_paid ?? p.costPaid ?? 0) as string | number),
+            costPaid: BigInt((p.cost_paid ?? p.costPaid ?? 0) as string | number || 0),
             claimed: Boolean(p.claimed),
-          };
+          } as Position;
         } catch {
           return null;
         }
       })
     );
-    positions.push(...results.filter((p): p is Position => p !== null));
+    for (const p of res) if (p) out.push(p);
   }
-  
-  return positions;
+  return out;
 }
 
 export function usePositions() {
@@ -64,5 +56,6 @@ export function usePositions() {
     queryKey: ["positions", addr],
     queryFn: () => (addr ? fetchPositions(addr) : []),
     staleTime: 30000,
+    enabled: !!addr,
   });
 }

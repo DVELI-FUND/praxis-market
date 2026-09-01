@@ -1,6 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { useWallet } from "@/store/wallet";
+import { usePositions } from "@/lib/positions";
 import { useQuery } from "@tanstack/react-query";
 import { queryAccount } from "@/lib/rpc";
 import { b64ToHex, fmtPRX } from "@/lib/format";
@@ -51,14 +52,7 @@ export default function ProfilePage() {
     refetchInterval: 15000,
   });
 
-  const { data: positions = [] } = useQuery({
-    queryKey: ["positions", praxisAddress],
-    queryFn: () => fetchPositions(praxisAddress as string),
-    enabled: !!praxisAddress,
-    staleTime: 30000,
-  });
-
-  const enriched = useMemo(() => {
+const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
     return positions.map((pos) => {
       const market = markets.find((m) => m.marketId === pos.marketId);
       if (!market) return { ...pos, market: null, value: 0n, cat: "other" };
