@@ -9,6 +9,16 @@ import {
 
 const W = 1000000n;
 
+// Convert a datetime-local string to a block height (5s blocks, Canopy default)
+export function datetimeToBlock(datetimeStr: string, currentHeight: number): number {
+  if (!datetimeStr) return currentHeight + 1000;
+  const targetMs = new Date(datetimeStr).getTime();
+  const nowMs = Date.now();
+  const deltaMs = Math.max(0, targetMs - nowMs);
+  const deltaBlocks = Math.floor(deltaMs / 5000);
+  return currentHeight + deltaBlocks;
+}
+
 export function buildRulesWithCat(cat: string, rules: string): string {
   const stripped = rules.replace(/^\[CAT:\w+\]\s*/, "");
   return "[CAT:" + cat + "] " + stripped;
@@ -26,7 +36,7 @@ export function buildRulesWithOutcomes(rules: string, yesLabel: string, noLabel:
   return stripped + (stripped ? " " : "") + "[OUT:" + yl + "|" + nl + "]";
 }
 
-export type FieldType = "wallet" | "addr" | "mid" | "number" | "text" | "hash64" | "outcome" | "cat";
+export type FieldType = "wallet" | "addr" | "mid" | "number" | "text" | "hash64" | "outcome" | "cat" | "datetime";
 export interface FieldDef {
   id: string;
   label: string;
@@ -155,7 +165,7 @@ export const ACTIONS: Record<string, ActionDef> = {
       { id: "out_no", label: "Custom NO label (optional)", type: "text" },
       { id: "creator", label: "Creator Address", type: "wallet" },
       { id: "b0", label: "B0 Liquidity (PRX)", type: "number", def: 60, scale: W },
-      { id: "expiry", label: "Expiry Block", type: "number", def: 0, hint: "0 = current height + 1000" },
+      { id: "expiry", label: "Expiry", type: "datetime" },
       { id: "rules", label: "Rules / Resolution criteria", type: "text" },
       { id: "img", label: "Banner Image URL (optional)", type: "text" },
       FEE,
@@ -166,7 +176,7 @@ export const ACTIONS: Record<string, ActionDef> = {
         String(v.out_yes ?? ""),
         String(v.out_no ?? "")
       );
-      const exp = Number(v.expiry) || ctx.height + 1000;
+      const exp = datetimeToBlock(String(v.expiry || ""), ctx.height);
       const nonce = BigInt(Date.now()) * 1000n;
       return encCreate(s(v, "creator"), u(v, "b0"), BigInt(exp), nonce, String(v.question ?? ""), rules);
     },

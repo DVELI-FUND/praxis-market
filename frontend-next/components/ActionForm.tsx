@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import type { ActionDef, Vals } from "@/lib/actions";
+import { datetimeToBlock } from "@/lib/actions";
 import { useWallet } from "@/store/wallet";
 import { useHeight } from "@/hooks/useHeight";
 import { useRoles } from "@/lib/roles";
@@ -15,7 +16,13 @@ import UnstakePlanner from "./UnstakePlanner";
 import { b2b64 } from "@/lib/proto";
 import ResolutionPlanner from "./ResolutionPlanner";
 
-const CATS = ["crypto", "sports", "politics", "finance", "other"];
+const CATS: { key: string; label: string }[] = [
+  { key: "crypto", label: "🟠 Crypto" },
+  { key: "sports", label: "⚽ Sports" },
+  { key: "politics", label: "🌐 Politics" },
+  { key: "finance", label: "📈 Finance" },
+  { key: "other", label: "👁 Other" },
+];
 
 function validateField(def: ActionDef, v: Vals): string | null {
   for (const f of def.fields) {
@@ -46,6 +53,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
       if (f.type === "number") init[f.id] = f.def ?? 0;
       else if (f.type === "outcome") init[f.id] = true;
       else if (f.type === "cat") init[f.id] = "crypto";
+      else if (f.type === "datetime") init[f.id] = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 16);
       else init[f.id] = "";
     }
     return init;
@@ -220,15 +228,39 @@ export default function ActionForm({ def }: { def: ActionDef }) {
             <div className="flex flex-wrap gap-1.5">
               {CATS.map((c) => (
                 <button
-                  key={c}
-                  onClick={() => set(f.id, c)}
+                  key={c.key}
+                  onClick={() => set(f.id, c.key)}
                   className={`rounded-full border px-3 py-1 font-mono text-[10px] ${
-                    vals[f.id] === c ? "border-up bg-up text-black" : "border-line text-ink-2"
+                    vals[f.id] === c.key ? "border-up bg-up text-black" : "border-line text-ink-2"
                   }`}
                 >
-                  {c}
+                  {c.label}
                 </button>
               ))}
+            </div>
+          ) : f.type === "datetime" ? (
+            <div>
+              <input
+                type="datetime-local"
+                value={String(vals[f.id] ?? "")}
+                onChange={(e) => set(f.id, e.target.value)}
+                className="w-full rounded-card border border-line-2 bg-bg px-3 py-2 font-mono text-[12px] text-ink outline-none focus:border-up"
+              />
+              {String(vals[f.id] || "") && chain?.height ? (
+                <div className="mt-1 rounded border border-amberx/40 bg-amberx/5 px-2 py-1 font-mono text-[9px] text-amberx">
+                  Block #{datetimeToBlock(String(vals[f.id]), chain.height).toLocaleString()}
+                  {" (~"}
+                  {(() => {
+                    const ms = new Date(String(vals[f.id])).getTime() - Date.now();
+                    const d = Math.floor(ms / 86400000);
+                    const h = Math.floor((ms % 86400000) / 3600000);
+                    return d > 0 ? `${d}d ${h}h` : `${h}h`;
+                  })()}
+                  {" from now, "}
+                  {(datetimeToBlock(String(vals[f.id]), chain.height) - chain.height).toLocaleString()}
+                  {" blocks)"}
+                </div>
+              ) : null}
             </div>
           ) : (
             <input
