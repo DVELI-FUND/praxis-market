@@ -1,4 +1,5 @@
 "use client";
+import KeystorePanel from "@/components/KeystorePanel";
 import { useMemo, useState } from "react";
 import { useWallet } from "@/store/wallet";
 import { usePositions } from "@/lib/positions";
@@ -245,6 +246,7 @@ const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
           </div>
         )}
       </div>
-    </main>
+    <KeystorePanel />
+      </main>
   );
 }
