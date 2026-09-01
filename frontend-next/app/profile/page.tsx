@@ -227,13 +227,13 @@ const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
             </div>
             {enriched.map((pos) => {
               if (!pos.market) return null;
-              const pnl = pos.value - (pos.sharesYes + pos.sharesNo);
+              const pnl = pos.value - pos.costPaid;
               const pnlColor = pnl >= 0n ? "text-up" : "text-down";
               return (
                 <a key={pos.marketId} href={`/market/${pos.marketId}`} className="grid grid-cols-[1fr_auto_auto_auto_auto] items-center gap-4 border-b border-line/50 px-4 py-3 transition-colors last:border-b-0 hover:bg-surface-2">
                   <div className="min-w-0">
                     <div className="line-clamp-1 font-sans text-[12px] font-semibold text-ink">{stripCatPrefix(pos.market.question || pos.market.rules || "")}</div>
-                    <div className="mt-0.5 font-mono text-[9px] text-ink-3">{pos.market.status}</div>
+                    <div className="mt-0.5 font-mono text-[9px] text-ink-3">{pos.marketId.slice(0, 10)}…</div>
                   </div>
                   <span className="w-[70px] text-right font-mono text-[10px] text-up tabular-nums">{fmtPRX(pos.sharesYes)}</span>
                   <span className="w-[70px] text-right font-mono text-[10px] text-down tabular-nums">{fmtPRX(pos.sharesNo)}</span>
