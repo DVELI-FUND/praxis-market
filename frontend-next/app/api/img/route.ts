@@ -31,6 +31,17 @@ export async function GET(req: Request) {
       html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ||
       html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i) ||
       html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i);
+    if (!m && target.hostname.includes("imgur")) {
+      try {
+        const or_ = await fetch("https://api.imgur.com/oembed.json?url=" + encodeURIComponent(target.href));
+        if (or_.ok) {
+          const oj = (await or_.json()) as { thumbnail_url?: string };
+          if (oj?.thumbnail_url) return new Response(null, { status: 302, headers: { ...cache, Location: oj.thumbnail_url } });
+        }
+      } catch {
+        // fall through
+      }
+    }
     if (!m) {
       try {
         const mr = await fetch("https://api.microlink.io/?url=" + encodeURIComponent(target.href));
