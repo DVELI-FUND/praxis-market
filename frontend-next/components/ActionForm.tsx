@@ -59,6 +59,27 @@ export default function ActionForm({ def }: { def: ActionDef }) {
     return init;
   });
   const [pending, setPending] = useState(false);
+  // Create Market: silently store banner in Vercel Blob → permanent URL
+  useEffect(() => {
+    if (def.key !== "create") return;
+    const u = String(vals.img ?? "").trim();
+    if (!u || !/^https?:\/\//.test(u) || u.includes("vercel-storage.com")) return;
+    const t = setTimeout(async () => {
+      try {
+        const r = await fetch("/api/banner?url=" + encodeURIComponent(u));
+        if (r.ok) {
+          const j = (await r.json()) as { url?: string };
+          if (j.url) set("img", j.url);
+        }
+      } catch {
+        // keep original URL; render-time ladder still covers it
+      }
+    }, 1200);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vals.img, def.key]);
+
+
   const [payload, setPayload] = useState("");
 
   useEffect(() => {
