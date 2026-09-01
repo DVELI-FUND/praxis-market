@@ -3,6 +3,7 @@ import { bls12_381 } from "@noble/curves/bls12-381";
 import { b2h } from "@/lib/format";
 import { decVarint, encSignBytes } from "@/lib/proto";
 import { rpc, submitTxRPC, queryHeight } from "@/lib/rpc";
+import { getChainContext } from "@/lib/chainContext";
 
 export const TYPE_URLS: Record<string, string> = {
   send: "type.googleapis.com/types.MessageSend",
@@ -53,6 +54,15 @@ export async function buildSigned(
   let netId = meta.netId;
   let chainId = meta.chainId;
   
+  // Read from global store first (mirrors old frontend's window.currentHeight/ChainID/NetworkID)
+  const ctx = getChainContext();
+  if (!height || !netId || !chainId) {
+    height = height || ctx.height;
+    netId = netId || ctx.networkId || 1;
+    chainId = chainId || ctx.chainId || 1;
+  }
+  
+  // Fallback to live query if still missing
   if (!height || !netId || !chainId) {
     const live = await queryHeight();
     height = height || live.height;

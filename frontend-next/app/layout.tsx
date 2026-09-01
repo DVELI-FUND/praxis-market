@@ -8,6 +8,7 @@ import type { ReactNode } from "react";
 import Providers from "./providers";
 import Chrome from "@/components/Chrome";
 import "./globals.css";
+import { initChainContext } from "@/lib/rpc";
 
 const syne = Syne({ subsets: ["latin"], weight: ["400", "600", "700", "800"], variable: "--font-display" });
 const dmMono = DM_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-mono" });
@@ -22,6 +23,11 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
+  // Initialize chain context on app startup (mirrors old frontend's checkRPC)
+  if (typeof window !== "undefined") {
+    initChainContext();
+  }
+
   return (
     <html lang="en" data-theme="dark">
       <body className={`${syne.variable} ${dmMono.variable} ${dmSans.variable} bg-bg text-ink font-sans`}>
