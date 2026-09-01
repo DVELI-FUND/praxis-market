@@ -11,12 +11,12 @@ export function normalizeBanner(url: string): string {
   }
   try {
     const p = new URL(u);
-    if (DIRECT_RE.test(p.pathname)) return u;
-    if (p.hostname === "i.imgur.com") return u;
-    if (p.hostname === "imgur.com") {
-      const m = p.pathname.match(/^\/([A-Za-z0-9]+)$/);
-      if (m && m[1] !== "a" && m[1] !== "gallery") return "https://i.imgur.com/" + m[1] + ".jpg";
+    // imgur hotlink-blocks raw i.imgur.com/imgur.com requests intermittently —
+    // always route through our own resolver so we control the fetch server-side.
+    if (p.hostname === "i.imgur.com" || p.hostname === "imgur.com") {
+      return "/api/img?url=" + encodeURIComponent(u);
     }
+    if (DIRECT_RE.test(p.pathname)) return u;
     // HTML page → server-side og:image resolver
     return "/api/img?url=" + encodeURIComponent(u);
   } catch {
