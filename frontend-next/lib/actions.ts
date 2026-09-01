@@ -167,7 +167,7 @@ export const ACTIONS: Record<string, ActionDef> = {
       { id: "b0", label: "B0 Liquidity (PRX)", type: "number", def: 60, scale: W },
       { id: "expiry", label: "Expiry", type: "datetime" },
       { id: "rules", label: "Rules / Resolution criteria", type: "text" },
-      { id: "img", label: "Banner Image URL (optional)", type: "text" },
+      { id: "img", label: "Banner Image URL (optional)", type: "text", hint: "imgur album/page, i.imgur.com direct, or ipfs:// — auto-resolved" },
       FEE,
     ],
     build: (v, ctx) => {
