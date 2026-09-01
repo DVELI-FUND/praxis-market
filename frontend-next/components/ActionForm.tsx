@@ -14,6 +14,7 @@ import { fmtPRX } from "@/lib/format";
 import ResolverStatusCard from "./ResolverStatusCard";
 import UnstakePlanner from "./UnstakePlanner";
 import { b2b64 } from "@/lib/proto";
+import { normalizeBanner } from "@/lib/img";
 import ResolutionPlanner from "./ResolutionPlanner";
 
 const CATS: { key: string; label: string }[] = [
@@ -81,6 +82,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
 
 
   const [payload, setPayload] = useState("");
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   useEffect(() => {
     if (!praxisAddress) return;
@@ -313,6 +315,40 @@ export default function ActionForm({ def }: { def: ActionDef }) {
         <div className="mb-2.5 rounded-card border border-line bg-bg-2 p-2 font-mono text-[9px] text-ink-3">
           Existing record — new stake tops up current {fmtPRX(myResolver.stake)} PRX (total must be ≥{" "}
           {fmtPRX(MIN_RESOLVER_STAKE)})
+        </div>
+      )}
+
+      {def.key === "create" && String(vals.img ?? "").trim() !== "" && (
+        <div className="mb-2.5">
+          <img
+            src={normalizeBanner(String(vals.img))}
+            alt=""
+            className="h-40 w-full rounded-card border border-line object-cover"
+            onLoad={() => setImgLoaded(true)}
+            onError={() => setImgLoaded(false)}
+          />
+          {imgLoaded && <div className="mt-1 font-mono text-[9px] text-up">✓ Image loaded</div>}
+        </div>
+      )}
+
+      {def.key === "create" && (
+        <div className="mb-3 rounded-card border border-line bg-bg-2 p-3 font-mono text-[10px] text-ink-2">
+          <div className="flex justify-between py-1">
+            <span>B0 liquidity seed</span>
+            <span className="text-up">{Number(vals.b0) || 0} PRX</span>
+          </div>
+          <div className="flex justify-between border-t border-line py-1">
+            <span>Creator bond (locked)</span>
+            <span>5,000 PRX</span>
+          </div>
+          <div className="flex justify-between border-t border-line py-1">
+            <span>TX fee</span>
+            <span>{(Number(vals.fee) || 10000).toLocaleString()} uPRX</span>
+          </div>
+          <div className="mt-1 flex justify-between border-t border-line pt-2">
+            <span>Total deducted</span>
+            <span className="text-up">{((Number(vals.b0) || 0) + 5000).toLocaleString()} PRX</span>
+          </div>
         </div>
       )}
 
