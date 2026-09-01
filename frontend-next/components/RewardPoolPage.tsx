@@ -109,26 +109,33 @@ export default function RewardPoolPage({ pool }: { pool: PoolKey }) {
     fetchEpochs();
   }, [praxisAddress, currentEpoch, pool]);
 
-  const stats = useMemo(() => {
-    const claimableNow = epochs
-      .filter((e) => e.eligible && e.epoch < currentEpoch)
-      .reduce((sum, e) => sum + BigInt(e.computed_payout || "0"), 0n);
-
-    const totalEarned = epochs.reduce((sum, e) => sum + BigInt(e.computed_payout || "0"), 0n);
-
-    const currentPool = epochs.find((e) => e.epoch === currentEpoch);
-    const currentPoolAmount = currentPool ? BigInt(currentPool.epoch_pool_amount || "0") : 0n;
-
-    return { claimableNow, totalEarned, currentPoolAmount };
-  }, [epochs, currentEpoch]);
-
   const isAuthorized = useMemo(() => {
     if (pool === "resolver") {
       return myResolver !== null;
     }
-    const unauthorized = epochs.some((e) => e.eligible_reason?.includes("not the authorized"));
+    const unauthorized = epochs.some((e) => (e.eligible_reason || "").includes("not the authorized"));
     return !unauthorized && epochs.length > 0;
   }, [pool, myResolver, epochs]);
+
+  const stats = useMemo(() => {
+    let claimableNow = 0n;
+    let totalEarned = 0n;
+    if (pool === "resolver") {
+      // epoch-scoped: sum competitive payouts across epochs
+      claimableNow = epochs
+        .filter((e) => e.eligible && e.epoch < currentEpoch)
+        .reduce((sum, e) => sum + BigInt(e.computed_payout || "0"), 0n);
+      totalEarned = epochs.reduce((sum, e) => sum + BigInt(e.computed_payout || "0"), 0n);
+    } else if (isAuthorized) {
+      // singleton pools: same balance every epoch — count ONCE, never per epoch
+      const elig = epochs.find((e) => e.eligible);
+      claimableNow = elig ? BigInt(elig.computed_payout || "0") : 0n;
+      totalEarned = 0n; // no per-epoch history exists for singleton pools
+    }
+    const currentPool = epochs.find((e) => e.epoch === currentEpoch) || epochs[epochs.length - 1];
+    const currentPoolAmount = currentPool ? BigInt(currentPool.epoch_pool_amount || "0") : 0n;
+    return { claimableNow, totalEarned, currentPoolAmount };
+  }, [epochs, currentEpoch, pool, isAuthorized]);
 
   return (
     <div className="animate-fadeUp">
