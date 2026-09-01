@@ -28,7 +28,7 @@ export const POOL_META: Record<PoolKey, { title: string; sub: string; claimKey: 
   },
   investor: {
     title: "Investor Rewards",
-    sub: "Liquidity provision rewards \u2014 241,920 block vesting window",
+    sub: "Liquidity provision rewards — 241,920 block vesting window",
     claimKey: "claim_investor",
   },
   protocol: {
@@ -143,19 +143,19 @@ export default function RewardPoolPage({ pool }: { pool: PoolKey }) {
       <div className="mb-4 grid grid-cols-3 gap-2">
         <StatCard
           label="Claimable Now"
-          value={loading ? "\u2026" : fmtPRX(stats.claimableNow)}
+          value={loading ? "…" : fmtPRX(stats.claimableNow)}
           sub="PRX"
           accent="text-up"
         />
         <StatCard
           label="Total Earned"
-          value={loading ? "\u2026" : fmtPRX(stats.totalEarned)}
+          value={loading ? "…" : fmtPRX(stats.totalEarned)}
           sub="PRX all time"
           accent="text-ink"
         />
         <StatCard
           label="Current Epoch Pool"
-          value={loading ? "\u2026" : fmtPRX(stats.currentPoolAmount)}
+          value={loading ? "…" : fmtPRX(stats.currentPoolAmount)}
           sub="PRX this epoch"
           accent="text-ink"
         />
@@ -175,7 +175,7 @@ export default function RewardPoolPage({ pool }: { pool: PoolKey }) {
           {myResolver ? (
             <>
               <span className={`inline-block rounded border px-2 py-1 font-mono text-[10px] ${tierOf(myResolver.rrsScore).cls}`}>
-                {tierOf(myResolver.rrsScore).label} \u2014 RRS {myResolver.rrsScore}
+                {tierOf(myResolver.rrsScore).label} — RRS {myResolver.rrsScore}
               </span>
               <div className="mt-3 grid grid-cols-3 gap-2 font-mono text-[10px]">
                 <div className="rounded-card border border-line bg-bg-2 px-2 py-1.5">
@@ -185,13 +185,13 @@ export default function RewardPoolPage({ pool }: { pool: PoolKey }) {
                   RRS Score <b className="text-ink">{myResolver.rrsScore}</b>
                 </div>
                 <div className="rounded-card border border-line bg-bg-2 px-2 py-1.5">
-                  Weight <b className="text-ink">{tierOf(myResolver.rrsScore).weight}\u00d7</b>
+                  Weight <b className="text-ink">{tierOf(myResolver.rrsScore).weight}×</b>
                 </div>
               </div>
               <div className="mt-3 rounded-card border border-line bg-bg-2 p-2.5 font-mono text-[9px] leading-relaxed">
                 <span className="text-ink-3">Payout formula:</span>
                 <br />
-                <span className="text-ink">epoch_pool \u00d7 (resolutions \u00d7 weight) / \u03a3(weighted resolutions)</span>
+                <span className="text-ink">epoch_pool × (resolutions × weight) / Σ(weighted resolutions)</span>
               </div>
             </>
           ) : (
@@ -237,7 +237,7 @@ export default function RewardPoolPage({ pool }: { pool: PoolKey }) {
             Epoch History
           </div>
           {loading ? (
-            <div className="py-10 text-center font-mono text-[10px] text-ink-3">Loading reward epochs\u2026</div>
+            <div className="py-10 text-center font-mono text-[10px] text-ink-3">Loading reward epochs…</div>
           ) : epochs.length === 0 ? (
             <div className="py-10 text-center font-mono text-[10px] text-ink-3">No reward data available</div>
           ) : (
@@ -274,7 +274,7 @@ export default function RewardPoolPage({ pool }: { pool: PoolKey }) {
                       status = "No activity";
                       statusColor = "text-ink-3";
                     } else {
-                      status = epochData.eligible_reason || "\u2014";
+                      status = epochData.eligible_reason || "—";
                       statusColor = "text-down";
                     }
 
