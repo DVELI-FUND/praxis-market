@@ -43,7 +43,16 @@ export async function rpc<T>(path: string, body: Record<string, unknown> = {}): 
 
 export async function submitTxRPC(obj: Record<string, unknown>): Promise<string> {
   const d = await rpc<unknown>("/v1/tx", obj);
-  return typeof d === "string" ? d.replace(/^"|"$/g, "") : JSON.stringify(d);
+  if (typeof d === "string") {
+    const t = d.replace(/^"|"$/g, "").trim();
+    if (/^[0-9a-fA-F]{16,}$/.test(t)) return t;
+    throw new Error("Node rejected tx: " + t);
+  }
+  const rec = (d || {}) as Record<string, unknown>;
+  if (rec.error || rec.code || rec.msg || rec.message) {
+    throw new Error("Node rejected tx: " + String(rec.msg || rec.message || rec.error || JSON.stringify(rec)));
+  }
+  return JSON.stringify(d);
 }
 
 export interface HeightInfo {
