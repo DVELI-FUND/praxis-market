@@ -8,6 +8,7 @@ import { fmtPRX, fmtCountdown } from "@/lib/format";
 import StatusPill from "./StatusPill";
 import ShareButton from "./ShareButton";
 import DetailTabs from "./DetailTabs";
+import BannerImg from "./BannerImg";
 import PriceChart from "./PriceChart";
 import PredictPanel from "./PredictPanel";
 import PositionCard from "./PositionCard";
@@ -63,6 +64,7 @@ export default function MarketDetail({ mid }: Props) {
     <div className="animate-fadeUp">
       <Link href="/" className="mb-4 inline-flex items-center gap-1 font-mono text-[10px] text-ink-2 transition-colors hover:text-up">← Back</Link>
 
+      <BannerImg rules={market.rules} className="mb-4 h-40 w-full rounded-card border border-line object-cover" />
       <div className="md:grid md:grid-cols-[1fr_340px] md:items-start md:gap-5">
         <div>
           {/* icon + title header */}
