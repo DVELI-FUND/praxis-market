@@ -16,6 +16,7 @@ import UnstakePlanner from "./UnstakePlanner";
 import { b2b64 } from "@/lib/proto";
 import { fetchMarkets, stripCatPrefix } from "@/lib/markets";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryHeight } from "@/lib/rpc";
 import { normalizeBanner } from "@/lib/img";
 import ResolutionPlanner from "./ResolutionPlanner";
 
@@ -161,15 +162,17 @@ export default function ActionForm({ def }: { def: ActionDef }) {
 
     setPending(true);
     try {
-      const inner = def.build(vals, { wallet: praxisAddress, height: chain.height });
+      // Force-fresh chain context to avoid stale cache errors
+      const freshChain = await queryClient.fetchQuery({ queryKey: ["chain-height"], queryFn: queryHeight });
+      const inner = def.build(vals, { wallet: praxisAddress, height: freshChain.height });
       queryClient.invalidateQueries({ queryKey: ["markets-cancel"] });
       await signAndBroadcast({
         privKey,
         pubKey,
         address: praxisAddress,
-        height: chain.height,
-        netId: chain.networkId,
-        chainId: chain.chainId,
+        height: freshChain.height,
+        netId: freshChain.networkId,
+        chainId: freshChain.chainId,
         msgType: def.msgType,
         typeUrl: TYPE_URLS[def.msgType],
         inner,
