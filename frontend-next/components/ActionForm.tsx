@@ -17,7 +17,7 @@ import UnstakePlanner from "./UnstakePlanner";
 import { b2b64 } from "@/lib/proto";
 import { fetchMarkets, stripCatPrefix, STATUS, yesPct } from "@/lib/markets";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { queryHeight } from "@/lib/rpc";
+import { queryHeight, getPluginRPC } from "@/lib/rpc";
 import { normalizeBanner } from "@/lib/img";
 import ResolutionPlanner from "./ResolutionPlanner";
 
@@ -91,10 +91,21 @@ export default function ActionForm({ def }: { def: ActionDef }) {
 
   // Cancel Market: live list of THIS wallet's cancellable markets
   const { data: cancelList = [], isFetching: isFetchingCancel } = useQuery({ queryKey: ["markets-cancel"], queryFn: fetchMarkets, staleTime: 15000, refetchOnMount: "always" });
+  const { data: rawMarkets = [] } = useQuery({
+    queryKey: ["markets-raw-cancel"],
+    queryFn: async () => { const r = await fetch(getPluginRPC() + "/v1/query/markets"); if (!r.ok) return []; return r.json(); },
+    staleTime: 15000,
+    refetchOnMount: "always",
+  });
+  const txById = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const r of rawMarkets as Array<{ id?: string; market?: { tx_count?: number } }>) m.set(String(r?.id || ""), Number(r?.market?.tx_count ?? 1));
+    return m;
+  }, [rawMarkets]);
   const { data: chChain } = useHeight();
   const mine = useMemo(() => (cancelList || []).filter((mm) => {
     const cr = String((mm as unknown as { creator?: string }).creator || "").toLowerCase();
-    return cr === String(praxisAddress || "").toLowerCase() && mm.status === STATUS.LIVE && Number(mm.expiry) > (chChain?.height ?? 0);
+    return cr === String(praxisAddress || "").toLowerCase() && mm.status === STATUS.LIVE && Number(mm.expiry) > (chChain?.height ?? 0) && (txById.get(mm.marketId) ?? 1) <= 1;
   }), [cancelList, praxisAddress, chChain?.height]);
 
   useEffect(() => {
@@ -247,6 +258,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
           <ul className="space-y-1.5 font-mono text-[10px] leading-relaxed text-ink-2">
             <li className="flex gap-2"><span className="text-ink-3">•</span>Only the wallet that created the market can cancel it.</li>
             <li className="flex gap-2"><span className="text-ink-3">•</span>Only while live and before expiry.</li>
+            <li className="flex gap-2"><span className="text-ink-3">•</span>No predictions placed yet — traded markets must resolve normally.</li>
             <li className="flex gap-2"><span className="text-ink-3">•</span>Creator bond (5,000 PRX) is returned on cancel.</li>
             <li className="flex gap-2"><span className="text-ink-3">•</span>Cancellation is final — the market is voided.</li>
           </ul>
@@ -255,13 +267,13 @@ export default function ActionForm({ def }: { def: ActionDef }) {
         {/* Picker */}
         <div>
           <div className="mb-2 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">Your cancellable markets</div>
-          {cancelList.length === 0 ? (
+          {mine.length === 0 ? (
             <div className="rounded-card border border-line bg-bg-2 p-4 font-mono text-[10px] text-ink-3">
               {isFetchingCancel ? "Loading your markets…" : "No live markets created by this wallet."}
             </div>
           ) : (
             <div className="space-y-2">
-              {cancelList.map((mm: any) => {
+              {mine.map((mm: any) => {
                 const isSelected = vals.mid === mm.marketId;
                 const qYes = BigInt(mm.qYes || 0);
                 const qNo = BigInt(mm.qNo || 0);
