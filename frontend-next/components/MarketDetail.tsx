@@ -197,7 +197,7 @@ export default function MarketDetail({ mid }: Props) {
           </div>
 
           {/* tabs */}
-          {holders && <DetailTabs mid={mid} market={market} holders={holders} disputeContext={disputeContext} />}
+          <DetailTabs mid={mid} market={market} holders={holders ?? []} disputeContext={disputeContext} />
 
           {/* timeline & payout */}
           <div className="mb-4 overflow-hidden rounded-card border border-line bg-surface-grad shadow-card">
