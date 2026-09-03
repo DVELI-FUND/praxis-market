@@ -10,11 +10,12 @@ import { showConfirm } from "@/store/confirm";
 import { signAndBroadcast } from "@/lib/broadcast";
 import { TYPE_URLS } from "@/lib/tx";
 import { useToast } from "@/store/toast";
-import { fmtPRX } from "@/lib/format";
+import { fmtPRX, fmtCountdown } from "@/lib/format";
 import ResolverStatusCard from "./ResolverStatusCard";
+import BannerImg from "./BannerImg";
 import UnstakePlanner from "./UnstakePlanner";
 import { b2b64 } from "@/lib/proto";
-import { fetchMarkets, stripCatPrefix, STATUS } from "@/lib/markets";
+import { fetchMarkets, stripCatPrefix, STATUS, yesPct } from "@/lib/markets";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryHeight } from "@/lib/rpc";
 import { normalizeBanner } from "@/lib/img";
@@ -218,6 +219,141 @@ export default function ActionForm({ def }: { def: ActionDef }) {
         <div className="mt-1 font-mono text-[10px] text-ink-3">
           This address is not registered for {def.gate} actions
         </div>
+      </div>
+    );
+  }
+
+  // Premium layout for cancel market
+  if (def.key === "cancel") {
+    const selected = cancelList.find((m: any) => m.marketId === vals.mid);
+
+    return (
+      <div className="space-y-4">
+        {/* Header */}
+        <div className="rounded-card border border-line bg-surface-grad p-5">
+          <div className="mb-1 flex items-center gap-2">
+            <span className="text-ink">⚠</span>
+            <span className="font-display text-[15px] font-bold text-ink">{def.title}</span>
+          </div>
+          <div className="font-mono text-[11px] text-ink-3">{def.sub}</div>
+        </div>
+
+        {/* Rules card */}
+        <div className="rounded-card border border-line bg-bg-2 p-4">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="text-[13px]">⚠</span>
+            <span className="font-display text-[12px] font-bold text-ink">Cancellation rules</span>
+          </div>
+          <ul className="space-y-1.5 font-mono text-[10px] leading-relaxed text-ink-2">
+            <li className="flex gap-2"><span className="text-ink-3">•</span>Only the wallet that created the market can cancel it.</li>
+            <li className="flex gap-2"><span className="text-ink-3">•</span>Only while live and before expiry.</li>
+            <li className="flex gap-2"><span className="text-ink-3">•</span>Creator bond (5,000 PRX) is returned on cancel.</li>
+            <li className="flex gap-2"><span className="text-ink-3">•</span>Cancellation is final — the market is voided.</li>
+          </ul>
+        </div>
+
+        {/* Picker */}
+        <div>
+          <div className="mb-2 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">Your cancellable markets</div>
+          {cancelList.length === 0 ? (
+            <div className="rounded-card border border-line bg-bg-2 p-4 font-mono text-[10px] text-ink-3">
+              {isFetchingCancel ? "Loading your markets…" : "No live markets created by this wallet."}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {cancelList.map((mm: any) => {
+                const isSelected = vals.mid === mm.marketId;
+                const qYes = BigInt(mm.qYes || 0);
+                const qNo = BigInt(mm.qNo || 0);
+                const total = qYes + qNo;
+                const vol = fmtPRX(total);
+                const pct = yesPct(mm);
+                const ends = fmtCountdown(Number(mm.expiry || 0), chChain?.height ?? 0);
+
+                return (
+                  <button
+                    key={mm.marketId}
+                    onClick={() => set("mid", mm.marketId)}
+                    className={`w-full rounded-card border p-3 text-left transition-all ${
+                      isSelected
+                        ? "border-up bg-up/5 shadow-card"
+                        : "border-line bg-bg-2 hover:border-line-2 hover:bg-bg"
+                    }`}
+                  >
+                    <div className="flex gap-3">
+                      <div className="h-14 w-14 shrink-0 overflow-hidden rounded border border-line-2 bg-bg-2">
+                        <BannerImg
+                          rules={mm.rules}
+                          className="h-full w-full object-cover"
+                          fallback={<div className="flex h-full w-full items-center justify-center text-ink-3">📊</div>}
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1 flex items-start gap-2">
+                          <span className={`shrink-0 rounded-full px-2 py-0.5 font-mono text-[8px] font-bold ${
+                            mm.status === STATUS.LIVE ? "bg-up/20 text-up" : "bg-ink-3/20 text-ink-3"
+                          }`}>
+                            {mm.status === STATUS.LIVE ? "LIVE" : "ENDED"}
+                          </span>
+                          <span className="truncate font-display text-[12px] font-semibold text-ink">
+                            {stripCatPrefix(mm.question || mm.rules)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 font-mono text-[10px] text-ink-3">
+                          <span>ends {ends}</span>
+                          {total > 0n && <span>vol {vol}</span>}
+                          <span className="ml-auto text-ink-2">
+                            {pct}% <span className="text-up">YES</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Summary strip */}
+        {selected && (
+          <div className="rounded-card border border-line bg-bg-2 px-4 py-3 font-mono text-[10px] text-ink-2">
+            <div className="flex items-center justify-between">
+              <span>from {(praxisAddress || "").slice(0, 6)}…{(praxisAddress || "").slice(-4)}</span>
+              <span>fee {Number(vals.fee || 10000).toLocaleString()} uPRX</span>
+            </div>
+          </div>
+        )}
+
+        {/* Advanced disclosure */}
+        <details className="rounded-card border border-line bg-bg-2 p-3">
+          <summary className="cursor-pointer font-mono text-[10px] font-bold uppercase tracking-[2px] text-ink-3 hover:text-ink-2">
+            ⚙ Advanced — manual override
+          </summary>
+          <div className="mt-3 space-y-2.5">
+            {def.fields.filter(f => f.type !== "wallet").map((f) => (
+              <div key={f.id}>
+                <label className="mb-1 block font-mono text-[9px] uppercase tracking-[2px] text-ink-3">{f.label}</label>
+                <input
+                  type={f.type === "number" ? "number" : "text"}
+                  value={String(vals[f.id] ?? "")}
+                  onChange={(e) => set(f.id, e.target.value)}
+                  className="w-full rounded border border-line bg-bg px-3 py-2 font-mono text-[11px] text-ink outline-none focus:border-line-2"
+                  placeholder={f.hint}
+                />
+              </div>
+            ))}
+          </div>
+        </details>
+
+        {/* Submit button */}
+        <button
+          onClick={submit}
+          disabled={pending || !vals.mid}
+          className="w-full rounded-card bg-up py-3.5 font-display text-[13px] font-bold text-bg transition-all hover:bg-up/90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {pending ? "Confirming…" : vals.mid ? `Cancel market ${String(vals.mid).slice(0, 6)}…` : "Select a market to cancel"}
+        </button>
       </div>
     );
   }
