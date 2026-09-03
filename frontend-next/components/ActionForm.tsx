@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState , useMemo} from "react";
 import type { ActionDef, Vals } from "@/lib/actions";
 import { datetimeToBlock } from "@/lib/actions";
 import { useWallet } from "@/store/wallet";
@@ -14,6 +14,8 @@ import { fmtPRX } from "@/lib/format";
 import ResolverStatusCard from "./ResolverStatusCard";
 import UnstakePlanner from "./UnstakePlanner";
 import { b2b64 } from "@/lib/proto";
+import { fetchMarkets, stripCatPrefix } from "@/lib/markets";
+import { useQuery } from "@tanstack/react-query";
 import { normalizeBanner } from "@/lib/img";
 import ResolutionPlanner from "./ResolutionPlanner";
 
@@ -83,6 +85,14 @@ export default function ActionForm({ def }: { def: ActionDef }) {
 
   const [payload, setPayload] = useState("");
   const [imgLoaded, setImgLoaded] = useState(false);
+
+  // Cancel Market: live list of THIS wallet's cancellable markets
+  const { data: cancelList = [] } = useQuery({ queryKey: ["markets-cancel"], queryFn: fetchMarkets });
+  const { data: chChain } = useHeight();
+  const mine = useMemo(() => (cancelList || []).filter((mm) => {
+    const cr = String((mm as unknown as { creator?: string }).creator || "").toLowerCase();
+    return cr === String(praxisAddress || "").toLowerCase() && mm.status === 1 && Number(mm.expiry) > (chChain?.height ?? 0);
+  }), [cancelList, praxisAddress, chChain?.height]);
 
   useEffect(() => {
     if (!praxisAddress) return;
@@ -349,6 +359,41 @@ export default function ActionForm({ def }: { def: ActionDef }) {
             <span>Total deducted</span>
             <span className="text-up">{((Number(vals.b0) || 0) + 5000).toLocaleString()} PRX</span>
           </div>
+        </div>
+      )}
+
+      {def.key === "cancel" && (
+        <div className="mb-3 rounded-card border border-line bg-bg-2 p-3 font-mono text-[10px] text-ink-2">
+          <div className="mb-1 font-bold text-ink">Cancellation rules</div>
+          <ul className="list-disc space-y-1 pl-4">
+            <li>Only the wallet that created the market can cancel it.</li>
+            <li>Only while live and before expiry.</li>
+            <li>Creator bond (5,000 PRX) is returned on cancel.</li>
+            <li>Cancellation is final — the market is voided.</li>
+          </ul>
+        </div>
+      )}
+
+      {def.key === "cancel" && (
+        <div className="mb-3">
+          <div className="mb-1.5 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">Your cancellable markets</div>
+          {mine.length === 0 ? (
+            <div className="rounded-card border border-line bg-bg-2 p-3 font-mono text-[10px] text-ink-3">No live markets created by this wallet.</div>
+          ) : (
+            <div className="space-y-1.5">
+              {mine.map((mm) => (
+                <button
+                  key={mm.marketId}
+                  type="button"
+                  onClick={() => set("mid", mm.marketId)}
+                  className={`flex w-full items-center gap-2 rounded-card border px-3 py-2 text-left font-sans text-[11px] transition-colors ${vals.mid === mm.marketId ? "border-up bg-up/10 text-ink" : "border-line bg-bg-2 text-ink-2 hover:border-line-2"}`}
+                >
+                  <span className="min-w-0 flex-1 truncate">{stripCatPrefix(mm.question || mm.rules)}</span>
+                  <span className="shrink-0 font-mono text-[9px] text-amberx">{mm.marketId.slice(0, 6)}…</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
