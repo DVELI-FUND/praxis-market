@@ -14,7 +14,7 @@ import { fmtPRX } from "@/lib/format";
 import ResolverStatusCard from "./ResolverStatusCard";
 import UnstakePlanner from "./UnstakePlanner";
 import { b2b64 } from "@/lib/proto";
-import { fetchMarkets, stripCatPrefix } from "@/lib/markets";
+import { fetchMarkets, stripCatPrefix, STATUS } from "@/lib/markets";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryHeight } from "@/lib/rpc";
 import { normalizeBanner } from "@/lib/img";
@@ -89,11 +89,11 @@ export default function ActionForm({ def }: { def: ActionDef }) {
   const [imgLoaded, setImgLoaded] = useState(false);
 
   // Cancel Market: live list of THIS wallet's cancellable markets
-  const { data: cancelList = [] } = useQuery({ queryKey: ["markets-cancel"], queryFn: fetchMarkets, staleTime: 15000, refetchOnMount: "always" });
+  const { data: cancelList = [], isFetching: isFetchingCancel } = useQuery({ queryKey: ["markets-cancel"], queryFn: fetchMarkets, staleTime: 15000, refetchOnMount: "always" });
   const { data: chChain } = useHeight();
   const mine = useMemo(() => (cancelList || []).filter((mm) => {
     const cr = String((mm as unknown as { creator?: string }).creator || "").toLowerCase();
-    return cr === String(praxisAddress || "").toLowerCase() && mm.status === 1 && Number(mm.expiry) > (chChain?.height ?? 0);
+    return cr === String(praxisAddress || "").toLowerCase() && mm.status === STATUS.LIVE && Number(mm.expiry) > (chChain?.height ?? 0);
   }), [cancelList, praxisAddress, chChain?.height]);
 
   useEffect(() => {
@@ -383,7 +383,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
         <div className="mb-3">
           <div className="mb-1.5 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">Your cancellable markets</div>
           {mine.length === 0 ? (
-            <div className="rounded-card border border-line bg-bg-2 p-3 font-mono text-[10px] text-ink-3">No live markets created by this wallet.</div>
+            <div className="rounded-card border border-line bg-bg-2 p-3 font-mono text-[10px] text-ink-3">{isFetchingCancel ? "Loading your markets…" : "No live markets created by this wallet."}</div>
           ) : (
             <div className="space-y-1.5">
               {mine.map((mm) => (
