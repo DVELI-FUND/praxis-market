@@ -203,7 +203,7 @@ export default function MarketDetail({ mid }: Props) {
           <div className="mb-4 overflow-hidden rounded-card border border-line bg-surface-grad shadow-card">
             <div className="border-b border-line px-4 py-3 font-display text-[13px] font-bold text-ink">Timeline & payout</div>
             <div className="space-y-2 px-4 py-3 font-mono text-[10px] text-ink-2">
-              <div className="flex justify-between gap-3"><span>Trading opened</span><span className="text-right text-ink-3">blk {Number((market as unknown as { openTime?: number }).openTime ?? 0).toLocaleString()} · {blkDate(Number((market as unknown as { openTime?: number }).openTime ?? 0))}</span></div>
+              <div className="flex justify-between gap-3"><span>Trading opened</span><span className="text-right text-ink-3">{(() => { const ob = Number((market as unknown as { openTime?: number }).openTime ?? 0); return ob > 0 ? `blk ${ob.toLocaleString()} · ${blkDate(ob)}` : "—"; })()}</span></div>
               <div className="flex justify-between gap-3"><span>Trading closes</span><span className="text-right text-amberx">blk {Number(market.expiry).toLocaleString()} · {blkDate(Number(market.expiry))}</span></div>
               <div className="flex justify-between gap-3"><span>Resolution</span><span className="text-right text-ink-3">bonded propose → dispute window → finalize</span></div>
               <div className="flex justify-between gap-3"><span>Payout</span><span className="text-right text-up">1 PRX per winning share · losers forfeit</span></div>
