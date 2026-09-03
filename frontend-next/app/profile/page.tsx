@@ -7,7 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { queryAccount } from "@/lib/rpc";
 import { b64ToHex, fmtPRX } from "@/lib/format";
 import { useMarkets } from "@/hooks/useMarkets";
-import { stripCatPrefix, yesPct, extractCat } from "@/lib/markets";
+import { stripCatPrefix, yesPct, extractCat, STATUS } from "@/lib/markets";
 import { ACTIONS } from "@/lib/actions";
 import ActionForm from "@/components/ActionForm";
 import LogoMark from "@/components/LogoMark";
@@ -73,6 +73,14 @@ const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
     for (const p of enriched) acc[p.cat] = (acc[p.cat] || 0n) + p.value;
     return Object.entries(acc).sort((a, b) => Number(b[1] - a[1]));
   }, [enriched]);
+
+  const fmtNum = (big: bigint) => {
+    const str = fmtPRX(big);
+    if (!/^-?\d+(\.\d+)?$/.test(str)) return str;
+    const n = Number(str);
+    const fixed = Math.abs(n) >= 1 ? n.toFixed(2) : n.toFixed(4);
+    return fixed.replace(/\.?0+$/, "");
+  };
 
   const copyAddr = async () => {
     if (!praxisAddress) return;
@@ -245,7 +253,7 @@ const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
                 const pnlPct = costPaid > 0n ? Number((pnl * 10000n) / costPaid) / 100 : 0;
                 const held = pos.sharesYes >= pos.sharesNo ? "YES" : "NO";
                 const shares = pos.sharesYes >= pos.sharesNo ? pos.sharesYes : pos.sharesNo;
-                const status = pos.market.status === 1 ? "LIVE" : "ENDED";
+                const status = pos.market.status === STATUS.LIVE ? "LIVE" : "ENDED";
 
                 return (
                   <a
@@ -276,12 +284,12 @@ const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
                           <span>
                             <b className={held === "YES" ? "text-up" : "text-down"}>{held}</b> {fmtPRX(shares)} shares
                           </span>
-                          <span>Value <b className="text-ink tabular-nums">{fmtPRX(pos.value)}</b></span>
+                          <span>Value <b className="text-ink tabular-nums">{fmtNum(pos.value)}</b></span>
                         </div>
                       </div>
                       <div className="flex shrink-0 flex-col items-end justify-between">
                         <div className={`font-display text-[16px] font-extrabold tabular-nums ${pnl >= 0n ? "text-up" : "text-down"}`}>
-                          {pnl >= 0n ? "+" : ""}{fmtPRX(pnl)}
+                          {pnl >= 0n ? "+" : ""}{fmtNum(pnl)}
                         </div>
                         <div className={`font-mono text-[10px] tabular-nums ${pnl >= 0n ? "text-up" : "text-down"}`}>
                           {pnlPct > 0 ? "+" : ""}{pnlPct.toFixed(1)}%
