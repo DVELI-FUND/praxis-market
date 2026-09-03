@@ -18,7 +18,15 @@ export default function PriceChart({ mid, initialYes, initialNo }: Props) {
   const height = chain?.height ?? 0;
 
   const allPoints = useMemo(() => {
-    let yes = initialYes, no = initialNo;
+    let yesAdd = 0n, noAdd = 0n;
+    for (const t of txs) {
+      if (t.messageType !== "submit_prediction") continue;
+      const sh = BigInt(t.transaction.msg.shares || 0);
+      if (t.transaction.msg.outcome) yesAdd += sh; else noAdd += sh;
+    }
+    let yes = initialYes - yesAdd, no = initialNo - noAdd;
+    if (yes < 0n) yes = 0n;
+    if (no < 0n) no = 0n;
     const hist: { height: number; pct: number }[] = [];
     const trades = [...txs].filter((t) => t.messageType === "submit_prediction").sort((a, b) => a.height - b.height);
     for (const tx of trades) {
@@ -57,7 +65,7 @@ export default function PriceChart({ mid, initialYes, initialNo }: Props) {
             </button>
           ))}
         </div>
-        <div className={`font-display text-[15px] font-extrabold tabular-nums ${up ? "text-up" : "text-down"}`}>{last.toFixed(1)}%</div>
+        <div className={`font-display text-[15px] font-extrabold tabular-nums ${up ? "text-up" : "text-down"}`}>{currentPct.toFixed(1)}%</div>
       </div>
 
       <svg viewBox={`0 0 ${w} ${h}`} className="w-full">
