@@ -134,47 +134,26 @@ export async function fetchDisputeContext(mid: string, addr?: string): Promise<D
 
 // Fetch activity by querying txs-by-sender for top holders, filtering by marketId
 export async function fetchMarketActivity(mid: string, holders: Holder[]): Promise<MarketActivity[]> {
-  const activities: MarketActivity[] = [];
-  const topHolders = holders.slice(0, 5); // Only query top 5 to avoid excessive RPC calls
+  try {
+    const url = getPluginRPC() + `/v1/query/market-txs?market=${encodeURIComponent(mid)}&limit=50`;
+    const resp = await fetch(url);
+    if (!resp.ok) return [];
+    const txs = await resp.json();
 
-  for (const holder of topHolders) {
-    try {
-      const resp = await fetch(`/api/txs-by-sender?address=${encodeURIComponent(holder.address)}`);
-      if (!resp.ok) continue;
-      const data = await resp.json();
-      const txs = data.results || [];
-      for (const tx of txs) {
-        const msg = tx.transaction?.msg || {};
-        const rawMid = msg.marketId || msg.market_id || "";
-        if (!rawMid) continue;
-        
-        // Decode base64 marketId if needed
-        let txMid = rawMid;
-        try {
-          txMid = Array.from(atob(rawMid), (c) => c.charCodeAt(0).toString(16).padStart(2, "0")).join("");
-        } catch {}
-        
-        if (txMid === mid) {
-          activities.push({
-            txHash: tx.txHash || "",
-            sender: tx.sender || "",
-            height: tx.height || 0,
-            messageType: tx.messageType || "unknown",
-            outcome: msg.outcome === true || msg.outcome === "true" || msg.outcome === 1,
-            shares: BigInt(msg.shares || msg.amount || 0),
-            proposedOutcome: msg.proposedOutcome === true || msg.proposedOutcome === "true" || msg.proposedOutcome === 1,
-            b0: BigInt(msg.b0 || 0),
-          });
-        }
-      }
-    } catch {
-      continue;
-    }
+    return txs.map((tx: any) => ({
+      txHash: tx.txHash || "",
+      sender: tx.sender || "",
+      height: tx.height || 0,
+      messageType: tx.messageType || "unknown",
+      outcome: tx.transaction?.msg?.outcome === true || tx.transaction?.msg?.outcome === "true",
+      shares: BigInt(tx.transaction?.msg?.shares || 0),
+      proposedOutcome: tx.transaction?.msg?.proposedOutcome === true || tx.transaction?.msg?.proposedOutcome === "true",
+      b0: BigInt(0),
+      cost: BigInt(tx.cost || 0),
+    }));
+  } catch {
+    return [];
   }
-
-  // Sort by height descending
-  activities.sort((a, b) => b.height - a.height);
-  return activities.slice(0, 20); // Return top 20
 }
 
 export async function fetchPosition(

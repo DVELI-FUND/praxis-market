@@ -1,6 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { useWallet } from "@/store/wallet";
+import { useQueryClient } from "@tanstack/react-query";
 import { useHeight } from "@/hooks/useHeight";
 import { useToast } from "@/store/toast";
 import { showConfirm } from "@/store/confirm";
@@ -8,6 +9,7 @@ import { buildSigned, friendlyError, TYPE_URLS, waitForConfirmation } from "@/li
 import { encPredict } from "@/lib/proto";
 import { submitTxRPC } from "@/lib/rpc";
 import { yesPct } from "@/lib/markets";
+import { fmtPRX } from "@/lib/format";
 import type { MarketDetail } from "@/lib/detail";
 
 interface Props {
@@ -20,6 +22,7 @@ export default function PredictPanel({ market, outcome, onOutcome }: Props) {
   const { status, praxisAddress, privKey, pubKey } = useWallet();
   const { data: chain } = useHeight();
   const toast = useToast((s) => s.show);
+  const queryClient = useQueryClient();
 
   const [shares, setShares] = useState(1);
   const [slip, setSlip] = useState(2);
@@ -63,9 +66,17 @@ export default function PredictPanel({ market, outcome, onOutcome }: Props) {
         fee, height: chain.height, netId: chain.networkId, chainId: chain.chainId,
       });
       const hash = await submitTxRPC(tx);
-      toast("⏳ Broadcasting — confirming in ~25s…");
+      toast("Submitting transaction…");
       const res = await waitForConfirmation(praxisAddress, hash);
-      toast(res.message, !res.ok);
+      if (res.ok) {
+        // Invalidate queries to refresh market state immediately
+        queryClient.invalidateQueries({ queryKey: ["market-txs", market.marketId] });
+        queryClient.invalidateQueries({ queryKey: ["market", market.marketId] });
+        queryClient.invalidateQueries({ queryKey: ["position", market.marketId, praxisAddress] });
+        toast(`✓ Position confirmed: +${fmtPRX(shares)} shares ${outcome ? "YES" : "NO"} @ ${pct}¢`);
+      } else {
+        toast(res.message, true);
+      }
     } catch (e) {
       toast(friendlyError(null, e instanceof Error ? e.message : String(e)), true);
     } finally {
