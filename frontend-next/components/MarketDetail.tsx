@@ -69,8 +69,16 @@ export default function MarketDetail({ mid }: Props) {
         <div>
           {/* icon + title header */}
           <div className="mb-4 flex items-start gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-card border border-line-2 bg-surface text-ink">
-              <LogoMark className="h-7 w-7" />
+            <div className="h-12 w-12 shrink-0 overflow-hidden rounded-card border border-line-2 bg-surface text-ink">
+              <BannerImg
+                rules={market.rules}
+                className="h-full w-full object-cover"
+                fallback={
+                  <div className="flex h-full w-full items-center justify-center">
+                    <LogoMark className="h-7 w-7" />
+                  </div>
+                }
+              />
             </div>
             <div className="min-w-0 flex-1">
               <div className="mb-2 flex items-center gap-2">
