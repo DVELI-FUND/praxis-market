@@ -292,7 +292,7 @@ const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
                           {pnl >= 0n ? "+" : ""}{fmtNum(pnl)}
                         </div>
                         <div className={`font-mono text-[10px] tabular-nums ${pnl >= 0n ? "text-up" : "text-down"}`}>
-                          {pnlPct > 0 ? "+" : ""}{pnlPct.toFixed(1)}%
+                          {pnlPct > 0 ? "+" : ""}{pnlPct.toFixed(1) === "-0.0" ? pnlPct.toFixed(2) : pnlPct.toFixed(1)}%
                         </div>
                       </div>
                     </div>
@@ -328,7 +328,7 @@ const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
                           const pnl = p.value - BigInt(Math.round(Number(p.costPaid || 0)));
                           return pnl > acc.pnl ? { pnl, name: p.market?.question || "?" } : acc;
                         }, { pnl: 0n, name: "?" });
-                        return `${best.pnl > 0n ? "+" : ""}${fmtPRX(best.pnl)}`;
+                        return `${best.pnl > 0n ? "+" : ""}${fmtNum(best.pnl)}`;
                       })()}
                     </div>
                   </div>
@@ -340,7 +340,7 @@ const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
                           const pnl = p.value - BigInt(Math.round(Number(p.costPaid || 0)));
                           return pnl < acc.pnl ? { pnl, name: p.market?.question || "?" } : acc;
                         }, { pnl: 0n, name: "?" });
-                        return `${fmtPRX(worst.pnl)}`;
+                        return `${fmtNum(worst.pnl)}`;
                       })()}
                     </div>
                   </div>
