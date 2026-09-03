@@ -11,6 +11,7 @@ import { stripCatPrefix, yesPct, extractCat } from "@/lib/markets";
 import { ACTIONS } from "@/lib/actions";
 import ActionForm from "@/components/ActionForm";
 import LogoMark from "@/components/LogoMark";
+import BannerImg from "@/components/BannerImg";
 import WalletPill from "@/components/WalletPill";
 
 interface Position {
@@ -41,6 +42,7 @@ export default function ProfilePage() {
   const { data: markets = [] } = useMarkets();
   const [panel, setPanel] = useState<"" | "send" | "receive">("");
   const [copied, setCopied] = useState(false);
+  const [tab, setTab] = useState<"positions" | "stats">("positions");
 
   const { data: balance = 0n } = useQuery({
     queryKey: ["balance", praxisAddress],
@@ -208,41 +210,141 @@ const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
         )}
       </div>
 
-      {/* positions table */}
-      <div className="overflow-hidden rounded-card border border-line bg-surface-grad shadow-card">
-        <div className="border-b border-line px-4 py-3">
-          <div className="font-display text-[14px] font-bold text-ink">Positions</div>
+      {/* tabs */}
+      <div className="mb-6">
+        <div className="mb-4 flex gap-2">
+          <button
+            onClick={() => setTab("positions")}
+            className={`rounded-pill px-4 py-2 font-mono text-[11px] font-bold transition-colors ${
+              tab === "positions" ? "bg-up text-black" : "bg-surface-grad text-ink-2 hover:text-ink"
+            }`}
+          >
+            Positions ({enriched.length})
+          </button>
+          <button
+            onClick={() => setTab("stats")}
+            className={`rounded-pill px-4 py-2 font-mono text-[11px] font-bold transition-colors ${
+              tab === "stats" ? "bg-up text-black" : "bg-surface-grad text-ink-2 hover:text-ink"
+            }`}
+          >
+            Stats
+          </button>
         </div>
-        {enriched.length === 0 ? (
-          <div className="px-4 py-10 text-center font-mono text-[10px] text-ink-3">
-            No positions yet — trade a market to get started
+
+        {tab === "positions" && (
+          <div className="space-y-3">
+            {enriched.length === 0 ? (
+              <div className="rounded-card border border-line bg-surface-grad p-10 text-center shadow-card">
+                <div className="font-mono text-[10px] text-ink-3">No positions yet — trade a market to get started</div>
+              </div>
+            ) : (
+              enriched.map((pos) => {
+                if (!pos.market) return null;
+                const costPaid = BigInt(Math.round(Number(pos.costPaid || 0)));
+                const pnl = pos.value - costPaid;
+                const pnlPct = costPaid > 0n ? Number((pnl * 10000n) / costPaid) / 100 : 0;
+                const held = pos.sharesYes >= pos.sharesNo ? "YES" : "NO";
+                const shares = pos.sharesYes >= pos.sharesNo ? pos.sharesYes : pos.sharesNo;
+                const status = pos.market.status === 1 ? "LIVE" : "ENDED";
+
+                return (
+                  <a
+                    key={pos.marketId}
+                    href={`/market/${pos.marketId}`}
+                    className="block rounded-card border border-line bg-surface-grad p-4 shadow-card transition-all hover:border-line-2 hover:shadow-card-hover"
+                  >
+                    <div className="flex gap-3">
+                      <div className="h-16 w-16 shrink-0 overflow-hidden rounded-card border border-line-2 bg-bg-2">
+                        <BannerImg
+                          rules={pos.market.rules}
+                          className="h-full w-full object-cover"
+                          fallback={<div className="flex h-full w-full items-center justify-center text-ink-3">📊</div>}
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1 flex items-start gap-2">
+                          <span className={`shrink-0 rounded-full px-2 py-0.5 font-mono text-[8px] font-bold ${
+                            status === "LIVE" ? "bg-up/20 text-up" : "bg-ink-3/20 text-ink-3"
+                          }`}>
+                            {status}
+                          </span>
+                          <span className="line-clamp-2 font-display text-[13px] font-semibold text-ink">
+                            {stripCatPrefix(pos.market.question || pos.market.rules || "")}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-4 font-mono text-[10px] text-ink-3">
+                          <span>
+                            <b className={held === "YES" ? "text-up" : "text-down"}>{held}</b> {fmtPRX(shares)} shares
+                          </span>
+                          <span>Value <b className="text-ink tabular-nums">{fmtPRX(pos.value)}</b></span>
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 flex-col items-end justify-between">
+                        <div className={`font-display text-[16px] font-extrabold tabular-nums ${pnl >= 0n ? "text-up" : "text-down"}`}>
+                          {pnl >= 0n ? "+" : ""}{fmtPRX(pnl)}
+                        </div>
+                        <div className={`font-mono text-[10px] tabular-nums ${pnl >= 0n ? "text-up" : "text-down"}`}>
+                          {pnlPct > 0 ? "+" : ""}{pnlPct.toFixed(1)}%
+                        </div>
+                      </div>
+                    </div>
+                  </a>
+                );
+              })
+            )}
           </div>
-        ) : (
-          <div>
-            <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 border-b border-line px-4 py-2.5 font-mono text-[8px] uppercase tracking-[1.5px] text-ink-3">
-              <span>Market</span>
-              <span className="w-[70px] text-right">YES</span>
-              <span className="w-[70px] text-right">NO</span>
-              <span className="w-[80px] text-right">Value</span>
-              <span className="w-[70px] text-right">PnL</span>
-            </div>
-            {enriched.map((pos) => {
-              if (!pos.market) return null;
-              const pnl = pos.value - pos.costPaid;
-              const pnlColor = pnl >= 0n ? "text-up" : "text-down";
-              return (
-                <a key={pos.marketId} href={`/market/${pos.marketId}`} className="grid grid-cols-[1fr_auto_auto_auto_auto] items-center gap-4 border-b border-line/50 px-4 py-3 transition-colors last:border-b-0 hover:bg-surface-2">
-                  <div className="min-w-0">
-                    <div className="line-clamp-1 font-sans text-[12px] font-semibold text-ink">{stripCatPrefix(pos.market.question || pos.market.rules || "")}</div>
-                    <div className="mt-0.5 font-mono text-[9px] text-ink-3">{pos.marketId.slice(0, 10)}…</div>
+        )}
+
+        {tab === "stats" && (
+          <div className="space-y-3">
+            {enriched.length === 0 ? (
+              <div className="rounded-card border border-line bg-surface-grad p-10 text-center shadow-card">
+                <div className="font-mono text-[10px] text-ink-3">No stats yet — trade a market to see performance</div>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                  <div className="rounded-card border border-line bg-surface-grad p-4 shadow-card">
+                    <div className="font-mono text-[9px] uppercase tracking-[2px] text-ink-3">Positions</div>
+                    <div className="mt-1 font-display text-[20px] font-extrabold text-ink tabular-nums">{enriched.length}</div>
                   </div>
-                  <span className="w-[70px] text-right font-mono text-[10px] text-up tabular-nums">{fmtPRX(pos.sharesYes)}</span>
-                  <span className="w-[70px] text-right font-mono text-[10px] text-down tabular-nums">{fmtPRX(pos.sharesNo)}</span>
-                  <span className="w-[80px] text-right font-mono text-[10px] text-ink tabular-nums">{fmtPRX(pos.value)}</span>
-                  <span className={`w-[70px] text-right font-mono text-[10px] ${pnlColor} tabular-nums`}>{pnl >= 0n ? "+" : ""}{fmtPRX(pnl)}</span>
-                </a>
-              );
-            })}
+                  <div className="rounded-card border border-line bg-surface-grad p-4 shadow-card">
+                    <div className="font-mono text-[9px] uppercase tracking-[2px] text-ink-3">Total Value</div>
+                    <div className="mt-1 font-display text-[20px] font-extrabold text-up tabular-nums">{fmtPRX(positionsValue)}</div>
+                  </div>
+                  <div className="rounded-card border border-line bg-surface-grad p-4 shadow-card">
+                    <div className="font-mono text-[9px] uppercase tracking-[2px] text-ink-3">Best Performer</div>
+                    <div className="mt-1 font-display text-[20px] font-extrabold text-up tabular-nums">
+                      {(() => {
+                        const best = enriched.reduce((acc, p) => {
+                          const pnl = p.value - BigInt(Math.round(Number(p.costPaid || 0)));
+                          return pnl > acc.pnl ? { pnl, name: p.market?.question || "?" } : acc;
+                        }, { pnl: 0n, name: "?" });
+                        return `${best.pnl > 0n ? "+" : ""}${fmtPRX(best.pnl)}`;
+                      })()}
+                    </div>
+                  </div>
+                  <div className="rounded-card border border-line bg-surface-grad p-4 shadow-card">
+                    <div className="font-mono text-[9px] uppercase tracking-[2px] text-ink-3">Worst Performer</div>
+                    <div className="mt-1 font-display text-[20px] font-extrabold text-down tabular-nums">
+                      {(() => {
+                        const worst = enriched.reduce((acc, p) => {
+                          const pnl = p.value - BigInt(Math.round(Number(p.costPaid || 0)));
+                          return pnl < acc.pnl ? { pnl, name: p.market?.question || "?" } : acc;
+                        }, { pnl: 0n, name: "?" });
+                        return `${fmtPRX(worst.pnl)}`;
+                      })()}
+                    </div>
+                  </div>
+                </div>
+                <div className="rounded-card border border-line bg-surface-grad p-4 shadow-card">
+                  <div className="mb-3 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">Avg Position Size</div>
+                  <div className="font-display text-[24px] font-extrabold text-ink tabular-nums">
+                    {fmtPRX(positionsValue / BigInt(enriched.length || 1))}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>
