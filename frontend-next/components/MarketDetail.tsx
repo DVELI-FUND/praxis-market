@@ -40,6 +40,33 @@ export default function MarketDetail({ mid }: Props) {
     });
   };
 
+  const { data: txs = [] } = useMarketTxs(mid);
+  const { data: mkq = [] } = useQuery({ queryKey: ["markets-related"], queryFn: fetchMarkets });
+  const allMarkets = (mkq ?? []) as Market[];
+  const chain2 = chain;
+  const chg = useMemo(() => {
+    if (!market) return 0;
+    const height = chain2?.height ?? 0;
+    const trades = [...txs].filter((t) => t.messageType === "submit_prediction").sort((a, b) => a.height - b.height);
+    let yesAdd = 0n, noAdd = 0n;
+    for (const t of trades) { const sh = BigInt(t.transaction?.msg?.shares || 0); if (t.transaction?.msg?.outcome) yesAdd += sh; else noAdd += sh; }
+    let yes = market.qYes - yesAdd, no = market.qNo - noAdd;
+    if (yes < 0n) yes = 0n;
+    if (no < 0n) no = 0n;
+    const minH = Math.max(0, height - 17280);
+    let pct24 = yes + no > 0n ? Number((yes * 10000n) / (yes + no)) / 100 : 50;
+    for (const t of trades) {
+      const sh = BigInt(t.transaction?.msg?.shares || 0);
+      if (t.transaction?.msg?.outcome) yes += sh; else no += sh;
+      if (t.height <= minH && yes + no > 0n) pct24 = Number((yes * 10000n) / (yes + no)) / 100;
+    }
+    const pct = yesPct(market);
+    return Math.round((pct - pct24) * 10) / 10;
+  }, [txs, market, chain2?.height]);
+  const fmtChg = (v: number) => (v > 0 ? `▲ ${v.toFixed(1)}%` : v < 0 ? `▼ ${Math.abs(v).toFixed(1)}%` : "— 0.0%");
+  const blkDate = (b: number) => new Date(Date.now() + (b - (chain2?.height ?? 0)) * 5000).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  const related = useMemo(() => allMarkets.filter((m2) => m2.marketId !== mid && m2.status === STATUS.LIVE).slice(0, 3), [allMarkets, mid]);
+
   if (isLoading) {
     return (
       <div className="animate-pulse space-y-4">
@@ -55,30 +82,7 @@ export default function MarketDetail({ mid }: Props) {
   }
 
   const pct = yesPct(market);
-  const { data: txs = [] } = useMarketTxs(mid);
-  const { data: mkq = [] } = useQuery({ queryKey: ["markets-related"], queryFn: fetchMarkets });
-  const allMarkets = (mkq ?? []) as Market[];
-  const chain2 = chain;
-  const chg = useMemo(() => {
-    const height = chain2?.height ?? 0;
-    const trades = [...txs].filter((t) => t.messageType === "submit_prediction").sort((a, b) => a.height - b.height);
-    let yesAdd = 0n, noAdd = 0n;
-    for (const t of trades) { const sh = BigInt(t.transaction?.msg?.shares || 0); if (t.transaction?.msg?.outcome) yesAdd += sh; else noAdd += sh; }
-    let yes = market.qYes - yesAdd, no = market.qNo - noAdd;
-    if (yes < 0n) yes = 0n;
-    if (no < 0n) no = 0n;
-    const minH = Math.max(0, height - 17280);
-    let pct24 = yes + no > 0n ? Number((yes * 10000n) / (yes + no)) / 100 : 50;
-    for (const t of trades) {
-      const sh = BigInt(t.transaction?.msg?.shares || 0);
-      if (t.transaction?.msg?.outcome) yes += sh; else no += sh;
-      if (t.height <= minH && yes + no > 0n) pct24 = Number((yes * 10000n) / (yes + no)) / 100;
-    }
-    return Math.round((pct - pct24) * 10) / 10;
-  }, [txs, market, chain2?.height, pct]);
-  const fmtChg = (v: number) => (v > 0 ? `▲ ${v.toFixed(1)}%` : v < 0 ? `▼ ${Math.abs(v).toFixed(1)}%` : "— 0.0%");
-  const blkDate = (b: number) => new Date(Date.now() + (b - (chain2?.height ?? 0)) * 5000).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-  const related = useMemo(() => allMarkets.filter((m2) => m2.marketId !== mid && m2.status === STATUS.LIVE).slice(0, 3), [allMarkets, mid]);
+
   const noPct = 100 - pct;
   const total = market.qYes + market.qNo;
   const vol = total > 0n ? fmtPRX(total) : "—";
