@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState , useMemo} from "react";
 import Link from "next/link";
 import { useMarketDetail } from "@/hooks/useMarketDetail";
 import { useHeight } from "@/hooks/useHeight";
@@ -10,6 +10,9 @@ import ShareButton from "./ShareButton";
 import DetailTabs from "./DetailTabs";
 import BannerImg from "./BannerImg";
 import PriceChart from "./PriceChart";
+import { useMarketTxs } from "@/lib/txHistory";
+import { fetchMarkets, type Market } from "@/lib/markets";
+import { useQuery } from "@tanstack/react-query";
 import PredictPanel from "./PredictPanel";
 import PositionCard from "./PositionCard";
 import LogoMark from "./LogoMark";
@@ -52,6 +55,30 @@ export default function MarketDetail({ mid }: Props) {
   }
 
   const pct = yesPct(market);
+  const { data: txs = [] } = useMarketTxs(mid);
+  const { data: mkq = [] } = useQuery({ queryKey: ["markets-related"], queryFn: fetchMarkets });
+  const allMarkets = (mkq ?? []) as Market[];
+  const chain2 = chain;
+  const chg = useMemo(() => {
+    const height = chain2?.height ?? 0;
+    const trades = [...txs].filter((t) => t.messageType === "submit_prediction").sort((a, b) => a.height - b.height);
+    let yesAdd = 0n, noAdd = 0n;
+    for (const t of trades) { const sh = BigInt(t.transaction?.msg?.shares || 0); if (t.transaction?.msg?.outcome) yesAdd += sh; else noAdd += sh; }
+    let yes = market.qYes - yesAdd, no = market.qNo - noAdd;
+    if (yes < 0n) yes = 0n;
+    if (no < 0n) no = 0n;
+    const minH = Math.max(0, height - 17280);
+    let pct24 = yes + no > 0n ? Number((yes * 10000n) / (yes + no)) / 100 : 50;
+    for (const t of trades) {
+      const sh = BigInt(t.transaction?.msg?.shares || 0);
+      if (t.transaction?.msg?.outcome) yes += sh; else no += sh;
+      if (t.height <= minH && yes + no > 0n) pct24 = Number((yes * 10000n) / (yes + no)) / 100;
+    }
+    return Math.round((pct - pct24) * 10) / 10;
+  }, [txs, market, chain2?.height, pct]);
+  const fmtChg = (v: number) => (v > 0 ? `▲ ${v.toFixed(1)}%` : v < 0 ? `▼ ${Math.abs(v).toFixed(1)}%` : "— 0.0%");
+  const blkDate = (b: number) => new Date(Date.now() + (b - (chain2?.height ?? 0)) * 5000).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  const related = useMemo(() => allMarkets.filter((m2) => m2.marketId !== mid && m2.status === STATUS.LIVE).slice(0, 3), [allMarkets, mid]);
   const noPct = 100 - pct;
   const total = market.qYes + market.qNo;
   const vol = total > 0n ? fmtPRX(total) : "—";
@@ -125,7 +152,7 @@ export default function MarketDetail({ mid }: Props) {
                 <span className="font-display text-[14px] font-bold text-ink">YES</span>
               </div>
               <div className="w-[80px] text-right font-display text-[18px] font-extrabold text-up tabular-nums">{pct}%</div>
-              <div className="w-[80px] text-right font-mono text-[11px] text-up tabular-nums">+0.0%</div>
+              <div className={`w-[80px] text-right font-mono text-[11px] tabular-nums ${chg > 0 ? "text-up" : chg < 0 ? "text-down" : "text-ink-3"}`}>{fmtChg(chg)}</div>
               <div className="w-[120px] text-right">
                 <button onClick={() => setOutcome(true)} className="rounded-card bg-up px-4 py-1.5 font-sans text-[11px] font-extrabold text-black transition-all hover:brightness-110">Buy YES</button>
               </div>
@@ -136,7 +163,7 @@ export default function MarketDetail({ mid }: Props) {
                 <span className="font-display text-[14px] font-bold text-ink">NO</span>
               </div>
               <div className="w-[80px] text-right font-display text-[18px] font-extrabold text-down tabular-nums">{noPct}%</div>
-              <div className="w-[80px] text-right font-mono text-[11px] text-down tabular-nums">+0.0%</div>
+              <div className={`w-[80px] text-right font-mono text-[11px] tabular-nums ${chg < 0 ? "text-up" : chg > 0 ? "text-down" : "text-ink-3"}`}>{fmtChg(-chg)}</div>
               <div className="w-[120px] text-right">
                 <button onClick={() => setOutcome(false)} className="rounded-card bg-down px-4 py-1.5 font-sans text-[11px] font-extrabold text-black transition-all hover:brightness-110">Buy NO</button>
               </div>
@@ -167,6 +194,35 @@ export default function MarketDetail({ mid }: Props) {
 
           {/* tabs */}
           {holders && <DetailTabs mid={mid} market={market} holders={holders} disputeContext={disputeContext} />}
+
+          {/* timeline & payout */}
+          <div className="mb-4 overflow-hidden rounded-card border border-line bg-surface-grad shadow-card">
+            <div className="border-b border-line px-4 py-3 font-display text-[13px] font-bold text-ink">Timeline & payout</div>
+            <div className="space-y-2 px-4 py-3 font-mono text-[10px] text-ink-2">
+              <div className="flex justify-between gap-3"><span>Trading opened</span><span className="text-right text-ink-3">blk {Number((market as unknown as { openTime?: number }).openTime ?? 0).toLocaleString()} · {blkDate(Number((market as unknown as { openTime?: number }).openTime ?? 0))}</span></div>
+              <div className="flex justify-between gap-3"><span>Trading closes</span><span className="text-right text-amberx">blk {Number(market.expiry).toLocaleString()} · {blkDate(Number(market.expiry))}</span></div>
+              <div className="flex justify-between gap-3"><span>Resolution</span><span className="text-right text-ink-3">bonded propose → dispute window → finalize</span></div>
+              <div className="flex justify-between gap-3"><span>Payout</span><span className="text-right text-up">1 PRX per winning share · losers forfeit</span></div>
+            </div>
+          </div>
+
+          {/* people are also trading */}
+          {related.length > 0 && (
+            <div className="mb-4">
+              <div className="mb-2 font-display text-[13px] font-bold text-ink">People are also trading</div>
+              <div className="space-y-1.5">
+                {related.map((rm) => (
+                  <Link key={rm.marketId} href={`/market/${rm.marketId}`} className="flex items-center gap-3 rounded-card border border-line bg-surface px-3 py-2 transition-colors hover:border-line-2">
+                    <div className="h-9 w-9 shrink-0 overflow-hidden rounded-card border border-line bg-surface-2">
+                      <BannerImg rules={rm.rules} className="h-full w-full object-cover" fallback={<div className="flex h-full w-full items-center justify-center text-[14px] text-ink-2">◈</div>} />
+                    </div>
+                    <div className="min-w-0 flex-1 truncate font-sans text-[12px] font-semibold text-ink">{stripCatPrefix(rm.question || rm.rules)}</div>
+                    <div className="font-display text-[13px] font-extrabold text-up tabular-nums">{yesPct(rm)}%</div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
 
           <FaqSection pct={pct} ends={fmtCountdown(Number(market.expiry), chain?.height ?? 0)} />
         </div>

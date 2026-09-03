@@ -30,6 +30,10 @@ export default function HoldersTab({ holders }: { holders: Holder[] }) {
           {rows.map((r, i) => (
             <div key={r.addr} className="flex items-center gap-3 rounded-card border border-line bg-bg-2 px-3 py-2">
               <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-mono text-[9px] font-bold ${i < 3 ? MEDAL[i] : "bg-surface-3 text-ink-3"}`}>{i + 1}</span>
+              <span
+                className="h-6 w-6 shrink-0 rounded-full border border-line"
+                style={{ background: `conic-gradient(from 0deg, hsl(${(parseInt(r.addr.slice(2, 6), 16) || 0) % 360} 70% 45%), hsl(${(parseInt(r.addr.slice(6, 10), 16) || 0) % 360} 70% 35%), hsl(${(parseInt(r.addr.slice(2, 6), 16) || 0) % 360} 70% 45%))` }}
+              />
               <span className="min-w-0 flex-1 truncate font-mono text-[10px] text-ink-2">{r.addr.slice(0, 10)}…{r.addr.slice(-4)}</span>
               <span className={`font-mono text-[11px] font-bold tabular-nums ${side === "yes" ? "text-up" : "text-down"}`}>{fmtPRX(r.amt)}</span>
             </div>
