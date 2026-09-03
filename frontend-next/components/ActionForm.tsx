@@ -15,7 +15,7 @@ import ResolverStatusCard from "./ResolverStatusCard";
 import UnstakePlanner from "./UnstakePlanner";
 import { b2b64 } from "@/lib/proto";
 import { fetchMarkets, stripCatPrefix } from "@/lib/markets";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { normalizeBanner } from "@/lib/img";
 import ResolutionPlanner from "./ResolutionPlanner";
 
@@ -45,6 +45,7 @@ function validateField(def: ActionDef, v: Vals): string | null {
 
 export default function ActionForm({ def }: { def: ActionDef }) {
   const { status, praxisAddress, privKey, pubKey } = useWallet();
+  const queryClient = useQueryClient();
   const { data: chain } = useHeight();
   const roles = useRoles();
   const myResolver = useMyResolver();
@@ -87,7 +88,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
   const [imgLoaded, setImgLoaded] = useState(false);
 
   // Cancel Market: live list of THIS wallet's cancellable markets
-  const { data: cancelList = [] } = useQuery({ queryKey: ["markets-cancel"], queryFn: fetchMarkets });
+  const { data: cancelList = [] } = useQuery({ queryKey: ["markets-cancel"], queryFn: fetchMarkets, staleTime: 15000, refetchOnMount: "always" });
   const { data: chChain } = useHeight();
   const mine = useMemo(() => (cancelList || []).filter((mm) => {
     const cr = String((mm as unknown as { creator?: string }).creator || "").toLowerCase();
@@ -161,6 +162,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
     setPending(true);
     try {
       const inner = def.build(vals, { wallet: praxisAddress, height: chain.height });
+      queryClient.invalidateQueries({ queryKey: ["markets-cancel"] });
       await signAndBroadcast({
         privKey,
         pubKey,
