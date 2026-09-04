@@ -1,13 +1,14 @@
 "use client";
 import Link from "next/link";
 import { useUi } from "@/store/ui";
+import { useWallet } from "@/store/wallet";
 import { useRoles } from "@/lib/roles";
 import LogoMark from "./LogoMark";
 import ThemeToggle from "./ThemeToggle";
 import WalletPill from "./WalletPill";
 
 type Badge = "RESOLVER" | "ADMIN" | null;
-interface NavItem { href: string; label: string; icon: string; badge?: Badge }
+interface NavItem { href: string; label: string; icon: string; badge?: Badge; gate?: "connected" | "resolver" | "creator" | "admin" }
 interface NavSection { name: string; items: NavItem[] }
 
 const SECTIONS: NavSection[] = [
@@ -15,18 +16,18 @@ const SECTIONS: NavSection[] = [
     name: "Markets",
     items: [
       { href: "/", label: "Browse Markets", icon: "◈" },
-      { href: "/action/claim", label: "Claim Winnings", icon: "◎" },
-      { href: "/action/reclaim", label: "Reclaim Stake", icon: "◍" },
+      { href: "/action/claim", label: "Claim Winnings", icon: "◎" , gate: "connected"},
+      { href: "/action/reclaim", label: "Reclaim Stake", icon: "◍" , gate: "connected"},
       { href: "/resolvers", label: "Browse Resolvers", icon: "◉" },
-      { href: "/action/claimcreator", label: "Claim Creator Fee", icon: "◔" },
-      { href: "/action/cancel", label: "Cancel Market", icon: "✕" },
+      { href: "/action/claimcreator", label: "Claim Creator Fee", icon: "◔" , gate: "connected"},
+      { href: "/action/cancel", label: "Cancel Market", icon: "✕" , gate: "creator"},
     ],
   },
   {
     name: "Rewards",
     items: [
-      { href: "/rewards/resolver", label: "Resolver Rewards", icon: "", badge: "RESOLVER" },
-      { href: "/rewards/builder", label: "Builder Rewards", icon: "◎", badge: "ADMIN" },
+      { href: "/rewards/resolver", label: "Resolver Rewards", icon: "", badge: "RESOLVER" , gate: "resolver"},
+      { href: "/rewards/builder", label: "Builder Rewards", icon: "◎", badge: "ADMIN" , gate: "admin"},
       { href: "/rewards/community", label: "Community Rewards", icon: "◉" },
       { href: "/rewards/investor", label: "Investor Rewards", icon: "◆" },
       { href: "/rewards/protocol", label: "Protocol Rewards", icon: "◐" },
@@ -36,25 +37,26 @@ const SECTIONS: NavSection[] = [
     name: "Account",
     items: [
       { href: "/profile", label: "Profile", icon: "◫" },
-      { href: "/action/register", label: "Register", icon: "◈", badge: "RESOLVER" },
-      { href: "/action/forfeit", label: "Forfeit Position", icon: "↩", badge: "RESOLVER" },
-      { href: "/action/propose", label: "Propose Outcome", icon: "⚖", badge: "RESOLVER" },
-      { href: "/action/dispute", label: "File Dispute", icon: "⚠", badge: "RESOLVER" },
-      { href: "/action/commit", label: "Commit Vote", icon: "◌", badge: "RESOLVER" },
-      { href: "/action/reveal", label: "Reveal Vote", icon: "○", badge: "RESOLVER" },
-      { href: "/action/tally", label: "Tally Votes", icon: "≡", badge: "RESOLVER" },
-      { href: "/action/slash", label: "Claim Slash", icon: "◈", badge: "RESOLVER" },
-      { href: "/action/unstake", label: "Unstake Resolver", icon: "↓", badge: "RESOLVER" },
-      { href: "/action/claimunbonded", label: "Claim Unbonded", icon: "◎", badge: "RESOLVER" },
-      { href: "/action/create", label: "Create Market", icon: "+", badge: "ADMIN" },
-      { href: "/action/finalize", label: "Finalize Market", icon: "✓", badge: "ADMIN" },
-      { href: "/settings", label: "Settings", icon: "⚙", badge: "ADMIN" },
+      { href: "/action/register", label: "Register", icon: "◈", badge: "RESOLVER" , gate: "connected"},
+      { href: "/action/forfeit", label: "Forfeit Position", icon: "↩", badge: "RESOLVER" , gate: "resolver"},
+      { href: "/action/propose", label: "Propose Outcome", icon: "⚖", badge: "RESOLVER" , gate: "resolver"},
+      { href: "/action/dispute", label: "File Dispute", icon: "⚠", badge: "RESOLVER" , gate: "resolver"},
+      { href: "/action/commit", label: "Commit Vote", icon: "◌", badge: "RESOLVER" , gate: "resolver"},
+      { href: "/action/reveal", label: "Reveal Vote", icon: "○", badge: "RESOLVER" , gate: "resolver"},
+      { href: "/action/tally", label: "Tally Votes", icon: "≡", badge: "RESOLVER" , gate: "resolver"},
+      { href: "/action/slash", label: "Claim Slash", icon: "◈", badge: "RESOLVER" , gate: "resolver"},
+      { href: "/action/unstake", label: "Unstake Resolver", icon: "↓", badge: "RESOLVER" , gate: "resolver"},
+      { href: "/action/claimunbonded", label: "Claim Unbonded", icon: "◎", badge: "RESOLVER" , gate: "resolver"},
+      { href: "/action/create", label: "Create Market", icon: "+", badge: "ADMIN" , gate: "creator"},
+      { href: "/action/finalize", label: "Finalize Market", icon: "✓", badge: "ADMIN" , gate: "admin"},
+      { href: "/settings", label: "Settings", icon: "⚙", badge: "ADMIN" , gate: "admin"},
     ],
   },
 ];
 
 function BadgeChip({ kind }: { kind: Badge }) {
   if (!kind) return null;
+
   return (
     <span
       className={`ml-auto rounded border px-1.5 py-0.5 font-mono text-[7px] tracking-[1px] ${
@@ -72,6 +74,17 @@ export default function MoreSheet() {
   const open = useUi((s) => s.moreOpen);
   const setMore = useUi((s) => s.setMore);
   const roles = useRoles();
+  const { status } = useWallet();
+  const connected = status === "connected" || status === "drift";
+  const canSee = (gate?: NavItem["gate"]) => {
+    if (!gate) return true;
+    if (gate === "connected") return connected;
+    if (gate === "resolver") return roles.isResolver || roles.isAdmin;
+    if (gate === "creator") return roles.isCreator || roles.isAdmin;
+    if (gate === "admin") return roles.isAdmin || roles.isCreator;
+    return true;
+  };
+  const visibleSections = SECTIONS.map((sec) => ({ ...sec, items: sec.items.filter((i) => canSee(i.gate)) })).filter((sec) => sec.items.length > 0);
 
   if (!open) return null;
 
@@ -99,7 +112,7 @@ export default function MoreSheet() {
           <WalletPill />
         </div>
 
-        {SECTIONS.map((sec) => (
+        {visibleSections.map((sec) => (
           <div key={sec.name} className="mb-4">
             <div className="mb-1.5 font-mono text-[8px] uppercase tracking-[3px] text-ink-3">{sec.name}</div>
             <div className="space-y-1">
