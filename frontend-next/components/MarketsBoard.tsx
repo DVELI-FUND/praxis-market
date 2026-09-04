@@ -187,7 +187,7 @@ export default function MarketsBoard() {
         </div>
       ) : visible.length === 0 ? (
         <div className="rounded-card border border-amberx/30 bg-amberx/5 p-4 font-mono text-[11px] text-amberx">
-          {cat !== "all" ? "No markets in this category" : EMPTY_LABELS[tab]}
+          {emptyLabel}
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
