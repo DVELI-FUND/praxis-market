@@ -19,13 +19,16 @@ export default function HomeSidebar() {
 
   const highVolume = useMemo(() => {
     return [...markets]
-      .filter((m) => m.qYes + m.qNo > 0n)
+      .filter((m) => (m.status === STATUS.LIVE || m.status === STATUS.PROPOSED) && m.qYes + m.qNo > 0n)
       .sort((a, b) => Number((b.qYes + b.qNo) - (a.qYes + a.qNo)))
       .slice(0, 3);
   }, [markets]);
 
   const newMarkets = useMemo(() => {
-    return [...markets].slice(0, 3);
+    return [...markets]
+      .filter((m) => m.status === STATUS.LIVE || m.status === STATUS.PROPOSED)
+      .sort((a, b) => b.openTime - a.openTime)
+      .slice(0, 3);
   }, [markets]);
 
   const RailCard = ({ title, items, accent }: { title: string; items: typeof markets; accent: string }) => (
