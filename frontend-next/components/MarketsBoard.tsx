@@ -154,8 +154,32 @@ export default function MarketsBoard() {
 
       {/* grid / states */}
       {isLoading && markets.length === 0 ? (
-        <div className="py-10 text-center font-mono text-[11px] text-ink-3">
-          <span className="animate-pulseDot">▪ ▪ ▪</span>&nbsp;&nbsp;loading markets
+        <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="rounded-card border border-line bg-surface-grad p-3.5">
+              {/* Banner skeleton */}
+              <div className="mb-3 aspect-[16/5] w-full rounded border border-line bg-line/30 animate-pulseDot" />
+              {/* Question skeleton */}
+              <div className="mb-2 space-y-1.5">
+                <div className="h-3 w-3/4 rounded bg-line/30 animate-pulseDot" />
+                <div className="h-3 w-1/2 rounded bg-line/30 animate-pulseDot" />
+              </div>
+              {/* Status pill skeleton */}
+              <div className="mb-3 flex items-center gap-2">
+                <div className="h-5 w-12 rounded-pill bg-line/30 animate-pulseDot" />
+                <div className="h-5 w-16 rounded-pill bg-line/30 animate-pulseDot" />
+              </div>
+              {/* YES/NO bars skeleton */}
+              <div className="mb-3">
+                <div className="h-6 w-full rounded bg-line/30 animate-pulseDot" />
+              </div>
+              {/* Bottom info skeleton */}
+              <div className="flex items-center justify-between">
+                <div className="h-3 w-20 rounded bg-line/30 animate-pulseDot" />
+                <div className="h-3 w-16 rounded bg-line/30 animate-pulseDot" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : isError ? (
         <div className="rounded-card border border-down/40 bg-down-dim p-4 font-mono text-[11px] text-down">
