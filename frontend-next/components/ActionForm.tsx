@@ -91,6 +91,59 @@ export default function ActionForm({ def }: { def: ActionDef }) {
 
   // Cancel Market: live list of THIS wallet's cancellable markets
   const { data: cancelList = [], isFetching: isFetchingCancel } = useQuery({ queryKey: ["markets-cancel"], queryFn: fetchMarkets, staleTime: 15000, refetchOnMount: "always" });
+
+  // Claim Winnings: finalized markets where this wallet holds winning shares
+  const { data: positionsForClaim = [] as { marketId: string; sharesYes: bigint; sharesNo: bigint }[] } = useQuery({
+    queryKey: ["positions-claim", praxisAddress],
+    queryFn: async () => {
+      if (!praxisAddress) return [];
+      const r = await fetch(`https://prax.val-a.grad.dev.app.canopynetwork.org/plugin/v1/query/positions?address=${encodeURIComponent(praxisAddress)}`);
+      if (!r.ok) return [];
+      const raw = await r.json();
+      return (raw.positions || []).map((p: any) => ({
+        marketId: String(p.marketId || p.market_id || ""),
+        sharesYes: BigInt(p.sharesYes || p.shares_yes || 0),
+        sharesNo: BigInt(p.sharesNo || p.shares_no || 0),
+      }));
+    },
+    enabled: !!praxisAddress,
+    staleTime: 15000,
+  });
+
+  const { data: finalizedMarkets = [] as { marketId: string; question: string; rules: string; status: number; outcome: boolean | null; finalizedPoolAmount: bigint }[] } = useQuery({
+    queryKey: ["markets-finalized"],
+    queryFn: async () => {
+      const r = await fetch("https://prax.val-a.grad.dev.app.canopynetwork.org/plugin/v1/query/markets");
+      if (!r.ok) return [];
+      const raw = await r.json();
+      return raw.filter((m: any) => m.market?.status === 6).map((m: any) => ({
+        marketId: m.id,
+        question: m.market?.question || "",
+        rules: m.market?.rules || "",
+        status: m.market?.status || 0,
+        outcome: m.market?.outcome,
+        finalizedPoolAmount: BigInt(m.market?.finalized_pool_amount || 0),
+      }));
+    },
+    staleTime: 15000,
+  });
+
+  const claimable = useMemo(() => {
+    type ClaimItem = { marketId: string; sharesYes: bigint; sharesNo: bigint; market: { marketId: string; question: string; rules: string; status: number; outcome: boolean | null; finalizedPoolAmount: bigint }; held: string; shares: bigint; winning: string | null; payout: bigint };
+    return positionsForClaim
+      .map((pos: { marketId: string; sharesYes: bigint; sharesNo: bigint }) => {
+        const mkt = finalizedMarkets.find((fm: { marketId: string }) => fm.marketId === pos.marketId);
+        if (!mkt) return null;
+        const held = pos.sharesYes >= pos.sharesNo ? "YES" : "NO";
+        const shares = pos.sharesYes >= pos.sharesNo ? pos.sharesYes : pos.sharesNo;
+        const winning = mkt.outcome === true ? "YES" : mkt.outcome === false ? "NO" : null;
+        if (winning && held === winning && shares > 0n) {
+          return { ...pos, market: mkt, held, shares, winning, payout: shares } as ClaimItem;
+        }
+        return null;
+      })
+      .filter(Boolean) as Array<{ marketId: string; sharesYes: bigint; sharesNo: bigint; market: any; held: string; shares: bigint; winning: string; payout: bigint }>;
+  }, [positionsForClaim, finalizedMarkets]);
   const { data: rawMarkets = [] } = useQuery({
     queryKey: ["markets-raw-cancel"],
     queryFn: async () => { const r = await fetch(getPluginRPC() + "/v1/query/markets"); if (!r.ok) return []; return r.json(); },
@@ -235,6 +288,140 @@ export default function ActionForm({ def }: { def: ActionDef }) {
   }
 
   // Premium layout for cancel market
+  
+  // Premium layout for claim winnings
+  if (def.key === "claim") {
+    const selected = claimable.find((c: any) => c.marketId === vals.mid);
+
+    return (
+      <div className="space-y-4">
+        {/* Header */}
+        <div className="rounded-card border border-line bg-surface-grad p-5">
+          <div className="mb-1 flex items-center gap-2">
+            <span className="text-ink">💰</span>
+            <span className="font-display text-[15px] font-bold text-ink">{def.title}</span>
+          </div>
+          <div className="font-mono text-[11px] text-ink-3">{def.sub}</div>
+        </div>
+
+        {/* Rules card */}
+        <div className="rounded-card border border-line bg-bg-2 p-4">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="text-[13px]">💰</span>
+            <span className="font-display text-[12px] font-bold text-ink">Claim rules</span>
+          </div>
+          <ul className="space-y-1.5 font-mono text-[10px] leading-relaxed text-ink-2">
+            <li className="flex gap-2"><span className="text-ink-3">•</span>Only finalized markets with winning shares can be claimed.</li>
+            <li className="flex gap-2"><span className="text-ink-3">•</span>Payout = winning shares × 1 PRX per share.</li>
+            <li className="flex gap-2"><span className="text-ink-3">•</span>Losers forfeit their shares to the finalized pool.</li>
+            <li className="flex gap-2"><span className="text-ink-3">•</span>Claim any time after finalization — no deadline.</li>
+          </ul>
+        </div>
+
+        {/* Picker */}
+        <div>
+          <div className="mb-2 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">Your claimable winnings</div>
+          {claimable.length === 0 ? (
+            <div className="rounded-card border border-line bg-bg-2 p-4 font-mono text-[10px] text-ink-3">
+              No finalized markets with winning shares yet.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {claimable.map((c: any) => {
+                const isSelected = vals.mid === c.marketId;
+                return (
+                  <button
+                    key={c.marketId}
+                    onClick={() => set("mid", c.marketId)}
+                    className={`w-full rounded-card border p-3 text-left transition-all ${
+                      isSelected
+                        ? "border-up bg-up/5 shadow-card"
+                        : "border-line bg-bg-2 hover:border-line-2 hover:bg-bg"
+                    }`}
+                  >
+                    <div className="flex gap-3">
+                      <div className="h-14 w-14 shrink-0 overflow-hidden rounded border border-line-2 bg-bg-2">
+                        <BannerImg
+                          rules={c.market.rules}
+                          className="h-full w-full object-cover"
+                          fallback={<div className="flex h-full w-full items-center justify-center text-ink-3">📊</div>}
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1 flex items-start gap-2">
+                          <span className="shrink-0 rounded-full bg-ink-3/20 px-2 py-0.5 font-mono text-[8px] font-bold text-ink-3">
+                            FINALIZED
+                          </span>
+                          <span className="truncate font-display text-[12px] font-semibold text-ink">
+                            {stripCatPrefix(c.market.question || c.market.rules)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 font-mono text-[10px] text-ink-3">
+                          <span>
+                            held <b className={c.held === "YES" ? "text-up" : "text-down"}>{c.held}</b> {fmtPRX(c.shares)} shares
+                          </span>
+                          <span>
+                            winner <b className={c.winning === "YES" ? "text-up" : "text-down"}>{c.winning}</b>
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 flex-col items-end justify-center">
+                        <div className="font-mono text-[9px] text-ink-3">est. payout</div>
+                        <div className="font-display text-[14px] font-extrabold text-up tabular-nums">
+                          {fmtPRX(c.payout)} PRX
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Summary strip */}
+        {selected && (
+          <div className="rounded-card border border-line bg-bg-2 px-4 py-3 font-mono text-[10px] text-ink-2">
+            <div className="flex items-center justify-between">
+              <span>claim {fmtPRX(selected.payout)} PRX</span>
+              <span>fee {Number(vals.fee || 10000).toLocaleString()} uPRX</span>
+            </div>
+          </div>
+        )}
+
+        {/* Advanced disclosure */}
+        <details className="rounded-card border border-line bg-bg-2 p-3">
+          <summary className="cursor-pointer font-mono text-[10px] font-bold uppercase tracking-[2px] text-ink-3 hover:text-ink-2">
+            ⚙ Advanced — manual override
+          </summary>
+          <div className="mt-3 space-y-2.5">
+            {def.fields.filter(f => f.type !== "wallet").map((f) => (
+              <div key={f.id}>
+                <label className="mb-1 block font-mono text-[9px] uppercase tracking-[2px] text-ink-3">{f.label}</label>
+                <input
+                  type={f.type === "number" ? "number" : "text"}
+                  value={String(vals[f.id] ?? "")}
+                  onChange={(e) => set(f.id, e.target.value)}
+                  className="w-full rounded border border-line bg-bg px-3 py-2 font-mono text-[11px] text-ink outline-none focus:border-line-2"
+                  placeholder={f.hint}
+                />
+              </div>
+            ))}
+          </div>
+        </details>
+
+        {/* Submit button */}
+        <button
+          onClick={submit}
+          disabled={pending || !vals.mid}
+          className="w-full rounded-card bg-up py-3.5 font-display text-[13px] font-bold text-bg transition-all hover:bg-up/90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {pending ? "Confirming…" : vals.mid ? `Claim ${selected ? fmtPRX(selected.payout) : ""} PRX` : "Select a market to claim"}
+        </button>
+      </div>
+    );
+  }
+
   if (def.key === "cancel") {
     const selected = cancelList.find((m: any) => m.marketId === vals.mid);
 
