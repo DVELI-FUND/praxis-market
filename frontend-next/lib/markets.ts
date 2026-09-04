@@ -25,6 +25,8 @@ export interface Market {
   status: number;
   qYes: bigint;
   qNo: bigint;
+  openTime: number;
+  txCount: number;
 }
 
 interface RawMarketEntry {
@@ -38,6 +40,8 @@ interface RawMarketEntry {
     rules?: string;
     creator?: string;
     b_eff?: string | number;
+    open_time?: string | number;
+    tx_count?: string | number;
   };
 }
 
@@ -80,6 +84,8 @@ export async function fetchMarkets(): Promise<Market[]> {
       status,
       qYes,
       qNo,
+      openTime: Number(mk.open_time || 0),
+      txCount: Number(mk.tx_count || 0),
     };
   });
 }
@@ -114,7 +120,7 @@ export const CAT_EMOJI: Record<string, string> = {
 };
 
 export type TabKey = "live" | "proposed" | "closed";
-export type SortKey = "vol" | "new" | "expiry" | "yes";
+export type SortKey = "vol" | "expiry" | "yes" | "newest" | "closing" | "trending" | "competitive" | "totalVol";
 
 // Tab filters — matches the live legacy inline override in index.html.
 export function filterByTab(markets: Market[], tab: TabKey): Market[] {
@@ -140,15 +146,23 @@ export function sortMarkets(markets: Market[], sort: SortKey): Market[] {
   const arr = [...markets];
   if (sort === "vol") {
     arr.sort((a, b) => Number(b.qYes + b.qNo - (a.qYes + a.qNo)));
-  } else if (sort === "expiry") {
+  } else if (sort === "expiry" || sort === "closing") {
     arr.sort((a, b) => Number(a.expiry - b.expiry));
   } else if (sort === "yes") {
     arr.sort((a, b) => yesPct(b) - yesPct(a));
+  } else if (sort === "newest") {
+    arr.sort((a, b) => b.openTime - a.openTime);
+  } else if (sort === "trending") {
+    arr.sort((a, b) => b.txCount - a.txCount);
+  } else if (sort === "competitive") {
+    arr.sort((a, b) => Math.abs(50 - yesPct(a)) - Math.abs(50 - yesPct(b)));
+  } else if (sort === "totalVol") {
+    arr.sort((a, b) => Number(b.b0 - a.b0));
   }
   return arr;
 }
 
-export function yesPct(m: Market): number {
+export function yesPct(m: { qYes: bigint; qNo: bigint }): number {
   const total = m.qYes + m.qNo;
   return total > 0n ? Number((m.qYes * 100n) / total) : 50;
 }
