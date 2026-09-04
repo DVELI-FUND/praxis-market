@@ -229,6 +229,7 @@ ACTIONS.claim_builder = {
 ACTIONS.claim_community = {
   key: "claim_community",
   msgType: "claim_community_reward",
+  gate: "admin",
   title: "Claim Community Reward",
   eye: "Rewards",
   sub: "Earn 20% of fees for community contributions",
@@ -239,6 +240,7 @@ ACTIONS.claim_community = {
 ACTIONS.claim_investor = {
   key: "claim_investor",
   msgType: "claim_investor_reward",
+  gate: "admin",
   title: "Claim Investor Reward",
   eye: "Rewards",
   sub: "Earn 20% of fees as an early investor",
@@ -249,6 +251,7 @@ ACTIONS.claim_investor = {
 ACTIONS.claim_protocol = {
   key: "claim_protocol",
   msgType: "claim_protocol_reward",
+  gate: "admin",
   title: "Claim Protocol Reward",
   eye: "Rewards",
   sub: "Earn 20% of fees for protocol governance",
