@@ -59,6 +59,13 @@ export default function MarketsBoard() {
     return sortMarkets(list, sort);
   }, [markets, tab, cat, sort]);
 
+  const emptyLabel =
+    tab === "live"
+      ? cat === "all"
+        ? "No live markets yet"
+        : `No live ${cat} markets yet`
+      : EMPTY_LABELS[tab];
+
   const liveCount = useMemo(() => markets.filter((m) => m.status === STATUS.LIVE).length, [markets]);
   const totalVolume = useMemo(() => markets.reduce<bigint>((s, m) => s + m.qYes + m.qNo, 0n), [markets]);
 
