@@ -28,9 +28,9 @@ const SECTIONS: NavSection[] = [
     items: [
       { href: "/rewards/resolver", label: "Resolver Rewards", icon: "", badge: "RESOLVER" , gate: "resolver"},
       { href: "/rewards/builder", label: "Builder Rewards", icon: "◎", badge: "ADMIN" , gate: "admin"},
-      { href: "/rewards/community", label: "Community Rewards", icon: "◉" },
-      { href: "/rewards/investor", label: "Investor Rewards", icon: "◆" },
-      { href: "/rewards/protocol", label: "Protocol Rewards", icon: "◐" },
+      { href: "/rewards/community", label: "Community Rewards", icon: "◉" , gate: "admin"},
+      { href: "/rewards/investor", label: "Investor Rewards", icon: "◆" , gate: "admin"},
+      { href: "/rewards/protocol", label: "Protocol Rewards", icon: "◐" , gate: "admin"},
     ],
   },
   {
