@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useWallet } from "@/store/wallet";
 import { useHeight } from "@/hooks/useHeight";
 import { useMyResolver, tierOf } from "@/lib/resolvers";
+import { useRoles } from "@/lib/roles";
 
 const PH12_CANARY = "PRAXIS-NEXT-PH12";
 
@@ -16,6 +17,7 @@ const POOLS: { pool: string; icon: string; name: string; share: string; desc: st
 
 export default function RewardsPage() {
   const { praxisAddress } = useWallet();
+  const roles = useRoles();
   const { data: chain } = useHeight();
   const myResolver = useMyResolver();
   const currentEpoch = chain?.height ? Math.floor(chain.height / 1000) : 0;
@@ -30,7 +32,13 @@ export default function RewardsPage() {
         <p className="mt-1 text-[13px] text-ink-2">5 pools × 20% of fees — claim per completed epoch</p>
       </div>
 
-      {!praxisAddress ? (
+      {!roles.hasAnyRole ? (
+        <div className="rounded-card border border-line bg-surface p-10 text-center">
+          <div className="mb-3 text-ink-3">🔒</div>
+          <div className="mb-1 font-display text-[16px] font-bold text-ink">Restricted Access</div>
+          <div className="font-mono text-[11px] text-ink-3">Rewards are earned by resolvers and protocol admins.</div>
+        </div>
+      ) : !praxisAddress ? (
         <div className="rounded-card border border-line bg-surface p-6 text-center font-mono text-[11px] text-ink-3">
           Connect wallet to claim rewards
         </div>

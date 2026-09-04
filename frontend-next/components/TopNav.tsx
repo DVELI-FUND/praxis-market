@@ -5,6 +5,7 @@ import WalletPill from "./WalletPill";
 import ThemeToggle from "./ThemeToggle";
 import LogoMark from "./LogoMark";
 import { useUi } from "@/store/ui";
+import { useRoles } from "@/lib/roles";
 
 const LINKS = [
   { href: "/", label: "Markets" },
@@ -16,6 +17,7 @@ const LINKS = [
 
 export default function TopNav() {
   const pathname = usePathname();
+  const roles = useRoles();
   return (
     <header className="sticky top-0 z-[190] hidden border-b border-line/60 bg-bg/85 backdrop-blur-xl md:block">
       <div className="mx-auto flex h-14 max-w-[1280px] items-center gap-4 px-5">
@@ -29,7 +31,7 @@ export default function TopNav() {
 
         {/* links */}
         <nav className="flex min-w-0 items-center gap-0.5">
-          {LINKS.map((l) => (
+          {LINKS.filter((l) => l.href === "/rewards" ? roles.hasAnyRole : true).map((l) => (
             <Link
               key={l.href}
               href={l.href}
