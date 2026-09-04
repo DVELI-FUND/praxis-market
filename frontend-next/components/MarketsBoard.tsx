@@ -132,11 +132,14 @@ export default function MarketsBoard() {
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value as SortKey)}
-            className="max-w-[90px] appearance-none bg-transparent p-0 font-mono text-[9px] text-inherit outline-none"
+            className="rounded-card border border-line bg-surface-grad px-3 py-1.5 font-mono text-[10px] text-ink-2 outline-none focus:border-line-2"
           >
             <option value="vol">24H Volume</option>
-            <option value="new">Newest</option>
-            <option value="expiry">Expiring Soon</option>
+            <option value="totalVol">Total Volume</option>
+            <option value="newest">Newest</option>
+            <option value="closing">Expiring Soon</option>
+            <option value="trending">Trending</option>
+            <option value="competitive">Competitive</option>
             <option value="yes">Highest YES</option>
           </select>
         </label>
