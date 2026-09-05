@@ -31,6 +31,14 @@ export default function InfoTab({ market, disputeContext }: Props) {
           <div className="font-mono text-[11px] text-up">{disputeContext.proposal.resolverAddr}</div>
         </div>
       )}
+      {disputeContext?.proposal && (
+        <div>
+          <div className="mb-1 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">Proposed Outcome</div>
+          <div className={`font-mono text-[11px] font-bold ${disputeContext.proposal.proposedOutcome ? "text-up" : "text-down"}`}>
+            {disputeContext.proposal.proposedOutcome ? "YES" : "NO"}
+          </div>
+        </div>
+      )}
       {disputeContext?.disputeWindow?.open && (
         <div>
           <div className="mb-1 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">Dispute Window</div>
