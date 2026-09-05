@@ -116,8 +116,9 @@ return &PluginDeliverResponse{Error: ErrInsufficientFunds()}
 }
 
 creator.Amount -= totalCost
-feePool.Amount   += fee / 2
-	gTreasury.Amount += fee - fee/2
+feeSplit := ComputeBps(fee, TX_TREASURY_SPLIT_BPS)
+feePool.Amount   += feeSplit
+gTreasury.Amount += fee - feeSplit
 
 	// Item-14: spam cap
 	if openCount.Amount >= MAX_OPEN_MARKETS_PER_CREATOR {

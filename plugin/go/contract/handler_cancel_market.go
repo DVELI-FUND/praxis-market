@@ -155,8 +155,9 @@ creatorFee.Amount   = 0
 resolverFee.Amount  = 0
 
 // TX fee split 50/50
-feePool.Amount    += fee / 2
-gTreasury.Amount  += fee - fee/2
+feeSplit := ComputeBps(fee, TX_TREASURY_SPLIT_BPS)
+feePool.Amount   += feeSplit
+gTreasury.Amount += fee - feeSplit
 
 // Decrement open market counter
 	if openCount.Amount > 0 {

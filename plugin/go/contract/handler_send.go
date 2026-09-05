@@ -90,8 +90,9 @@ if from.Amount < fee {
 return &PluginDeliverResponse{Error: ErrInsufficientFunds()}
 }
 from.Amount -= fee
-feePool.Amount   += fee / 2
-	gTreasury.Amount += fee - fee/2
+feeSplit := ComputeBps(fee, TX_TREASURY_SPLIT_BPS)
+feePool.Amount   += feeSplit
+gTreasury.Amount += fee - feeSplit
 
 rawFrom, pe := SafeMarshal(from)
 if pe != nil {
@@ -138,8 +139,9 @@ return &PluginDeliverResponse{Error: ErrInsufficientFunds()}
 
 from.Amount    -= totalDeduct
 to.Amount      += msg.Amount
-feePool.Amount   += fee / 2
-	gTreasury.Amount += fee - fee/2
+feeSplit := ComputeBps(fee, TX_TREASURY_SPLIT_BPS)
+feePool.Amount   += feeSplit
+gTreasury.Amount += fee - feeSplit
 
 rawFrom, pe := SafeMarshal(from)
 if pe != nil {

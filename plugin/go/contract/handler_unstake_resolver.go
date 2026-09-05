@@ -132,8 +132,9 @@ if acc.Amount < fee {
 	return &PluginDeliverResponse{Error: ErrInsufficientFunds()}
 }
 acc.Amount -= fee
-feePool.Amount += fee / 2
-gTreasury.Amount += fee - fee/2
+feeSplit := ComputeBps(fee, TX_TREASURY_SPLIT_BPS)
+feePool.Amount   += feeSplit
+gTreasury.Amount += fee - feeSplit
 
 // ── Marshal ───────────────────────────────────────────────────────────
 rawRec, pe := SafeMarshal(record)

@@ -226,8 +226,9 @@ return &PluginDeliverResponse{Error: ErrInsufficientPanelCandidates()}
 
 market.Status    = STATUS_DISPUTED
 disputer.Amount -= totalCost
-feePool.Amount   += fee / 2
-treasyPool.Amount += fee / 2
+feeSplit := ComputeBps(fee, TX_TREASURY_SPLIT_BPS)
+feePool.Amount    += feeSplit
+treasyPool.Amount += fee - feeSplit
 
 dispute := &DisputeRecord{
 DisputerAddress: msg.DisputerAddress,

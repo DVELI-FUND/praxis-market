@@ -91,8 +91,9 @@ return &PluginDeliverResponse{Error: ErrInsufficientFunds()}
 }
 
 account.Amount -= totalCost
-feePool.Amount  += fee / 2
-	gTreasury.Amount += fee - fee/2
+feeSplit := ComputeBps(fee, TX_TREASURY_SPLIT_BPS)
+feePool.Amount   += feeSplit
+gTreasury.Amount += fee - feeSplit
 
 var record *ResolverRecord
 if existing != nil {

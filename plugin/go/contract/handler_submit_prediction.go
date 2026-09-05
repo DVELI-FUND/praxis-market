@@ -166,8 +166,9 @@ isNewPosition := position.SharesYes == 0 && position.SharesNo == 0 && position.C
 
 bettor.Amount      -= finalCost
 mPool.Amount       += tradeCost
-feePool.Amount     += fee / 2
-	gTreasury.Amount   += fee - fee/2
+feeSplit := ComputeBps(fee, TX_TREASURY_SPLIT_BPS)
+feePool.Amount   += feeSplit
+gTreasury.Amount += fee - feeSplit
 creatorFee.Amount  += creatorFeeAmt
 resolverFee.Amount += resolverFeeAmt
 
