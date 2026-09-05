@@ -109,6 +109,53 @@ return append(append([]byte{}, prefix...), addr...)
 }
 
 func (c *Contract) Genesis(req *PluginGenesisRequest) *PluginGenesisResponse {
+liqQId := nextQueryId()
+resp, err := c.plugin.StateRead(c, &PluginStateReadRequest{
+Keys: []*PluginKeyRead{
+{QueryId: liqQId, Key: KeyForAccount(PRAXIS_LIQUIDITY_SEED_ADDR)},
+},
+})
+if err != nil {
+return &PluginGenesisResponse{Error: err}
+}
+if resp.Error != nil {
+return &PluginGenesisResponse{Error: resp.Error}
+}
+
+liqAcc := &Account{Address: PRAXIS_LIQUIDITY_SEED_ADDR}
+for _, r := range resp.Results {
+if r.QueryId == liqQId && len(r.Entries) > 0 && len(r.Entries[0].Value) > 0 {
+if pe := Unmarshal(r.Entries[0].Value, liqAcc); pe != nil {
+return &PluginGenesisResponse{Error: pe}
+}
+}
+}
+liqAcc.Amount += GENESIS_LIQUIDITY_AMOUNT
+
+communityAlloc := &Pool{Amount: GENESIS_COMMUNITY_AMOUNT}
+investorAlloc := &GenesisVestingAlloc{TotalAllocation: GENESIS_INVESTOR_AMOUNT, StartHeight: 0}
+foundationAlloc := &GenesisVestingAlloc{TotalAllocation: GENESIS_FOUNDATION_AMOUNT, StartHeight: 0}
+
+rawLiq, pe := SafeMarshal(liqAcc)
+if pe != nil { return &PluginGenesisResponse{Error: pe} }
+rawCommunity, pe := SafeMarshal(communityAlloc)
+if pe != nil { return &PluginGenesisResponse{Error: pe} }
+rawInvestor, pe := SafeMarshal(investorAlloc)
+if pe != nil { return &PluginGenesisResponse{Error: pe} }
+rawFoundation, pe := SafeMarshal(foundationAlloc)
+if pe != nil { return &PluginGenesisResponse{Error: pe} }
+
+wr, werr := c.plugin.StateWrite(c, &PluginStateWriteRequest{
+Sets: []*PluginSetOp{
+{Key: KeyForAccount(PRAXIS_LIQUIDITY_SEED_ADDR), Value: rawLiq},
+{Key: KeyForGenesisCommunityAlloc(),              Value: rawCommunity},
+{Key: KeyForGenesisInvestorAlloc(),               Value: rawInvestor},
+{Key: KeyForGenesisFoundationAlloc(),             Value: rawFoundation},
+},
+})
+if pe := errCheckWrite(wr, werr); pe != nil {
+return &PluginGenesisResponse{Error: pe}
+}
 return &PluginGenesisResponse{}
 }
 
@@ -207,6 +254,12 @@ case *MessageCancelMarket:
 return c.CheckMessageCancelMarket(m)
 case *MessageClaimUnbondedStake:
 return c.CheckMessageClaimUnbondedStake(m)
+case *MessageClaimGenesisInvestorAlloc:
+return c.CheckMessageClaimGenesisInvestorAlloc(m)
+case *MessageClaimGenesisFoundationAlloc:
+return c.CheckMessageClaimGenesisFoundationAlloc(m)
+case *MessageClaimGenesisCommunityAlloc:
+return c.CheckMessageClaimGenesisCommunityAlloc(m)
 default:
 return &PluginCheckResponse{Error: ErrInvalidMessageCast()}
 }
@@ -265,6 +318,12 @@ case *MessageCancelMarket:
 return c.DeliverMessageCancelMarket(m, fee, req.TxHash)
 case *MessageClaimUnbondedStake:
 return c.DeliverMessageClaimUnbondedStake(m, fee)
+case *MessageClaimGenesisInvestorAlloc:
+return c.DeliverMessageClaimGenesisInvestorAlloc(m, fee)
+case *MessageClaimGenesisFoundationAlloc:
+return c.DeliverMessageClaimGenesisFoundationAlloc(m, fee)
+case *MessageClaimGenesisCommunityAlloc:
+return c.DeliverMessageClaimGenesisCommunityAlloc(m, fee)
 default:
 return &PluginDeliverResponse{Error: ErrInvalidMessageCast()}
 }

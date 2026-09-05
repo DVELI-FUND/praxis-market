@@ -329,3 +329,7 @@ return &PluginError{Code: 207, Module: errModule, Msg: "resolver RRS score is ze
 func ErrNoResolutions() *PluginError {
 return &PluginError{Code: 208, Module: errModule, Msg: "no successful resolutions in this epoch"}
 }
+
+func ErrNothingVested() *PluginError {
+return &PluginError{Code: 219, Module: errModule, Msg: "no newly vested tokens available to claim yet"}
+}

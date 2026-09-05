@@ -303,3 +303,18 @@ message MarketIndex {
 message GlobalStats {
   uint64 total_weighted_resolutions = 1;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GENESIS ALLOCATION (one-time, minted via Genesis() hook — see keys 0x2E-0x30)
+// ─────────────────────────────────────────────────────────────────────────────
+message GenesisVestingAlloc {
+  uint64 total_allocation = 1;
+  uint64 claimed_amount   = 2;
+  uint64 start_height     = 3;
+}
+
+message MessageClaimGenesisInvestorAlloc {}
+
+message MessageClaimGenesisFoundationAlloc {}
+
+message MessageClaimGenesisCommunityAlloc {}

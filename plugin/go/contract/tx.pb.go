@@ -2717,6 +2717,177 @@ func (x *GlobalStats) GetTotalWeightedResolutions() uint64 {
 	return 0
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// GENESIS ALLOCATION (one-time, minted via Genesis() hook — see keys 0x2E-0x30)
+// ─────────────────────────────────────────────────────────────────────────────
+type GenesisVestingAlloc struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	TotalAllocation uint64                 `protobuf:"varint,1,opt,name=total_allocation,json=totalAllocation,proto3" json:"total_allocation,omitempty"`
+	ClaimedAmount   uint64                 `protobuf:"varint,2,opt,name=claimed_amount,json=claimedAmount,proto3" json:"claimed_amount,omitempty"`
+	StartHeight     uint64                 `protobuf:"varint,3,opt,name=start_height,json=startHeight,proto3" json:"start_height,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *GenesisVestingAlloc) Reset() {
+	*x = GenesisVestingAlloc{}
+	mi := &file_tx_proto_msgTypes[44]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GenesisVestingAlloc) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GenesisVestingAlloc) ProtoMessage() {}
+
+func (x *GenesisVestingAlloc) ProtoReflect() protoreflect.Message {
+	mi := &file_tx_proto_msgTypes[44]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GenesisVestingAlloc.ProtoReflect.Descriptor instead.
+func (*GenesisVestingAlloc) Descriptor() ([]byte, []int) {
+	return file_tx_proto_rawDescGZIP(), []int{44}
+}
+
+func (x *GenesisVestingAlloc) GetTotalAllocation() uint64 {
+	if x != nil {
+		return x.TotalAllocation
+	}
+	return 0
+}
+
+func (x *GenesisVestingAlloc) GetClaimedAmount() uint64 {
+	if x != nil {
+		return x.ClaimedAmount
+	}
+	return 0
+}
+
+func (x *GenesisVestingAlloc) GetStartHeight() uint64 {
+	if x != nil {
+		return x.StartHeight
+	}
+	return 0
+}
+
+type MessageClaimGenesisInvestorAlloc struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MessageClaimGenesisInvestorAlloc) Reset() {
+	*x = MessageClaimGenesisInvestorAlloc{}
+	mi := &file_tx_proto_msgTypes[45]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MessageClaimGenesisInvestorAlloc) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MessageClaimGenesisInvestorAlloc) ProtoMessage() {}
+
+func (x *MessageClaimGenesisInvestorAlloc) ProtoReflect() protoreflect.Message {
+	mi := &file_tx_proto_msgTypes[45]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MessageClaimGenesisInvestorAlloc.ProtoReflect.Descriptor instead.
+func (*MessageClaimGenesisInvestorAlloc) Descriptor() ([]byte, []int) {
+	return file_tx_proto_rawDescGZIP(), []int{45}
+}
+
+type MessageClaimGenesisFoundationAlloc struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MessageClaimGenesisFoundationAlloc) Reset() {
+	*x = MessageClaimGenesisFoundationAlloc{}
+	mi := &file_tx_proto_msgTypes[46]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MessageClaimGenesisFoundationAlloc) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MessageClaimGenesisFoundationAlloc) ProtoMessage() {}
+
+func (x *MessageClaimGenesisFoundationAlloc) ProtoReflect() protoreflect.Message {
+	mi := &file_tx_proto_msgTypes[46]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MessageClaimGenesisFoundationAlloc.ProtoReflect.Descriptor instead.
+func (*MessageClaimGenesisFoundationAlloc) Descriptor() ([]byte, []int) {
+	return file_tx_proto_rawDescGZIP(), []int{46}
+}
+
+type MessageClaimGenesisCommunityAlloc struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MessageClaimGenesisCommunityAlloc) Reset() {
+	*x = MessageClaimGenesisCommunityAlloc{}
+	mi := &file_tx_proto_msgTypes[47]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MessageClaimGenesisCommunityAlloc) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MessageClaimGenesisCommunityAlloc) ProtoMessage() {}
+
+func (x *MessageClaimGenesisCommunityAlloc) ProtoReflect() protoreflect.Message {
+	mi := &file_tx_proto_msgTypes[47]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MessageClaimGenesisCommunityAlloc.ProtoReflect.Descriptor instead.
+func (*MessageClaimGenesisCommunityAlloc) Descriptor() ([]byte, []int) {
+	return file_tx_proto_rawDescGZIP(), []int{47}
+}
+
 var File_tx_proto protoreflect.FileDescriptor
 
 const file_tx_proto_rawDesc = "" +
@@ -2924,7 +3095,14 @@ const file_tx_proto_rawDesc = "" +
 	"\n" +
 	"market_ids\x18\x01 \x03(\fR\tmarketIds\"K\n" +
 	"\vGlobalStats\x12<\n" +
-	"\x1atotal_weighted_resolutions\x18\x01 \x01(\x04R\x18totalWeightedResolutionsB5Z3github.com/canopy-network/canopy/plugin/go/contractb\x06proto3"
+	"\x1atotal_weighted_resolutions\x18\x01 \x01(\x04R\x18totalWeightedResolutions\"\x8a\x01\n" +
+	"\x13GenesisVestingAlloc\x12)\n" +
+	"\x10total_allocation\x18\x01 \x01(\x04R\x0ftotalAllocation\x12%\n" +
+	"\x0eclaimed_amount\x18\x02 \x01(\x04R\rclaimedAmount\x12!\n" +
+	"\fstart_height\x18\x03 \x01(\x04R\vstartHeight\"\"\n" +
+	" MessageClaimGenesisInvestorAlloc\"$\n" +
+	"\"MessageClaimGenesisFoundationAlloc\"#\n" +
+	"!MessageClaimGenesisCommunityAllocB5Z3github.com/canopy-network/canopy/plugin/go/contractb\x06proto3"
 
 var (
 	file_tx_proto_rawDescOnce sync.Once
@@ -2938,56 +3116,60 @@ func file_tx_proto_rawDescGZIP() []byte {
 	return file_tx_proto_rawDescData
 }
 
-var file_tx_proto_msgTypes = make([]protoimpl.MessageInfo, 44)
+var file_tx_proto_msgTypes = make([]protoimpl.MessageInfo, 48)
 var file_tx_proto_goTypes = []any{
-	(*Signature)(nil),                   // 0: types.Signature
-	(*Transaction)(nil),                 // 1: types.Transaction
-	(*MessageSend)(nil),                 // 2: types.MessageSend
-	(*FeeParams)(nil),                   // 3: types.FeeParams
-	(*MarketState)(nil),                 // 4: types.MarketState
-	(*MarketTxEntry)(nil),               // 5: types.MarketTxEntry
-	(*PositionState)(nil),               // 6: types.PositionState
-	(*OutcomeState)(nil),                // 7: types.OutcomeState
-	(*TreasuryReserve)(nil),             // 8: types.TreasuryReserve
-	(*ResolverState)(nil),               // 9: types.ResolverState
-	(*ResolverRecord)(nil),              // 10: types.ResolverRecord
-	(*ProposalRecord)(nil),              // 11: types.ProposalRecord
-	(*DisputeRecord)(nil),               // 12: types.DisputeRecord
-	(*VoteCommit)(nil),                  // 13: types.VoteCommit
-	(*VoteReveal)(nil),                  // 14: types.VoteReveal
-	(*SlashRecord)(nil),                 // 15: types.SlashRecord
-	(*PanelEntropyAccum)(nil),           // 16: types.PanelEntropyAccum
-	(*MessageCreateMarket)(nil),         // 17: types.MessageCreateMarket
-	(*MessageSubmitPrediction)(nil),     // 18: types.MessageSubmitPrediction
-	(*MessageClaimWinnings)(nil),        // 19: types.MessageClaimWinnings
-	(*MessageResolveMarket)(nil),        // 20: types.MessageResolveMarket
-	(*MessageRegisterResolver)(nil),     // 21: types.MessageRegisterResolver
-	(*MessageProposeOutcome)(nil),       // 22: types.MessageProposeOutcome
-	(*MessageFileDispute)(nil),          // 23: types.MessageFileDispute
-	(*MessageCommitVote)(nil),           // 24: types.MessageCommitVote
-	(*MessageRevealVote)(nil),           // 25: types.MessageRevealVote
-	(*MessageTallyVotes)(nil),           // 26: types.MessageTallyVotes
-	(*MessageFinalizeMarket)(nil),       // 27: types.MessageFinalizeMarket
-	(*MessageClaimSlash)(nil),           // 28: types.MessageClaimSlash
-	(*MessageReclaimStake)(nil),         // 29: types.MessageReclaimStake
-	(*MessageForfeitPosition)(nil),      // 30: types.MessageForfeitPosition
-	(*MessageClaimBuilderReward)(nil),   // 31: types.MessageClaimBuilderReward
-	(*MessageClaimCreatorFee)(nil),      // 32: types.MessageClaimCreatorFee
-	(*MessageClaimResolverReward)(nil),  // 33: types.MessageClaimResolverReward
-	(*LastClaimedBlock)(nil),            // 34: types.LastClaimedBlock
-	(*MessageClaimCommunityReward)(nil), // 35: types.MessageClaimCommunityReward
-	(*MessageClaimInvestorReward)(nil),  // 36: types.MessageClaimInvestorReward
-	(*MessageClaimProtocolReward)(nil),  // 37: types.MessageClaimProtocolReward
-	(*MessageCancelMarket)(nil),         // 38: types.MessageCancelMarket
-	(*MessageUnstakeResolver)(nil),      // 39: types.MessageUnstakeResolver
-	(*MessageClaimUnbondedStake)(nil),   // 40: types.MessageClaimUnbondedStake
-	(*ResolverIndex)(nil),               // 41: types.ResolverIndex
-	(*MarketIndex)(nil),                 // 42: types.MarketIndex
-	(*GlobalStats)(nil),                 // 43: types.GlobalStats
-	(*anypb.Any)(nil),                   // 44: google.protobuf.Any
+	(*Signature)(nil),                          // 0: types.Signature
+	(*Transaction)(nil),                        // 1: types.Transaction
+	(*MessageSend)(nil),                        // 2: types.MessageSend
+	(*FeeParams)(nil),                          // 3: types.FeeParams
+	(*MarketState)(nil),                        // 4: types.MarketState
+	(*MarketTxEntry)(nil),                      // 5: types.MarketTxEntry
+	(*PositionState)(nil),                      // 6: types.PositionState
+	(*OutcomeState)(nil),                       // 7: types.OutcomeState
+	(*TreasuryReserve)(nil),                    // 8: types.TreasuryReserve
+	(*ResolverState)(nil),                      // 9: types.ResolverState
+	(*ResolverRecord)(nil),                     // 10: types.ResolverRecord
+	(*ProposalRecord)(nil),                     // 11: types.ProposalRecord
+	(*DisputeRecord)(nil),                      // 12: types.DisputeRecord
+	(*VoteCommit)(nil),                         // 13: types.VoteCommit
+	(*VoteReveal)(nil),                         // 14: types.VoteReveal
+	(*SlashRecord)(nil),                        // 15: types.SlashRecord
+	(*PanelEntropyAccum)(nil),                  // 16: types.PanelEntropyAccum
+	(*MessageCreateMarket)(nil),                // 17: types.MessageCreateMarket
+	(*MessageSubmitPrediction)(nil),            // 18: types.MessageSubmitPrediction
+	(*MessageClaimWinnings)(nil),               // 19: types.MessageClaimWinnings
+	(*MessageResolveMarket)(nil),               // 20: types.MessageResolveMarket
+	(*MessageRegisterResolver)(nil),            // 21: types.MessageRegisterResolver
+	(*MessageProposeOutcome)(nil),              // 22: types.MessageProposeOutcome
+	(*MessageFileDispute)(nil),                 // 23: types.MessageFileDispute
+	(*MessageCommitVote)(nil),                  // 24: types.MessageCommitVote
+	(*MessageRevealVote)(nil),                  // 25: types.MessageRevealVote
+	(*MessageTallyVotes)(nil),                  // 26: types.MessageTallyVotes
+	(*MessageFinalizeMarket)(nil),              // 27: types.MessageFinalizeMarket
+	(*MessageClaimSlash)(nil),                  // 28: types.MessageClaimSlash
+	(*MessageReclaimStake)(nil),                // 29: types.MessageReclaimStake
+	(*MessageForfeitPosition)(nil),             // 30: types.MessageForfeitPosition
+	(*MessageClaimBuilderReward)(nil),          // 31: types.MessageClaimBuilderReward
+	(*MessageClaimCreatorFee)(nil),             // 32: types.MessageClaimCreatorFee
+	(*MessageClaimResolverReward)(nil),         // 33: types.MessageClaimResolverReward
+	(*LastClaimedBlock)(nil),                   // 34: types.LastClaimedBlock
+	(*MessageClaimCommunityReward)(nil),        // 35: types.MessageClaimCommunityReward
+	(*MessageClaimInvestorReward)(nil),         // 36: types.MessageClaimInvestorReward
+	(*MessageClaimProtocolReward)(nil),         // 37: types.MessageClaimProtocolReward
+	(*MessageCancelMarket)(nil),                // 38: types.MessageCancelMarket
+	(*MessageUnstakeResolver)(nil),             // 39: types.MessageUnstakeResolver
+	(*MessageClaimUnbondedStake)(nil),          // 40: types.MessageClaimUnbondedStake
+	(*ResolverIndex)(nil),                      // 41: types.ResolverIndex
+	(*MarketIndex)(nil),                        // 42: types.MarketIndex
+	(*GlobalStats)(nil),                        // 43: types.GlobalStats
+	(*GenesisVestingAlloc)(nil),                // 44: types.GenesisVestingAlloc
+	(*MessageClaimGenesisInvestorAlloc)(nil),   // 45: types.MessageClaimGenesisInvestorAlloc
+	(*MessageClaimGenesisFoundationAlloc)(nil), // 46: types.MessageClaimGenesisFoundationAlloc
+	(*MessageClaimGenesisCommunityAlloc)(nil),  // 47: types.MessageClaimGenesisCommunityAlloc
+	(*anypb.Any)(nil),                          // 48: google.protobuf.Any
 }
 var file_tx_proto_depIdxs = []int32{
-	44, // 0: types.Transaction.msg:type_name -> google.protobuf.Any
+	48, // 0: types.Transaction.msg:type_name -> google.protobuf.Any
 	0,  // 1: types.Transaction.signature:type_name -> types.Signature
 	2,  // [2:2] is the sub-list for method output_type
 	2,  // [2:2] is the sub-list for method input_type
@@ -3007,7 +3189,7 @@ func file_tx_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_tx_proto_rawDesc), len(file_tx_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   44,
+			NumMessages:   48,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
