@@ -87,7 +87,7 @@ export default function RewardsPage() {
             <ul className="space-y-0.5">
               <li>• 1% creator fee + 1% resolver fee on every trade</li>
               <li>• Fees split 20% × 5 pools (resolver / builder / community / investor / protocol)</li>
-              <li>• Epoch = 1,000 blocks ≈ 83 min at 5s/block</li>
+              <li>• Epoch = 500 blocks ≈ 83 min at 10s/block</li>
               <li>• Resolver share = pool × (resolutions × weight) / Σ weighted — 1× / 3× / 7× tiers</li>
               <li>• Only past epochs are claimable (current epoch not yet snapshotted)</li>
             </ul>

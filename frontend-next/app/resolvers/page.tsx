@@ -12,7 +12,7 @@ function tier(rrs: number): { name: string; cls: string; ring: string } {
 }
 
 function fmtAge(blocks: number): string {
-  const secs = blocks * 5;
+  const secs = blocks * 10;
   if (secs < 3600) return `${Math.floor(secs / 60)}m`;
   if (secs < 86400) return `${Math.floor(secs / 3600)}h`;
   const days = Math.floor(secs / 86400);

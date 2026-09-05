@@ -7,9 +7,9 @@ package contract
 
 const (
 // Epoch timing
-PRIS_EPOCH_BLOCKS            uint64 = 1_000    // ~83 minutes at 5s/block
-PRIS_BUILDER_EPOCH_BLOCKS    uint64 = 120_960  // ~7 days at 5s/block
-PRIS_INVESTOR_VESTING_BLOCKS uint64 = 241_920  // ~14 days at 5s/block
+PRIS_EPOCH_BLOCKS            uint64 = 500      // ~83 minutes at 10s/block
+PRIS_BUILDER_EPOCH_BLOCKS    uint64 = 60_480   // ~7 days at 10s/block
+PRIS_INVESTOR_VESTING_BLOCKS uint64 = 120_960  // ~14 days at 10s/block
 
 // Treasury distribution BPS (basis points, 10000 = 100%)
 PRIS_RESOLVER_SHARE_BPS  uint64 = 2_000 // 20%
@@ -66,6 +66,6 @@ PRAXIS_PROTOCOL_ADDR = []byte{
 
 // Unstake constants
 const (
-PRIS_UNSTAKE_UNBONDING_BLOCKS uint64 = 120_960 // 7 days at 5s/block
+PRIS_UNSTAKE_UNBONDING_BLOCKS uint64 = 60_480 // 7 days at 10s/block
 PRIS_UNSTAKE_PARTIAL_RRS_HIT  uint64 = 10      // RRS penalty for partial unstake
 )

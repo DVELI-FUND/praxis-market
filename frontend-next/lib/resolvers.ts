@@ -6,7 +6,7 @@ import { useWallet } from "@/store/wallet";
 
 // Protocol constants — plugin/go/contract (constants_pris.go + handlers)
 export const MIN_RESOLVER_STAKE = 500000000000n; // 500,000 PRX in uPRX
-export const UNBONDING_BLOCKS = 120960; // ~7 days @5s/block
+export const UNBONDING_BLOCKS = 60480; // ~7 days @10s/block
 export const PARTIAL_RRS_HIT = 10; // RRS penalty on partial unstake
 export const RRS_INITIAL = 10;
 
