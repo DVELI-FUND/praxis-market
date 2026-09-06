@@ -1163,7 +1163,168 @@ return
 }
 })
 
-log.Printf("plugin RPC server listening on %s (routes: /v1/query/markets, /v1/query/positions, /v1/query/market-txs, /v1/query/resolvers, /v1/query/proposals, /v1/query/disputes, /v1/query/votes, /v1/query/outcomes, /v1/query/slashes, /v1/query/position, /v1/query/account, /v1/query/unbonding, /v1/query/dispute-context, /v1/query/reward-context)", addr)
+// GET /v1/query/genesis-allocation?pool=<liquidity|community|investor|foundation>&address=<hex>
+// Powers the genesis-allocation claim page. Distinct from /v1/query/reward-context:
+// these are one-time allocations minted via Genesis() (keys 0x2E-0x30), not
+// recurring epoch revenue-share -- no `epoch` param, and investor/foundation
+// use real cliff+linear vesting (see vesting.go), not a flat claim cooldown.
+mux.HandleFunc("/v1/query/genesis-allocation", func(w http.ResponseWriter, r *http.Request) {
+poolType := r.URL.Query().Get("pool")
+addrHex := r.URL.Query().Get("address")
+if poolType == "" {
+http.Error(w, "missing required query param: pool", http.StatusBadRequest)
+return
+}
+if addrHex == "" {
+http.Error(w, "missing required query param: address", http.StatusBadRequest)
+return
+}
+addr, err := hex.DecodeString(addrHex)
+if err != nil {
+http.Error(w, "invalid address: must be hex-encoded", http.StatusBadRequest)
+return
+}
+height := GetGlobalHeight()
+
+switch poolType {
+case "liquidity":
+if !bytes.Equal(addr, PRAXIS_LIQUIDITY_SEED_ADDR) {
+http.Error(w, "address is not authorized to view this allocation", http.StatusForbidden)
+return
+}
+resp, qErr := p.QueryState(0, &PluginStateReadRequest{
+Keys: []*PluginKeyRead{{QueryId: 1, Key: KeyForAccount(PRAXIS_LIQUIDITY_SEED_ADDR)}},
+})
+if qErr != nil {
+http.Error(w, qErr.Msg, http.StatusInternalServerError)
+return
+}
+acc := &Account{}
+for _, res := range resp.Results {
+if res.QueryId == 1 && len(res.Entries) > 0 {
+Unmarshal(res.Entries[0].Value, acc)
+}
+}
+result := map[string]interface{}{
+"address":         addrHex,
+"pool_type":       "liquidity",
+"account_balance": strconv.FormatUint(acc.Amount, 10),
+"note":            "liquid at genesis -- no claim message, spend directly via MessageCreateMarket etc.",
+}
+w.Header().Set("Content-Type", "application/json")
+json.NewEncoder(w).Encode(result)
+return
+
+case "community":
+if !bytes.Equal(addr, PRAXIS_GENESIS_COMMUNITY_ADDR) {
+http.Error(w, "address is not authorized to view this allocation", http.StatusForbidden)
+return
+}
+resp, qErr := p.QueryState(0, &PluginStateReadRequest{
+Keys: []*PluginKeyRead{{QueryId: 1, Key: KeyForGenesisCommunityAlloc()}},
+})
+if qErr != nil {
+http.Error(w, qErr.Msg, http.StatusInternalServerError)
+return
+}
+pool := &Pool{}
+for _, res := range resp.Results {
+if res.QueryId == 1 && len(res.Entries) > 0 {
+Unmarshal(res.Entries[0].Value, pool)
+}
+}
+eligible := pool.Amount > 0
+reason := ""
+if !eligible {
+reason = "allocation already fully claimed"
+}
+result := map[string]interface{}{
+"address":           addrHex,
+"pool_type":         "community",
+"remaining_balance": strconv.FormatUint(pool.Amount, 10),
+"eligible":          eligible,
+"eligible_reason":   reason,
+}
+w.Header().Set("Content-Type", "application/json")
+json.NewEncoder(w).Encode(result)
+return
+
+case "investor", "foundation":
+var (
+allocKey       []byte
+authorizedAddr []byte
+)
+if poolType == "investor" {
+allocKey = KeyForGenesisInvestorAlloc()
+authorizedAddr = PRAXIS_GENESIS_INVESTOR_ADDR
+} else {
+allocKey = KeyForGenesisFoundationAlloc()
+authorizedAddr = PRAXIS_GENESIS_FOUNDATION_ADDR
+}
+if !bytes.Equal(addr, authorizedAddr) {
+http.Error(w, "address is not authorized to view this allocation", http.StatusForbidden)
+return
+}
+resp, qErr := p.QueryState(0, &PluginStateReadRequest{
+Keys: []*PluginKeyRead{{QueryId: 1, Key: allocKey}},
+})
+if qErr != nil {
+http.Error(w, qErr.Msg, http.StatusInternalServerError)
+return
+}
+alloc := &GenesisVestingAlloc{}
+for _, res := range resp.Results {
+if res.QueryId == 1 && len(res.Entries) > 0 {
+Unmarshal(res.Entries[0].Value, alloc)
+}
+}
+vested := computeVestedAmount(alloc.TotalAllocation, alloc.StartHeight, height)
+claimable := uint64(0)
+if vested > alloc.ClaimedAmount {
+claimable = vested - alloc.ClaimedAmount
+}
+fullyVestedHeight := alloc.StartHeight + GENESIS_VEST_CLIFF_BLOCKS + GENESIS_VEST_DURATION_BLOCKS
+cliffHeight := alloc.StartHeight + GENESIS_VEST_CLIFF_BLOCKS
+eligible := true
+reason := ""
+switch {
+case alloc.TotalAllocation == 0:
+eligible = false
+reason = "allocation not found"
+case height < cliffHeight:
+eligible = false
+reason = "cliff not yet reached"
+case claimable == 0:
+eligible = false
+reason = "no newly vested tokens available"
+}
+result := map[string]interface{}{
+"address":              addrHex,
+"pool_type":            poolType,
+"total_allocation":     strconv.FormatUint(alloc.TotalAllocation, 10),
+"claimed_amount":       strconv.FormatUint(alloc.ClaimedAmount, 10),
+"vested_amount":        strconv.FormatUint(vested, 10),
+"claimable_amount":     strconv.FormatUint(claimable, 10),
+"start_height":         alloc.StartHeight,
+"current_height":       height,
+"cliff_height":         cliffHeight,
+"fully_vested_height":  fullyVestedHeight,
+"cliff_blocks":         GENESIS_VEST_CLIFF_BLOCKS,
+"vest_duration_blocks": GENESIS_VEST_DURATION_BLOCKS,
+"eligible":             eligible,
+"eligible_reason":      reason,
+}
+w.Header().Set("Content-Type", "application/json")
+json.NewEncoder(w).Encode(result)
+return
+
+default:
+http.Error(w, "invalid pool: must be one of liquidity, community, investor, foundation", http.StatusBadRequest)
+return
+}
+})
+
+log.Printf("plugin RPC server listening on %s (routes: /v1/query/markets, /v1/query/positions, /v1/query/market-txs, /v1/query/resolvers, /v1/query/proposals, /v1/query/disputes, /v1/query/votes, /v1/query/outcomes, /v1/query/slashes, /v1/query/position, /v1/query/account, /v1/query/unbonding, /v1/query/dispute-context, /v1/query/reward-context, /v1/query/genesis-allocation)", addr)
 if err := http.ListenAndServe(addr, mux); err != nil {
 log.Printf("plugin RPC server error: %v", err)
 }
