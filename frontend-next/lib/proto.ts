@@ -160,3 +160,15 @@ export function encRewardInvestor(addr: string): Uint8Array {
 export function encRewardProtocol(addr: string): Uint8Array {
   return cat(bf(1, h2b(addr)));
 }
+
+// Genesis allocation claims — empty protos (all data comes from signer address)
+export function encClaimGenesisCommunity(): Uint8Array {
+  return new Uint8Array(0);
+}
+export function encClaimGenesisInvestor(): Uint8Array {
+  return new Uint8Array(0);
+}
+export function encClaimGenesisFoundation(): Uint8Array {
+  return new Uint8Array(0);
+}
+

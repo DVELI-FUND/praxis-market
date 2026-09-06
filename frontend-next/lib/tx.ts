@@ -29,6 +29,9 @@ export const TYPE_URLS: Record<string, string> = {
   claim_community_reward: "type.googleapis.com/types.MessageClaimCommunityReward",
   claim_investor_reward: "type.googleapis.com/types.MessageClaimInvestorReward",
   claim_protocol_reward: "type.googleapis.com/types.MessageClaimProtocolReward",
+  claim_genesis_community_alloc: "type.googleapis.com/types.MessageClaimGenesisCommunityAlloc",
+  claim_genesis_investor_alloc: "type.googleapis.com/types.MessageClaimGenesisInvestorAlloc",
+  claim_genesis_foundation_alloc: "type.googleapis.com/types.MessageClaimGenesisFoundationAlloc",
 };
 
 export interface TxMeta {

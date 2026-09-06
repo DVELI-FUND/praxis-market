@@ -4,7 +4,8 @@ import {
   encCommit, encReveal, encTally, encFinalize, encSlash, encForfeit,
   encUnstakeResolver, encClaimUnbonded, encClaimCreatorFee, encCancelMarket,
   encRewardResolver, encRewardBuilder, encRewardCommunity, encRewardInvestor,
-  encRewardProtocol,
+  encRewardProtocol, encClaimGenesisCommunity, encClaimGenesisInvestor,
+  encClaimGenesisFoundation,
 } from "@/lib/proto";
 
 const W = 1000000n;
@@ -193,6 +194,7 @@ export const ACTION_SECTIONS: { name: string; gate?: "resolver" | "admin" | "cre
   },
   { name: "Admin", gate: "admin", keys: ["create", "finalize", "cancel"] },
   { name: "Rewards", keys: ["claim_resolver", "claim_builder", "claim_community", "claim_investor", "claim_protocol"] },
+  { name: "Genesis", keys: ["claim_genesis_community", "claim_genesis_investor", "claim_genesis_foundation"] },
 ];
 
 // Reward actions (epoch-based claims)

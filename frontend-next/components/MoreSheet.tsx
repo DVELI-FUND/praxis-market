@@ -3,12 +3,13 @@ import Link from "next/link";
 import { useUi } from "@/store/ui";
 import { useWallet } from "@/store/wallet";
 import { useRoles } from "@/lib/roles";
+import { isGenesisAddress } from "@/lib/genesis";
 import LogoMark from "./LogoMark";
 import ThemeToggle from "./ThemeToggle";
 import WalletPill from "./WalletPill";
 
 type Badge = "RESOLVER" | "ADMIN" | null;
-interface NavItem { href: string; label: string; icon: string; badge?: Badge; gate?: "connected" | "resolver" | "creator" | "admin" }
+interface NavItem { href: string; label: string; icon: string; badge?: Badge; gate?: "connected" | "resolver" | "creator" | "admin" | "genesis" }
 interface NavSection { name: string; items: NavItem[] }
 
 const SECTIONS: NavSection[] = [
@@ -31,6 +32,12 @@ const SECTIONS: NavSection[] = [
       { href: "/rewards/community", label: "Community Rewards", icon: "◉" , gate: "admin"},
       { href: "/rewards/investor", label: "Investor Rewards", icon: "◆" , gate: "admin"},
       { href: "/rewards/protocol", label: "Protocol Rewards", icon: "◐" , gate: "admin"},
+    ],
+  },
+  {
+    name: "Genesis",
+    items: [
+      { href: "/genesis", label: "Claim Allocation", icon: "◈", gate: "genesis" },
     ],
   },
   {
@@ -74,10 +81,12 @@ export default function MoreSheet() {
   const open = useUi((s) => s.moreOpen);
   const setMore = useUi((s) => s.setMore);
   const roles = useRoles();
-  const { status } = useWallet();
+  const { status, praxisAddress } = useWallet();
   const connected = status === "connected" || status === "drift";
+  const isGenesis = isGenesisAddress(praxisAddress);
   const canSee = (gate?: NavItem["gate"]) => {
     if (!gate) return true;
+    if (gate === "genesis") return roles.isAdmin || isGenesis;
     if (gate === "connected") return connected;
     if (gate === "resolver") return roles.isResolver || roles.isAdmin;
     if (gate === "creator") return roles.isCreator || roles.isAdmin;
