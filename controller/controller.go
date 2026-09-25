@@ -48,7 +48,7 @@ type Controller struct {
 }
 
 // New() creates a new instance of a Controller, this is the entry point when initializing an instance of a Canopy application
-func New(fsm *fsm.StateMachine, c lib.Config, valKey crypto.PrivateKeyI, metrics *lib.Metrics, l lib.LoggerI) (controller *Controller, err lib.ErrorI) {
+func New(fsm *fsm.StateMachine, c lib.Config, valKey crypto.PrivateKeyI, metrics *lib.Metrics, l lib.LoggerI, preConnectedPlugin *lib.Plugin) (controller *Controller, err lib.ErrorI) {
 	address := valKey.PublicKey().Address()
 	// load the maximum validators param to set limits on P2P
 	maxMembersPerCommittee, err := fsm.GetMaxValidators()
@@ -83,10 +83,20 @@ func New(fsm *fsm.StateMachine, c lib.Config, valKey crypto.PrivateKeyI, metrics
 	controller.loadCheckpointsFile()
 	// setup plugin if enabled
 	if c.Plugin != "" {
-		if err = controller.PluginExecute(c.Plugin); err != nil {
-			return nil, err
+		if preConnectedPlugin != nil {
+			// plugin was already started and connected by the caller BEFORE fsm.New()
+			// ran (so genesis could invoke it) -- just wire it into the controller
+			controller.Plugin = preConnectedPlugin
+			controller.Plugin.SetQueryProvider(&pluginQueryProvider{controller: controller})
+			controller.FSM.Plugin, controller.Mempool.FSM.Plugin = controller.Plugin, controller.Plugin
+		} else {
+			// fallback: caller didn't pre-start the plugin -- genesis will NOT see
+			// the plugin if height was 0 in this path
+			if err = controller.PluginExecute(c.Plugin); err != nil {
+				return nil, err
+			}
+			controller.PluginConnectSync()
 		}
-		controller.PluginConnectSync()
 	}
 	// initialize the consensus in the controller, passing a reference to itself
 	controller.Consensus, err = bft.New(c, valKey, fsm.Height(), fsm.Height()-1, controller, c.RunVDF, metrics, l)
@@ -289,6 +299,64 @@ func (c *Controller) runPluginCtl(plugin, action string) ([]byte, lib.ErrorI) {
 	return output, nil
 }
 
+
+// StartAndConnectPlugin() launches the plugin process (if configured) and blocks until it
+// connects over the unix socket, returning the connected Plugin. This MUST be called and its
+// result awaited BEFORE fsm.New(), so that a height-0 Genesis() can correctly invoke the
+// plugin's Genesis handler. Previously fsm.New() was always called with a nil plugin,
+// silently skipping any plugin-defined genesis logic (e.g. genesis allocations) with no error.
+func StartAndConnectPlugin(cfg lib.Config, l lib.LoggerI) (*lib.Plugin, lib.ErrorI) {
+if cfg.Plugin == "" {
+return nil, nil
+}
+if _, err := execPluginCtl(cfg, cfg.Plugin, "start"); err != nil {
+return nil, err
+}
+l.Infof("Plugin %s started", cfg.Plugin)
+return connectPluginSync(cfg, l)
+}
+
+// execPluginCtl() is the standalone (pre-Controller) version of runPluginCtl, usable before a
+// Controller instance exists.
+func execPluginCtl(cfg lib.Config, plugin, action string) ([]byte, lib.ErrorI) {
+if plugin == "" || strings.Contains(plugin, "..") || strings.ContainsRune(plugin, os.PathSeparator) {
+return nil, lib.NewError(lib.NoCode, lib.MainModule, fmt.Sprintf("invalid plugin name %q", plugin))
+}
+cmdPath, err := resolvePluginCtlPath(plugin)
+if err != nil {
+return nil, lib.NewError(lib.NoCode, lib.MainModule, err.Error())
+}
+cmd := exec.Command(cmdPath, action)
+cmd.Env = append(os.Environ(), "CANOPY_PLUGIN_HOME="+cfg.PluginHome(plugin))
+output, err := cmd.CombinedOutput()
+if err != nil {
+return nil, lib.NewError(lib.NoCode, lib.MainModule, fmt.Sprintf("failed to execute plugin %s (%s): %v, output: %s", plugin, action, err, string(output)))
+}
+return output, nil
+}
+
+// connectPluginSync() is the standalone (pre-Controller) version of PluginConnectSync: blocks
+// until a plugin process connects over the unix socket, returning the connected Plugin.
+func connectPluginSync(cfg lib.Config, l lib.LoggerI) (*lib.Plugin, lib.ErrorI) {
+sockPath := filepath.Join(socketDir, socketFile)
+if err := os.MkdirAll(socketDir, 0777); err != nil {
+return nil, lib.NewError(lib.NoCode, lib.MainModule, fmt.Sprintf("failed to make the plugin socket path %s: %v", sockPath, err))
+}
+if err := os.RemoveAll(sockPath); err != nil {
+return nil, lib.NewError(lib.NoCode, lib.MainModule, fmt.Sprintf("failed to remove plugin socket %s: %v", sockPath, err))
+}
+listener, err := net.Listen("unix", sockPath)
+if err != nil {
+return nil, lib.NewError(lib.NoCode, lib.MainModule, fmt.Sprintf("failed to listen on socket: %v", err))
+}
+defer listener.Close()
+l.Infof("Plugin service listening on socket: %s", sockPath)
+conn, e := listener.Accept()
+if e != nil {
+return nil, lib.NewError(lib.NoCode, lib.MainModule, fmt.Sprintf("failed to accept plugin connection: %v", e))
+}
+return lib.NewPlugin(conn, l, time.Duration(cfg.PluginTimeoutMS)*time.Millisecond), nil
+}
 // PluginExecute() executes the plugin control script to start the plugin process
 func (c *Controller) PluginExecute(plugin string) lib.ErrorI {
 	output, err := c.runPluginCtl(plugin, "start")

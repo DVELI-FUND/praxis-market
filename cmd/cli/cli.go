@@ -185,12 +185,21 @@ func Start() {
 	l.Infof("Using identity: Address: %s | PublicKey: %s",
 		validatorKey.PublicKey().Address().String(), validatorKey.PublicKey().String())
 	// initialize the state machine
-	sm, err := fsm.New(config, db, nil, metrics, l)
+	// start the plugin (if configured) and block until it connects, BEFORE
+	// constructing the state machine -- this lets a height-0 Genesis() correctly
+	// invoke the plugin's Genesis handler (previously always skipped: fsm.New()
+	// was called with a hardcoded nil plugin here, before the plugin connected)
+	plugin, err := controller.StartAndConnectPlugin(config, l)
+	if err != nil {
+		l.Fatal(err.Error())
+	}
+	// initialize the state machine
+	sm, err := fsm.New(config, db, plugin, metrics, l)
 	if err != nil {
 		l.Fatal(err.Error())
 	}
 	// create a new instance of the application
-	app, err := controller.New(sm, config, validatorKey, metrics, l)
+	app, err := controller.New(sm, config, validatorKey, metrics, l, plugin)
 	if err != nil {
 		l.Fatal(err.Error())
 	}
