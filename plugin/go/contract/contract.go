@@ -61,6 +61,9 @@ SupportedTransactions: []string{
 		"unstake_resolver",
 		"cancel_market",
 		"claim_unbonded_stake",
+		"claim_genesis_community_alloc",
+		"claim_genesis_investor_alloc",
+		"claim_genesis_foundation_alloc",
 },
 TransactionTypeUrls: []string{
 	"type.googleapis.com/types.MessageCreateMarket",
@@ -85,6 +88,9 @@ TransactionTypeUrls: []string{
 		"type.googleapis.com/types.MessageUnstakeResolver",
 		"type.googleapis.com/types.MessageCancelMarket",
 		"type.googleapis.com/types.MessageClaimUnbondedStake",
+		"type.googleapis.com/types.MessageClaimGenesisCommunityAlloc",
+		"type.googleapis.com/types.MessageClaimGenesisInvestorAlloc",
+		"type.googleapis.com/types.MessageClaimGenesisFoundationAlloc",
 },
 }
 
