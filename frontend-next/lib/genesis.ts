@@ -2,10 +2,10 @@
 // Frontend needs these to gate the nav item and check eligibility.
 
 export const GENESIS_ADDRESSES: Record<string, string> = {
-  liquidity: "869e664c50c5c19f7d56dbef03960b116bc54acc", // liquid, no claim msg
-  community: "869e664c50c5c19f7d56dbef03960b116bc54acc", // liquid, claim-gated
-  investor: "ad7cbf82b65f584a9a862caed1ab51f9f6692d2a",  // 6mo cliff + 18mo linear
-  foundation: "2ed76cbe2e3f384877e84ed1999d0c159480b611", // 6mo cliff + 18mo linear
+  liquidity: "c8ca64bb287d9032b37cf20f853bf647e4e516bf", // liquid, no claim msg
+  community: "3b6293d5059dc5f552fdb66044bf31a1e70d5dbd", // liquid, claim-gated
+  investor: "1140a1c5e5e82caf8eae6ddbd104b55849bd9b23",  // 6mo cliff + 18mo linear
+  foundation: "ab410efe7bbf9d9f95d65bfa725feb25ade53f22", // 6mo cliff + 18mo linear
 };
 
 export function isGenesisAddress(addr: string | undefined | null): boolean {
