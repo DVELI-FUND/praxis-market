@@ -142,6 +142,8 @@ export const PRAXIS_ERRORS: Record<number, string> = {
   215: "Market has expired.",
   216: "Market has positions — cannot cancel.",
   217: "Unbonding already pending.",
+  320: "Pool is empty — allocation already fully claimed.",
+  333: "No newly vested tokens available yet.",
 };
 
 export function friendlyError(code?: number | null, msg?: string): string {

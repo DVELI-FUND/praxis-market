@@ -58,7 +58,7 @@ export interface ActionDef {
   title: string;
   eye: string;
   sub: string;
-  gate?: "resolver" | "admin" | "creator";
+  gate?: "resolver" | "admin" | "creator" | "genesis";
   statusCard?: "resolver";
   planner?: "propose" | "dispute";
   fields: FieldDef[];
