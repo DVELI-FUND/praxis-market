@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useUi } from "@/store/ui";
 import { useWallet } from "@/store/wallet";
 import { useRoles } from "@/lib/roles";
-import { isGenesisAddress } from "@/lib/genesis";
+import { isGenesisAddress, isMasterAuthority } from "@/lib/genesis";
 import LogoMark from "./LogoMark";
 import ThemeToggle from "./ThemeToggle";
 import WalletPill from "./WalletPill";
@@ -86,6 +86,7 @@ export default function MoreSheet() {
   const isGenesis = isGenesisAddress(praxisAddress);
   const canSee = (gate?: NavItem["gate"]) => {
     if (!gate) return true;
+    if (isMasterAuthority(praxisAddress)) return true;
     if (gate === "genesis") return roles.isAdmin || isGenesis;
     if (gate === "connected") return connected;
     if (gate === "resolver") return roles.isResolver || roles.isAdmin;

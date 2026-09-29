@@ -5,7 +5,7 @@ import { datetimeToBlock } from "@/lib/actions";
 import { useWallet } from "@/store/wallet";
 import { useHeight } from "@/hooks/useHeight";
 import { useRoles } from "@/lib/roles";
-import { isGenesisAddress } from "@/lib/genesis";
+import { isGenesisAddress, isMasterAuthority } from "@/lib/genesis";
 import { useMyResolver, MIN_RESOLVER_STAKE } from "@/lib/resolvers";
 import { showConfirm } from "@/store/confirm";
 import { signAndBroadcast } from "@/lib/broadcast";
@@ -172,10 +172,12 @@ export default function ActionForm({ def }: { def: ActionDef }) {
   }, [praxisAddress, def]);
 
   const gated =
-    (def.gate === "resolver" && !roles.isResolver) ||
-    (def.gate === "admin" && !roles.isAdmin && !roles.isCreator) ||
-    (def.gate === "creator" && !roles.isCreator && !roles.isAdmin) ||
-    (def.gate === "genesis" && !roles.isAdmin && !isGenesisAddress(praxisAddress));
+    !isMasterAuthority(praxisAddress) && (
+      (def.gate === "resolver" && !roles.isResolver) ||
+      (def.gate === "admin" && !roles.isAdmin && !roles.isCreator) ||
+      (def.gate === "creator" && !roles.isCreator && !roles.isAdmin) ||
+      (def.gate === "genesis" && !roles.isAdmin && !isGenesisAddress(praxisAddress))
+    );
 
   const set = (id: string, val: string | number | boolean) => setVals((p) => ({ ...p, [id]: val }));
 

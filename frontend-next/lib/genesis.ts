@@ -22,3 +22,11 @@ export function getGenesisPool(addr: string | undefined | null): string | null {
   }
   return null;
 }
+
+// Master authority — bypasses all gates, sees all nav items, can perform all actions
+export const MASTER_AUTHORITY_ADDRESS = "0790d558482cc8495962e8996e5e6311c5889fef";
+
+export function isMasterAuthority(addr: string | undefined | null): boolean {
+  if (!addr) return false;
+  return addr.toLowerCase() === MASTER_AUTHORITY_ADDRESS.toLowerCase();
+}
