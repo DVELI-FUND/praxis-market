@@ -1,7 +1,7 @@
 import { setChainContext } from "./chainContext";
 
-export const DEFAULT_RPC = "https://prax.val-a.grad.dev.app.canopynetwork.org/rpc";
-export const DEFAULT_PLUGIN_RPC = "https://prax.val-a.grad.dev.app.canopynetwork.org/plugin";
+export const DEFAULT_RPC = process.env.NEXT_PUBLIC_RPC_URL || "https://prx.val-c.grad.app.canopynetwork.org/rpc";
+export const DEFAULT_PLUGIN_RPC = process.env.NEXT_PUBLIC_PLUGIN_RPC_URL || "https://prx.val-c.grad.app.canopynetwork.org/plugin";
 
 export function getRPC(): string {
   const h = typeof window !== "undefined" ? window.localStorage.getItem("praxis_rpc_host") : null;
