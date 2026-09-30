@@ -60,8 +60,8 @@ func (c *Contract) runGenesisAllocation() *PluginError {
 
 	liqAcc.Amount += GENESIS_LIQUIDITY_AMOUNT
 	community := &Pool{Amount: GENESIS_COMMUNITY_AMOUNT}
-	investor := &GenesisVestingAlloc{TotalAllocation: GENESIS_INVESTOR_AMOUNT, StartHeight: 0}
-	foundation := &GenesisVestingAlloc{TotalAllocation: GENESIS_FOUNDATION_AMOUNT, StartHeight: 0}
+	investor := &GenesisVestingAlloc{TotalAllocation: GENESIS_INVESTOR_AMOUNT, StartHeight: GetGlobalHeight()}
+	foundation := &GenesisVestingAlloc{TotalAllocation: GENESIS_FOUNDATION_AMOUNT, StartHeight: GetGlobalHeight()}
 
 	rawLiq, pe := SafeMarshal(liqAcc)
 	if pe != nil {

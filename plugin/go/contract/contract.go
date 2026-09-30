@@ -170,6 +170,9 @@ return &PluginBeginResponse{}
 
 
 func (c *Contract) CheckTx(req *PluginCheckRequest) *PluginCheckResponse {
+	if req.Tx != nil && req.Tx.ChainId != 0 {
+		c.Config.ChainId = req.Tx.ChainId
+	}
 msg, err := FromAny(req.Tx.Msg)
 if err != nil {
 return &PluginCheckResponse{Error: err}
@@ -233,6 +236,9 @@ return &PluginCheckResponse{Error: ErrInvalidMessageCast()}
 }
 
 func (c *Contract) DeliverTx(req *PluginDeliverRequest) *PluginDeliverResponse {
+	if req.Tx != nil && req.Tx.ChainId != 0 {
+		c.Config.ChainId = req.Tx.ChainId
+	}
 msg, err := FromAny(req.Tx.Msg)
 if err != nil {
 return &PluginDeliverResponse{Error: err}
