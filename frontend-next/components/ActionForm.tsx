@@ -114,7 +114,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
   const { data: finalizedMarkets = [] as { marketId: string; question: string; rules: string; status: number; outcome: boolean | null; finalizedPoolAmount: bigint }[] } = useQuery({
     queryKey: ["markets-finalized"],
     queryFn: async () => {
-      const r = await fetch("https://prax.val-a.grad.dev.app.canopynetwork.org/plugin/v1/query/markets");
+      const r = await fetch(getPluginRPC() + "/v1/query/markets");
       if (!r.ok) return [];
       const raw = await r.json();
       return raw.filter((m: any) => m.market?.status === 6).map((m: any) => ({
