@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useMarkets } from "@/hooks/useMarkets";
-import { stripCatPrefix, yesPct } from "@/lib/markets";
+import { extractOutcomes, stripCatPrefix, yesPct } from "@/lib/markets";
 import { fmtPRX } from "@/lib/format";
 
 export default function LiveTicker() {
@@ -23,7 +23,7 @@ export default function LiveTicker() {
             >
               <span className="h-1 w-1 rounded-full bg-up animate-pulseDot" />
               <span className="max-w-[220px] truncate text-ink-2">{stripCatPrefix(m.question || m.rules || "")}</span>
-              <span className="text-up tabular-nums">YES {pct}¢</span>
+              <span className="text-up tabular-nums">{extractOutcomes(m.rules).yes} {pct}¢</span>
               <span className="text-ink-3 tabular-nums">Vol {fmtPRX(m.qYes + m.qNo)}</span>
             </Link>
           );

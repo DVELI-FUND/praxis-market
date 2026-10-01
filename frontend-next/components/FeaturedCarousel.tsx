@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useMarkets } from "@/hooks/useMarkets";
 import { useHeight } from "@/hooks/useHeight";
-import { extractCat, extractImg, stripCatPrefix, STATUS, yesPct } from "@/lib/markets";
+import { extractCat, extractImg, extractOutcomes, stripCatPrefix, STATUS, yesPct } from "@/lib/markets";
 import { fmtPRX, fmtCountdown } from "@/lib/format";
 import StatusPill from "./StatusPill";
 
@@ -34,6 +34,7 @@ export default function FeaturedCarousel() {
   const vol = total > 0n ? fmtPRX(total) : "—";
   const imgUrl = extractImg(m.rules);
   const catKey = extractCat(m.rules);
+  const outLbl = extractOutcomes(m.rules);
   const question = stripCatPrefix(m.question || m.rules || "");
 
   const prev = () => setIdx((i) => (i - 1 + featured.length) % featured.length);
@@ -61,7 +62,7 @@ export default function FeaturedCarousel() {
 
         <div className="mb-4 flex flex-wrap items-end gap-5">
           <div>
-            <div className="font-mono text-[8px] uppercase tracking-[2px] text-ink-3">YES chance</div>
+            <div className="font-mono text-[8px] uppercase tracking-[2px] text-ink-3">{outLbl.yes} chance</div>
             <div className="font-display text-[36px] font-extrabold leading-none text-up tabular-nums md:text-[44px]">
               {pct}<span className="text-[16px] opacity-60">%</span>
             </div>
