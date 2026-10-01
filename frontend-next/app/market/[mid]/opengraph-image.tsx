@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { b64ToHex } from "@/lib/format";
+import { isHiddenMarket } from "@/lib/hiddenMarkets";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
@@ -22,7 +23,7 @@ export default async function Image({ params }: { params: { mid: string } }) {
     const raw = await r.json();
     const arr: any[] = Array.isArray(raw) ? raw : raw.markets || [];
     const m = arr.find((x) => b64ToHex(String(x.id || x.market_id || "")) === params.mid);
-    if (m) {
+    if (m && !isHiddenMarket(params.mid)) {
       const q = String(m.question || m.rules || "").replace(/^\[.*?\]\s*/, "");
       if (q) question = q;
       const qy = Number(m.q_yes || 0), qn = Number(m.q_no || 0);

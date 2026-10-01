@@ -1,5 +1,6 @@
 import { b64ToHex } from "@/lib/format";
 import { getPluginRPC, queryHeight } from "@/lib/rpc";
+import { isHiddenMarket } from "@/lib/hiddenMarkets";
 
 export const CLOSED_WINDOW = 20000; // blocks — from Frontend/markets.js
 
@@ -66,7 +67,7 @@ export async function fetchMarkets(): Promise<Market[]> {
   if (!resp.ok) throw new Error("plugin RPC returned " + resp.status);
   const raw = (await resp.json()) as RawMarketEntry[];
 
-  return (raw || []).map((entry) => {
+  return (raw || []).filter((entry) => !isHiddenMarket(entry.id)).map((entry) => {
     const id = entry.id || "";
     const mk = entry.market || {};
     const qYes = BigInt(mk.q_yes || 0);
