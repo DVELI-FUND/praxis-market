@@ -1,113 +1,64 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useWallet } from "@/store/wallet";
-import { useHeight } from "@/hooks/useHeight";
-import { useRoles } from "@/lib/roles";
-import { isGenesisAddress, getGenesisPool, GENESIS_ADDRESSES } from "@/lib/genesis";
 import { fmtPRX } from "@/lib/format";
 import { rpc } from "@/lib/rpc";
-import { useRouter } from "next/navigation";
+import ActionForm from "@/components/ActionForm";
+import { ACTIONS } from "@/lib/actions";
 
-interface GenesisResponse {
+interface GenesisAllocation {
   address: string;
   pool_type: string;
-  // Community fields
   remaining_balance?: string;
+  claimable_amount?: string;
   eligible?: boolean;
   eligible_reason?: string;
-  // Investor/Foundation fields
-  total_allocation?: string;
-  claimed_amount?: string;
-  vested_amount?: string;
-  claimable_amount?: string;
-  start_height?: number;
-  current_height?: number;
-  cliff_height?: number;
-  fully_vested_height?: number;
-  cliff_blocks?: number;
-  vest_duration_blocks?: number;
-  // Liquidity
-  account_balance?: string;
-  note?: string;
+  next_claim_height?: string;
 }
+
+const POOLS = [
+  { key: "community", label: "Community Pool", color: "amberx", desc: "5M PRX — liquid, no vesting" },
+  { key: "investor", label: "Investor Pool", color: "up", desc: "3M PRX — 24-month vesting" },
+  { key: "foundation", label: "Foundation Pool", color: "ink", desc: "2M PRX — 36-month vesting" },
+];
 
 export default function GenesisPage() {
   const { praxisAddress } = useWallet();
-  const { data: chain } = useHeight();
-  const roles = useRoles();
-  const router = useRouter();
-  const [alloc, setAlloc] = useState<GenesisResponse | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const myPool = getGenesisPool(praxisAddress);
-  const canAccess = roles.isAdmin || isGenesisAddress(praxisAddress);
+  const [allocations, setAllocations] = useState<Record<string, GenesisAllocation>>({});
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!canAccess || !praxisAddress || !myPool) return;
-    setLoading(true);
-    setError(null);
-    rpc(`/v1/query/genesis-allocation?pool=${myPool}&address=${praxisAddress}`)
-      .then((data: unknown) => {
-        setAlloc(data as GenesisResponse);
-        setLoading(false);
-      })
-      .catch((err: any) => {
-        setError(err.message || "Failed to load allocation");
-        setLoading(false);
-      });
-  }, [canAccess, praxisAddress, myPool]);
+    if (!praxisAddress) {
+      setLoading(false);
+      return;
+    }
 
-  if (!canAccess) {
-    return (
-      <main className="relative z-10 mx-auto min-h-screen max-w-[980px] px-4 py-6 pb-24 md:px-8">
-        <div className="rounded-card border border-line bg-surface p-10 text-center">
-          <div className="mb-3 text-ink-3">🔒</div>
-          <div className="mb-1 font-display text-[16px] font-bold text-ink">Restricted Access</div>
-          <div className="font-mono text-[11px] text-ink-3">Genesis allocation claims are restricted to authorized wallets.</div>
-        </div>
-      </main>
-    );
-  }
+    setLoading(true);
+    Promise.all(
+      POOLS.map((pool) =>
+        rpc(`/v1/query/genesis-allocation?pool=${pool.key}&address=${praxisAddress}`)
+          .then((data: unknown) => ({ pool: pool.key, data: data as GenesisAllocation }))
+          .catch(() => ({ pool: pool.key, data: null }))
+      )
+    ).then((results) => {
+      const map: Record<string, GenesisAllocation> = {};
+      results.forEach(({ pool, data }) => {
+        if (data) map[pool] = data;
+      });
+      setAllocations(map);
+      setLoading(false);
+    });
+  }, [praxisAddress]);
 
   if (!praxisAddress) {
     return (
       <main className="relative z-10 mx-auto min-h-screen max-w-[980px] px-4 py-6 pb-24 md:px-8">
+        <div className="mb-6">
+          <h1 className="font-display text-[22px] font-extrabold tracking-[-0.3px]">Genesis Allocations</h1>
+          <p className="mt-1 text-[13px] text-ink-2">Connect wallet to view allocations</p>
+        </div>
         <div className="rounded-card border border-line bg-surface p-6 text-center font-mono text-[11px] text-ink-3">
-          Connect wallet to claim genesis allocation
-        </div>
-      </main>
-    );
-  }
-
-  if (loading) {
-    return (
-      <main className="relative z-10 mx-auto min-h-screen max-w-[980px] px-4 py-6 pb-24 md:px-8">
-        <div className="rounded-card border border-line bg-surface p-6 text-center font-mono text-[11px] text-ink-3">
-          Loading allocation...
-        </div>
-      </main>
-    );
-  }
-
-  if (error) {
-    return (
-      <main className="relative z-10 mx-auto min-h-screen max-w-[980px] px-4 py-6 pb-24 md:px-8">
-        <div className="rounded-card border border-line bg-surface p-6 text-center">
-          <div className="mb-1 font-display text-[14px] font-bold text-down">Error</div>
-          <div className="font-mono text-[11px] text-ink-3">{error}</div>
-        </div>
-      </main>
-    );
-  }
-
-  if (!myPool || !alloc) {
-    return (
-      <main className="relative z-10 mx-auto min-h-screen max-w-[980px] px-4 py-6 pb-24 md:px-8">
-        <div className="rounded-card border border-line bg-surface p-10 text-center">
-          <div className="mb-3 text-ink-3">◎</div>
-          <div className="mb-1 font-display text-[16px] font-bold text-ink">No Allocation</div>
-          <div className="font-mono text-[11px] text-ink-3">This wallet is not an authorized genesis beneficiary.</div>
+          Connect wallet to view your genesis allocations
         </div>
       </main>
     );
@@ -116,151 +67,115 @@ export default function GenesisPage() {
   return (
     <main className="relative z-10 mx-auto min-h-screen max-w-[980px] px-4 py-6 pb-24 md:px-8">
       <div className="mb-6">
-        <div className="mb-2 flex items-center gap-2.5 font-mono text-[9px] uppercase tracking-[3px] text-up">
-          <span className="inline-block h-px w-5 bg-up" /> Genesis
+        <div className="mb-2 flex items-center gap-2.5 font-mono text-[9px] uppercase tracking-[3px] text-amberx">
+          <span className="inline-block h-px w-5 bg-amberx" /> Genesis
         </div>
-        <h1 className="font-display text-[22px] font-extrabold tracking-[-0.3px]">Claim Allocation</h1>
-        <p className="mt-1 text-[13px] text-ink-2">25M PRX minted at chain genesis — authorized wallets only</p>
+        <h1 className="font-display text-[22px] font-extrabold tracking-[-0.3px]">Genesis Allocations</h1>
+        <p className="mt-1 text-[13px] text-ink-2">
+          Claim your pre-allocated PRX from genesis — community pool is liquid, investor and foundation vest over time
+        </p>
       </div>
 
-      {myPool === "liquidity" ? (
-        <LiquidityCard alloc={alloc} />
-      ) : myPool === "community" ? (
-        <CommunityCard alloc={alloc} router={router} />
+      {loading ? (
+        <div className="space-y-4">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="rounded-card border border-line bg-surface p-5">
+              <div className="mb-3 h-5 w-32 rounded bg-line/30 animate-pulseDot" />
+              <div className="mb-2 h-3 w-48 rounded bg-line/30 animate-pulseDot" />
+              <div className="h-8 w-24 rounded bg-line/30 animate-pulseDot" />
+            </div>
+          ))}
+        </div>
       ) : (
-        <VestingCard alloc={alloc} pool={myPool} router={router} />
+        <div className="space-y-4">
+          {POOLS.map((pool) => {
+            const alloc = allocations[pool.key];
+            const remaining = alloc?.remaining_balance ? fmtPRX(BigInt(alloc.remaining_balance)) : "0";
+            const claimable = alloc?.claimable_amount ? fmtPRX(BigInt(alloc.claimable_amount)) : null;
+            const eligible = alloc?.eligible;
+
+            return (
+              <div key={pool.key} className="rounded-card border border-line bg-surface-grad p-5">
+                <div className="mb-3 flex items-start justify-between">
+                  <div>
+                    <div className={`mb-1 font-display text-[16px] font-bold text-${pool.color}`}>
+                      {pool.label}
+                    </div>
+                    <div className="font-mono text-[10px] text-ink-3">{pool.desc}</div>
+                  </div>
+                  {eligible && (
+                    <div className="rounded-pill bg-amberx/10 px-2 py-0.5 font-mono text-[9px] font-bold text-amberx">
+                      ELIGIBLE
+                    </div>
+                  )}
+                </div>
+
+                <div className="mb-4 space-y-2">
+                  <div className="flex items-center justify-between rounded-card border border-line bg-surface p-3">
+                    <div className="font-mono text-[9px] uppercase tracking-wider text-ink-3">
+                      Remaining Balance
+                    </div>
+                    <div className="font-display text-[16px] font-bold text-ink">{remaining} PRX</div>
+                  </div>
+
+                  {claimable && claimable !== "0" && (
+                    <div className="flex items-center justify-between rounded-card border border-amberx/30 bg-amberx/5 p-3">
+                      <div className="font-mono text-[9px] uppercase tracking-wider text-amberx">
+                        Claimable Now
+                      </div>
+                      <div className="font-display text-[16px] font-bold text-amberx">{claimable} PRX</div>
+                    </div>
+                  )}
+
+                  {alloc?.next_claim_height && (
+                    <div className="flex items-center justify-between rounded-card border border-line bg-surface p-3">
+                      <div className="font-mono text-[9px] uppercase tracking-wider text-ink-3">
+                        Next Claim Height
+                      </div>
+                      <div className="font-mono text-[11px] font-bold text-ink">
+                        #{alloc.next_claim_height}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {!alloc && (
+                  <div className="rounded-card border border-line bg-surface p-3 text-center">
+                    <div className="font-mono text-[11px] text-ink-3">
+                      No allocation found for this address
+                    </div>
+                  </div>
+                )}
+
+                {alloc && !eligible && alloc.eligible_reason && (
+                  <div className="rounded-card border border-line bg-surface p-3">
+                    <div className="font-mono text-[10px] text-ink-3">{alloc.eligible_reason}</div>
+                  </div>
+                )}
+
+                {eligible && (
+                  <div className="mt-4">
+                    <ActionForm def={ACTIONS[`claim_genesis_${pool.key}`]} />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          <div className="rounded-card border border-line bg-surface p-4">
+            <div className="mb-2 font-mono text-[10px] uppercase tracking-wider text-ink-3">
+              How Genesis Claims Work
+            </div>
+            <ul className="space-y-1.5 font-mono text-[11px] text-ink-2">
+              <li>• <span className="font-bold text-amberx">Community:</span> 5M PRX liquid from genesis, claim anytime</li>
+              <li>• <span className="font-bold text-up">Investor:</span> 3M PRX vesting over 24 months, claim unlocked portions</li>
+              <li>• <span className="font-bold">Foundation:</span> 2M PRX vesting over 36 months, claim unlocked portions</li>
+              <li>• Each claim transfers available balance to your wallet</li>
+              <li>• Vesting schedules are enforced on-chain, no manual tracking needed</li>
+            </ul>
+          </div>
+        </div>
       )}
     </main>
-  );
-}
-
-function LiquidityCard({ alloc }: { alloc: GenesisResponse }) {
-  const balance = alloc.account_balance ? fmtPRX(BigInt(alloc.account_balance)) : "0";
-  return (
-    <div className="rounded-card border border-line bg-surface-grad p-5">
-      <div className="mb-3 font-display text-[15px] font-bold text-up">Liquidity Seed Wallet</div>
-      <div className="mb-4 font-mono text-[10px] text-ink-3">Liquid — spend directly via market creation, no claim needed</div>
-      <div className="mb-4 rounded-card border border-line bg-surface p-4">
-        <div className="mb-1 font-mono text-[9px] uppercase tracking-wider text-ink-3">Balance</div>
-        <div className="font-display text-[20px] font-bold text-ink">{balance} PRX</div>
-      </div>
-      <div className="font-mono text-[11px] text-ink-2">{alloc.note}</div>
-    </div>
-  );
-}
-
-function CommunityCard({ alloc, router }: { alloc: GenesisResponse; router: any }) {
-  const remaining = alloc.remaining_balance ? fmtPRX(BigInt(alloc.remaining_balance)) : "0";
-  const eligible = alloc.eligible;
-
-  return (
-    <div className="rounded-card border border-amberx/30 bg-surface-grad p-5">
-      <div className="mb-3 font-display text-[15px] font-bold text-amberx">Community Allocation</div>
-      <div className="mb-4 font-mono text-[10px] text-ink-3">Liquid — claim full remaining balance, no vesting</div>
-      <div className="mb-4 rounded-card border border-line bg-surface p-4">
-        <div className="mb-1 font-mono text-[9px] uppercase tracking-wider text-ink-3">Remaining</div>
-        <div className="font-display text-[20px] font-bold text-ink">{remaining} PRX</div>
-      </div>
-      {eligible ? (
-        <button
-          onClick={() => router.push("/action/claim_genesis_community")}
-          className="w-full rounded-card bg-up py-3 font-display text-[13px] font-bold text-bg transition-all hover:bg-up/90"
-        >
-          Claim Community Allocation
-        </button>
-      ) : (
-        <div className="rounded-card border border-line bg-surface p-3 text-center">
-          <div className="font-mono text-[11px] text-ink-3">{alloc.eligible_reason || "Not eligible"}</div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function VestingCard({ alloc, pool, router }: { alloc: GenesisResponse; pool: string; router: any }) {
-  const total = alloc.total_allocation ? BigInt(alloc.total_allocation) : 0n;
-  const claimed = alloc.claimed_amount ? BigInt(alloc.claimed_amount) : 0n;
-  const vested = alloc.vested_amount ? BigInt(alloc.vested_amount) : 0n;
-  const claimable = alloc.claimable_amount ? BigInt(alloc.claimable_amount) : 0n;
-  const eligible = alloc.eligible;
-
-  const currentHeight = alloc.current_height || 0;
-  const cliffHeight = alloc.cliff_height || 0;
-  const fullyVestedHeight = alloc.fully_vested_height || 0;
-  const cliffBlocks = alloc.cliff_blocks || 0;
-  const vestDurationBlocks = alloc.vest_duration_blocks || 1;
-
-  const blocksUntilCliff = Math.max(0, cliffHeight - currentHeight);
-  const vestingProgress = cliffHeight <= currentHeight && currentHeight <= fullyVestedHeight
-    ? ((currentHeight - cliffHeight) / vestDurationBlocks) * 100
-    : 0;
-
-  const poolLabel = pool === "investor" ? "Investor" : "Foundation";
-  const color = pool === "investor" ? "text-pinkx" : "text-cyanx";
-  const borderColor = pool === "investor" ? "border-pinkx/30" : "border-cyanx/30";
-
-  return (
-    <div className={`rounded-card border ${borderColor} bg-surface-grad p-5`}>
-      <div className={`mb-3 font-display text-[15px] font-bold ${color}`}>{poolLabel} Allocation</div>
-      <div className="mb-4 font-mono text-[10px] text-ink-3">6-month cliff + 18-month linear vesting</div>
-
-      <div className="mb-4 space-y-3">
-        <div className="rounded-card border border-line bg-surface p-4">
-          <div className="mb-1 font-mono text-[9px] uppercase tracking-wider text-ink-3">Total Allocation</div>
-          <div className="font-display text-[18px] font-bold text-ink">{fmtPRX(total)} PRX</div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-card border border-line bg-surface p-3">
-            <div className="mb-1 font-mono text-[8px] uppercase tracking-wider text-ink-3">Vested</div>
-            <div className="font-display text-[14px] font-bold text-ink">{fmtPRX(vested)}</div>
-          </div>
-          <div className="rounded-card border border-line bg-surface p-3">
-            <div className="mb-1 font-mono text-[8px] uppercase tracking-wider text-ink-3">Claimed</div>
-            <div className="font-display text-[14px] font-bold text-ink">{fmtPRX(claimed)}</div>
-          </div>
-        </div>
-
-        <div className="rounded-card border border-line bg-surface p-4">
-          <div className="mb-1 font-mono text-[9px] uppercase tracking-wider text-ink-3">Claimable Now</div>
-          <div className={`font-display text-[20px] font-bold ${claimable > 0n ? "text-up" : "text-ink-3"}`}>
-            {fmtPRX(claimable)} PRX
-          </div>
-        </div>
-      </div>
-
-      {blocksUntilCliff > 0 && (
-        <div className="mb-4 rounded-card border border-line bg-surface p-3">
-          <div className="mb-1 font-mono text-[9px] uppercase tracking-wider text-ink-3">Blocks Until Cliff</div>
-          <div className="font-mono text-[13px] font-bold text-ink">{blocksUntilCliff.toLocaleString()}</div>
-        </div>
-      )}
-
-      {vestingProgress > 0 && (
-        <div className="mb-4">
-          <div className="mb-2 font-mono text-[9px] uppercase tracking-wider text-ink-3">Vesting Progress</div>
-          <div className="h-2 overflow-hidden rounded-pill bg-surface">
-            <div
-              className="h-full bg-up transition-all"
-              style={{ width: `${Math.min(100, vestingProgress)}%` }}
-            />
-          </div>
-          <div className="mt-1 text-right font-mono text-[10px] text-ink-3">{vestingProgress.toFixed(1)}%</div>
-        </div>
-      )}
-
-      {eligible ? (
-        <button
-          onClick={() => router.push(`/action/claim_genesis_${pool}`)}
-          className="w-full rounded-card bg-up py-3 font-display text-[13px] font-bold text-bg transition-all hover:bg-up/90"
-        >
-          Claim {poolLabel} Allocation
-        </button>
-      ) : (
-        <div className="rounded-card border border-line bg-surface p-3 text-center">
-          <div className="font-mono text-[11px] text-ink-3">{alloc.eligible_reason || "Not eligible"}</div>
-        </div>
-      )}
-    </div>
   );
 }
