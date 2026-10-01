@@ -62,7 +62,7 @@ export async function buildSigned(
   if (!height || !netId || !chainId) {
     height = height || ctx.height;
     netId = netId || ctx.networkId || 1;
-    chainId = chainId || ctx.chainId || 1;
+    chainId = chainId || ctx.chainId || 30;
   }
   
   // Fallback to live query if still missing
@@ -70,7 +70,7 @@ export async function buildSigned(
     const live = await queryHeight();
     height = height || live.height;
     netId = netId || live.networkId || 1;
-    chainId = chainId || live.chainId || 1;
+    chainId = chainId || live.chainId || 30;
   }
   
   const p = { txTime, fee: meta.fee || 10000, height, memo: "", netId, chainId };

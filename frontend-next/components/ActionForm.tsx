@@ -273,7 +273,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
       fee: Number(vals.fee) || 10000,
       memo: "",
       network_id: chain.networkId ?? 1,
-      chain_id: chain.chainId ?? 1,
+      chain_id: chain.chainId ?? 30,
     };
     setPayload(JSON.stringify(unsigned, null, 2));
     toast("✓ Unsigned payload built — copy for CLI signing");

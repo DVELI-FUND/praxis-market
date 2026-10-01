@@ -61,36 +61,43 @@ export interface HeightInfo {
   chainId?: number;
 }
 
-// Mirrors old frontend's checkRPC: populate global store with height/networkId/chainId
+type BlkResp = {
+  blockHeader?: {
+    lastQuorumCertificate?: {
+      header?: { chainId?: number; chainID?: number; networkID?: number; networkId?: number };
+    };
+  };
+};
+
+// Praxis chain id (node rejects any tx whose chainID != its Config.ChainId)
+const FALLBACK_CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID || 30);
+
+async function discoverChain(height: number): Promise<{ chainId?: number; networkId?: number }> {
+  // block at the current height is often not indexed yet (HTTP 400): 0 = latest indexed
+  const heights = [0, height - 1, height - 2].filter((h, i, arr) => h >= 0 && arr.indexOf(h) === i);
+  for (const h of heights) {
+    try {
+      const blk = await rpc<BlkResp>("/v1/query/block-by-height", { height: h });
+      const hdr = blk?.blockHeader?.lastQuorumCertificate?.header;
+      const chainId = hdr?.chainId ?? hdr?.chainID;
+      if (chainId) return { chainId, networkId: hdr?.networkID ?? hdr?.networkId };
+    } catch {
+      // try next height
+    }
+  }
+  return {};
+}
+
 export async function queryHeight(): Promise<HeightInfo> {
   const d = await rpc<{ height?: number | string; network_id?: number; networkID?: number }>(
     "/v1/query/height",
     {}
   );
   const height = Number(d.height || 0);
-  let networkId = d.network_id ?? d.networkID;
-  let chainId: number | undefined;
-  
-  try {
-    const blk = await rpc<{
-      blockHeader?: {
-        lastQuorumCertificate?: {
-          header?: { chainId?: number; chainID?: number; networkID?: number; networkId?: number };
-        };
-      };
-    }>("/v1/query/block-by-height", { height });
-    const hdr = blk?.blockHeader?.lastQuorumCertificate?.header;
-    if (hdr) {
-      chainId = hdr.chainId ?? hdr.chainID;
-      networkId = hdr.networkID ?? hdr.networkId ?? networkId;
-    }
-  } catch {
-    // block-by-height may fail — use what we have
-  }
-  
-  // Populate global store (mirrors old frontend's window.currentHeight/ChainID/NetworkID)
+  const found = await discoverChain(height);
+  const chainId = found.chainId ?? FALLBACK_CHAIN_ID;
+  const networkId = found.networkId ?? d.network_id ?? d.networkID;
   setChainContext(height, chainId, networkId);
-  
   return { height, networkId, chainId };
 }
 

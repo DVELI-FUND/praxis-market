@@ -1,6 +1,6 @@
 // Global chain context — mirrors old frontend's window.currentHeight/ChainID/NetworkID
 let _height = 0;
-let _chainId = 1;
+let _chainId = 30;
 let _networkId = 1;
 
 export function setChainContext(height: number, chainId?: number, networkId?: number) {

@@ -123,7 +123,7 @@ export function encSignBytes(msgType: string, typeUrl: string, inner: Uint8Array
     vf(6, m.fee || 10000),
     m.memo ? sf(7, m.memo) : new Uint8Array(0),
     vf(8, m.netId || 1),
-    vf(9, m.chainId || 1)
+    vf(9, m.chainId || 30)
   );
 }
 
