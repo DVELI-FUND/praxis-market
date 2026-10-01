@@ -6,6 +6,7 @@ import { b64ToHex } from "@/lib/format";
 const HIDDEN: string[] = [
   "6da413d908ca5d41bc90c25bec85cc33a1942538",
   "8fee15ad02f94760476d8330283423efdfc01bce",
+  "46296c71dc08ca5a3e255464334cd42b2aabeb20",
   // IDS_END
 ];
 
