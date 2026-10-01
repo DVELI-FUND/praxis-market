@@ -51,7 +51,7 @@ export default function InfoTab({ market, disputeContext }: Props) {
         <div className="border-t border-line pt-3">
           <div className="mb-2 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">Resolution Criteria</div>
           <div className="rounded-card border border-line bg-bg-2 p-3 font-mono text-[11px] leading-[1.7] whitespace-pre-wrap text-ink-2">
-            {market.rules}
+            {market.rules.replace(/\[(?:CAT|IMG|OUT):[^\]]*\]\s*/g, "").trim()}
           </div>
         </div>
       )}

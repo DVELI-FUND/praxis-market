@@ -8,7 +8,7 @@ import { showConfirm } from "@/store/confirm";
 import { buildSigned, friendlyError, TYPE_URLS, waitForConfirmation } from "@/lib/tx";
 import { encPredict } from "@/lib/proto";
 import { submitTxRPC } from "@/lib/rpc";
-import { yesPct } from "@/lib/markets";
+import { extractOutcomes, yesPct } from "@/lib/markets";
 import { fmtPRX } from "@/lib/format";
 import type { MarketDetail } from "@/lib/detail";
 
@@ -23,6 +23,7 @@ export default function PredictPanel({ market, outcome, onOutcome }: Props) {
   const { data: chain } = useHeight();
   const toast = useToast((s) => s.show);
   const queryClient = useQueryClient();
+  const outLbl = extractOutcomes(market.rules || "");
 
   const [shares, setShares] = useState(1);
   const [slip, setSlip] = useState(2);
@@ -53,7 +54,7 @@ export default function PredictPanel({ market, outcome, onOutcome }: Props) {
 
     const ok = await showConfirm("Submit Prediction", [
       ["Market ID", market.marketId.slice(0, 16) + "…", ""],
-      ["Outcome", outcome ? "YES" : "NO", outcome ? "g" : "r"],
+      ["Outcome", outcome ? outLbl.yes : outLbl.no, outcome ? "g" : "r"],
       ["Shares", shares.toLocaleString() + " PRX", ""],
       ["Max Cost", bd.maxCost.toLocaleString() + " PRX", ""],
     ]);
@@ -73,7 +74,7 @@ export default function PredictPanel({ market, outcome, onOutcome }: Props) {
         queryClient.invalidateQueries({ queryKey: ["market-txs", market.marketId] });
         queryClient.invalidateQueries({ queryKey: ["market", market.marketId] });
         queryClient.invalidateQueries({ queryKey: ["position", market.marketId, praxisAddress] });
-        toast(`✓ Position confirmed: +${fmtPRX(shares)} shares ${outcome ? "YES" : "NO"} @ ${pct}¢`);
+        toast(`✓ Position confirmed: +${fmtPRX(shares)} shares ${outcome ? outLbl.yes : outLbl.no} @ ${pct}¢`);
       } else {
         toast(res.message, true);
       }
@@ -99,11 +100,11 @@ export default function PredictPanel({ market, outcome, onOutcome }: Props) {
         {/* outcome segmented */}
         <div className="mb-3 grid grid-cols-2 gap-2">
           <button onClick={() => onOutcome(true)} className={`flex items-center justify-between rounded-card border px-3 py-2.5 transition-all ${outcome ? "border-up bg-up-dim shadow-glowUp" : "border-line opacity-50 hover:opacity-80"}`}>
-            <span className="font-mono text-[10px] font-bold text-up">YES</span>
+            <span className="max-w-[55%] truncate font-mono text-[10px] font-bold text-up">{outLbl.yes}</span>
             <span className="font-display text-[15px] font-bold text-up tabular-nums">{pct}¢</span>
           </button>
           <button onClick={() => onOutcome(false)} className={`flex items-center justify-between rounded-card border px-3 py-2.5 transition-all ${!outcome ? "border-down bg-down-dim shadow-glowDown" : "border-line opacity-50 hover:opacity-80"}`}>
-            <span className="font-mono text-[10px] font-bold text-down">NO</span>
+            <span className="max-w-[55%] truncate font-mono text-[10px] font-bold text-down">{outLbl.no}</span>
             <span className="font-display text-[15px] font-bold text-down tabular-nums">{100 - pct}¢</span>
           </button>
         </div>
@@ -155,7 +156,7 @@ export default function PredictPanel({ market, outcome, onOutcome }: Props) {
         )}
 
         <button onClick={() => void submit()} disabled={pending || over || !connected} className="w-full rounded-card bg-up py-3 font-sans text-[13px] font-extrabold text-black shadow-glowUp transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40">
-          {pending ? "▪▪▪ broadcasting…" : `⚡ Buy ${outcome ? "YES" : "NO"} · ${bd.maxCost} PRX max`}
+          {pending ? "▪▪▪ broadcasting…" : `⚡ Buy ${outcome ? outLbl.yes : outLbl.no} · ${bd.maxCost} PRX max`}
         </button>
         {!connected && <div className="mt-2 text-center font-mono text-[9px] text-ink-3">connect wallet to trade</div>}
       </div>

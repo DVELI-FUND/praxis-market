@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { Market } from "@/lib/markets";
-import { CAT_SYMBOLS, extractCat, stripCatPrefix, yesPct } from "@/lib/markets";
+import { CAT_SYMBOLS, extractCat, extractOutcomes, stripCatPrefix, yesPct } from "@/lib/markets";
 import BannerImg from "./BannerImg";
 import { fmtPRX, fmtCountdown } from "@/lib/format";
 import { useHeight } from "@/hooks/useHeight";
@@ -34,6 +34,7 @@ export default function MarketCard({ market, featured = false, bookmarked, onTog
   }, [pct]);
 
   const catKey = extractCat(market.rules);
+  const outLbl = extractOutcomes(market.rules);
   const catSymbol = CAT_SYMBOLS[catKey] || "◈";
   const question = stripCatPrefix(market.question || market.rules || "(no question)");
   const maxLen = featured ? 140 : 96;
@@ -94,11 +95,11 @@ export default function MarketCard({ market, featured = false, bookmarked, onTog
 
         <div className="mb-3 grid grid-cols-2 gap-2">
           <div className="flex items-center justify-between rounded-card border border-up/25 bg-up-dim px-3 py-2 transition-colors group-hover:border-up/50">
-            <span className="font-mono text-[10px] font-bold text-up">YES</span>
+            <span className="max-w-[55%] truncate font-mono text-[10px] font-bold text-up">{outLbl.yes}</span>
             <span className="font-display text-[14px] font-bold text-up tabular-nums">{pct}¢</span>
           </div>
           <div className="flex items-center justify-between rounded-card border border-down/25 bg-down-dim px-3 py-2 transition-colors group-hover:border-down/50">
-            <span className="font-mono text-[10px] font-bold text-down">NO</span>
+            <span className="max-w-[55%] truncate font-mono text-[10px] font-bold text-down">{outLbl.no}</span>
             <span className="font-display text-[14px] font-bold text-down tabular-nums">{noPct}¢</span>
           </div>
         </div>

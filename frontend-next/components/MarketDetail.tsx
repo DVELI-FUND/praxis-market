@@ -3,7 +3,7 @@ import { useEffect, useState , useMemo} from "react";
 import Link from "next/link";
 import { useMarketDetail } from "@/hooks/useMarketDetail";
 import { useHeight } from "@/hooks/useHeight";
-import { extractCat, stripCatPrefix, yesPct, STATUS } from "@/lib/markets";
+import { extractCat, extractOutcomes, stripCatPrefix, yesPct, STATUS } from "@/lib/markets";
 import { fmtPRX, fmtCountdown } from "@/lib/format";
 import StatusPill from "./StatusPill";
 import ShareButton from "./ShareButton";
@@ -87,6 +87,7 @@ export default function MarketDetail({ mid }: Props) {
   const total = market.qYes + market.qNo;
   const vol = total > 0n ? fmtPRX(total) : "—";
   const catKey = extractCat(market.rules);
+  const outLbl = extractOutcomes(market.rules || "");
   const question = stripCatPrefix(market.question || market.rules || "(no question)");
   const rules = market.rules || "";
   const rulesText = rules.replace(/^\[.*?\]\s*/, "").trim();
@@ -153,23 +154,23 @@ export default function MarketDetail({ mid }: Props) {
             <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-3 px-4 py-4">
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-up" />
-                <span className="font-display text-[14px] font-bold text-ink">YES</span>
+                <span className="font-display text-[14px] font-bold text-ink">{outLbl.yes}</span>
               </div>
               <div className="w-[80px] text-right font-display text-[18px] font-extrabold text-up tabular-nums">{pct}%</div>
               <div className={`w-[80px] text-right font-mono text-[11px] tabular-nums ${chg > 0 ? "text-up" : chg < 0 ? "text-down" : "text-ink-3"}`}>{fmtChg(chg)}</div>
               <div className="w-[120px] text-right">
-                <button onClick={() => setOutcome(true)} className="rounded-card bg-up px-4 py-1.5 font-sans text-[11px] font-extrabold text-black transition-all hover:brightness-110">Buy YES</button>
+                <button onClick={() => setOutcome(true)} className="rounded-card bg-up px-4 py-1.5 font-sans text-[11px] font-extrabold text-black transition-all hover:brightness-110">Buy {outLbl.yes}</button>
               </div>
             </div>
             <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-3 border-t border-line px-4 py-4">
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-down" />
-                <span className="font-display text-[14px] font-bold text-ink">NO</span>
+                <span className="font-display text-[14px] font-bold text-ink">{outLbl.no}</span>
               </div>
               <div className="w-[80px] text-right font-display text-[18px] font-extrabold text-down tabular-nums">{noPct}%</div>
               <div className={`w-[80px] text-right font-mono text-[11px] tabular-nums ${chg < 0 ? "text-up" : chg > 0 ? "text-down" : "text-ink-3"}`}>{fmtChg(-chg)}</div>
               <div className="w-[120px] text-right">
-                <button onClick={() => setOutcome(false)} className="rounded-card bg-down px-4 py-1.5 font-sans text-[11px] font-extrabold text-black transition-all hover:brightness-110">Buy NO</button>
+                <button onClick={() => setOutcome(false)} className="rounded-card bg-down px-4 py-1.5 font-sans text-[11px] font-extrabold text-black transition-all hover:brightness-110">Buy {outLbl.no}</button>
               </div>
             </div>
           </div>
