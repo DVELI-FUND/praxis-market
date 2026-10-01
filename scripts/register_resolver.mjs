@@ -8,7 +8,7 @@ const RESOLVER_ADDR = 'e7c7dad131a03f7ea0cc09a637ad096eb3495f77';
 const STAKE = 500000000000n;
 const FEE = 10000;
 const NETWORK_ID = 1;
-const CHAIN_ID = 1;
+const CHAIN_ID = 30;
 
 function h2b(hex){hex=hex.trim().toLowerCase();if(hex.length%2)throw new Error('Odd hex');const o=new Uint8Array(hex.length/2);for(let i=0;i<o.length;i++)o[i]=parseInt(hex.slice(i*2,i*2+2),16);return o;}
 function b2h(b){return Array.from(b).map(x=>x.toString(16).padStart(2,'0')).join('');}
@@ -24,7 +24,7 @@ function encRegister(addr,stake){return cat(bf(1,h2b(addr)),vf(2,stake));}
 function encAny(typeUrl,inner){return cat(sf(1,typeUrl),bf(2,inner));}
 function encSignBytes(msgType,typeUrl,inner,{txTime,fee,height,memo,netId,chainId}){
   const any=encAny(typeUrl,inner);
-  return cat(sf(1,msgType),ef(2,any),vf(4,height),vf(5,txTime),vf(6,fee||10000),memo?sf(7,memo):new Uint8Array(0),vf(8,netId||1),vf(9,chainId||1));
+  return cat(sf(1,msgType),ef(2,any),vf(4,height),vf(5,txTime),vf(6,fee||10000),memo?sf(7,memo):new Uint8Array(0),vf(8,netId||1),vf(9,chainId||30));
 }
 
 async function main(){
