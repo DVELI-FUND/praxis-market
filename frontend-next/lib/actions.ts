@@ -147,6 +147,27 @@ export const ACTIONS: Record<string, ActionDef> = {
     build: (v) => encRegister(s(v, "addr"), u(v, "stake")),
     validate: (v) => (Number(v.stake) < 500000 ? "Stake min 500,000 PRX" : null),
   },
+  claim_genesis_community: {
+    key: "claim_genesis_community", msgType: "claim_genesis_community_alloc", title: "Claim Community Allocation",
+    eye: "Genesis", sub: "Claim 5M PRX liquid community allocation — no vesting",
+    gate: "genesis",
+    fields: [ WALLET, FEE ],
+    build: () => encClaimGenesisCommunity(),
+  },
+  claim_genesis_investor: {
+    key: "claim_genesis_investor", msgType: "claim_genesis_investor_alloc", title: "Claim Investor Allocation",
+    eye: "Genesis", sub: "Claim vested portion of 6.5M PRX investor allocation",
+    gate: "genesis",
+    fields: [ WALLET, FEE ],
+    build: () => encClaimGenesisInvestor(),
+  },
+  claim_genesis_foundation: {
+    key: "claim_genesis_foundation", msgType: "claim_genesis_foundation_alloc", title: "Claim Foundation Allocation",
+    eye: "Genesis", sub: "Claim vested portion of 6.5M PRX foundation allocation",
+    gate: "genesis",
+    fields: [ WALLET, FEE ],
+    build: () => encClaimGenesisFoundation(),
+  },
   unstake: {
     key: "unstake", msgType: "unstake_resolver", title: "Unstake Resolver", eye: "Resolver", sub: "Begin 120,960-block unbonding period — partial or full exit", gate: "resolver", statusCard: "resolver",
     fields: [ WALLET, { id: "amount", label: "Amount (PRX) — 0 = full exit", type: "number", def: 0, scale: W }, FEE ],
