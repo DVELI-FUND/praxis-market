@@ -173,7 +173,7 @@ export default function GenesisPage() {
                         <div className="rounded-card border border-line bg-surface p-3">
                           <div className="mb-1 flex items-center justify-between">
                             <span className="font-mono text-[9px] uppercase tracking-wider text-ink-3">Cliff reached in</span>
-                            <span className="font-mono text-[11px] font-bold text-ink">{fmtCountdown(blocksToCliff, currentHeight)}</span>
+                            <span className="font-mono text-[11px] font-bold text-ink">{fmtCountdown(cliffHeight, currentHeight)}</span>
                           </div>
                           <div className="font-mono text-[10px] text-ink-3">
                             Block #{cliffHeight} (current: #{currentHeight})
@@ -185,7 +185,7 @@ export default function GenesisPage() {
                         <div className="rounded-card border border-line bg-surface p-3">
                           <div className="mb-1 flex items-center justify-between">
                             <span className="font-mono text-[9px] uppercase tracking-wider text-ink-3">Fully vested in</span>
-                            <span className="font-mono text-[11px] font-bold text-ink">{fmtCountdown(blocksToFullyVested, currentHeight)}</span>
+                            <span className="font-mono text-[11px] font-bold text-ink">{fmtCountdown(fullyVestedHeight, currentHeight)}</span>
                           </div>
                           <div className="font-mono text-[10px] text-ink-3">
                             Block #{fullyVestedHeight} (current: #{currentHeight})
