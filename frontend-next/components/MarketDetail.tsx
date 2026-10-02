@@ -148,30 +148,30 @@ export default function MarketDetail({ mid }: Props) {
 
           {/* outcome row */}
           <div className="mb-4 overflow-hidden rounded-card border border-line bg-surface-grad shadow-card">
-            <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-3 border-b border-line px-4 py-2.5 font-mono text-[11px] uppercase tracking-[1.5px] text-ink-3">
+            <div className="hidden border-b border-line px-4 py-2.5 font-mono text-[11px] uppercase tracking-[1.5px] text-ink-3 md:grid md:grid-cols-[1fr_auto_auto_auto] md:items-center md:gap-3">
               <span>Outcome</span>
               <span className="w-[80px] text-right">Chance</span>
               <span className="w-[80px] text-right">Change</span>
               <span className="w-[120px] text-right">Action</span>
             </div>
-            <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-3 px-4 py-4">
+            <div className="flex items-center justify-between gap-2 px-4 py-4 md:grid md:grid-cols-[1fr_auto_auto_auto] md:items-center md:gap-3">
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-up" />
                 <span className="font-display text-[16px] font-bold text-ink">{outLbl.yes}</span>
               </div>
-              <div className="w-[80px] text-right font-display text-[18px] font-extrabold text-up tabular-nums">{pct}%</div>
-              <div className={`w-[80px] text-right font-mono text-[13px] tabular-nums ${chg > 0 ? "text-up" : chg < 0 ? "text-down" : "text-ink-3"}`}>{fmtChg(chg)}</div>
+              <div className="font-display text-[18px] font-extrabold text-up tabular-nums md:w-[80px] md:text-right">{pct}%</div>
+              <div className={`hidden font-mono text-[13px] tabular-nums ${chg > 0 ? "text-up" : chg < 0 ? "text-down" : "text-ink-3"} md:block md:w-[80px] md:text-right`}>{fmtChg(chg)}</div>
               <div className="w-[120px] text-right">
                 <button onClick={() => setOutcome(true)} className="rounded-card bg-up px-4 py-1.5 font-sans text-[13px] font-extrabold text-black transition-all hover:brightness-110">Buy {outLbl.yes}</button>
               </div>
             </div>
-            <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-3 border-t border-line px-4 py-4">
+            <div className="flex items-center justify-between gap-2 border-t border-line px-4 py-4 md:grid md:grid-cols-[1fr_auto_auto_auto] md:items-center md:gap-3">
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-down" />
                 <span className="font-display text-[16px] font-bold text-ink">{outLbl.no}</span>
               </div>
-              <div className="w-[80px] text-right font-display text-[18px] font-extrabold text-down tabular-nums">{noPct}%</div>
-              <div className={`w-[80px] text-right font-mono text-[13px] tabular-nums ${chg < 0 ? "text-up" : chg > 0 ? "text-down" : "text-ink-3"}`}>{fmtChg(-chg)}</div>
+              <div className="font-display text-[18px] font-extrabold text-down tabular-nums md:w-[80px] md:text-right">{noPct}%</div>
+              <div className={`hidden font-mono text-[13px] tabular-nums ${chg < 0 ? "text-up" : chg > 0 ? "text-down" : "text-ink-3"} md:block md:w-[80px] md:text-right`}>{fmtChg(-chg)}</div>
               <div className="w-[120px] text-right">
                 <button onClick={() => setOutcome(false)} className="rounded-card bg-down px-4 py-1.5 font-sans text-[13px] font-extrabold text-black transition-all hover:brightness-110">Buy {outLbl.no}</button>
               </div>
