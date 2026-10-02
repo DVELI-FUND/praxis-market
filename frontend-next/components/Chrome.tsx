@@ -6,6 +6,7 @@ import BottomNav from "./BottomNav";
 import Toaster from "./Toaster";
 import ConfirmModal from "./ConfirmModal";
 import MoreSheet from "./MoreSheet";
+import WalletModal from "./WalletModal";
 
 export default function Chrome({ children }: { children: ReactNode }) {
   return (
@@ -16,6 +17,7 @@ export default function Chrome({ children }: { children: ReactNode }) {
       <Toaster />
       <ConfirmModal />
       <MoreSheet />
+      <WalletModal />
     </WalletProvider>
   );
 }

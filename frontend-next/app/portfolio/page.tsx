@@ -64,7 +64,10 @@ const { data: positions = [] } = usePositions();const { data: balance = 0n } = u
             <div className="font-display text-[16px] font-extrabold text-ink">Your portfolio awaits</div>
             <div className="mt-1 font-mono text-[10px] text-ink-3">Connect your wallet to view balance, assets and positions</div>
           </div>
-          <WalletPill />
+          <WalletPill size="lg" />
+          <div className="max-w-[360px] font-mono text-[9px] leading-relaxed text-ink-3">
+            Works with MetaMask, Rabby, Coinbase, Trust, Brave and other EVM wallets. One free signature — no gas, non-custodial.
+          </div>
         </div>
       </main>
     );
