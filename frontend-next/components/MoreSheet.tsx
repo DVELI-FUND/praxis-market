@@ -1,4 +1,5 @@
 "use client";
+import CatIcon from "./icons/CatIcon";
 import Link from "next/link";
 import { useUi } from "@/store/ui";
 import { useWallet } from "@/store/wallet";
@@ -19,11 +20,11 @@ const SECTIONS: NavSection[] = [
       { href: "/", label: "Browse Markets", icon: "◈" },
       { href: "/action/claim", label: "Claim Winnings", icon: "◎" , gate: "connected"},
       { href: "/action/reclaim", label: "Reclaim Stake", icon: "◍" , gate: "connected"},
-      { href: "/sports", label: "Sports", icon: "⚽" },
-      { href: "/esports", label: "Esports", icon: "🎮" },
-      { href: "/crypto", label: "Crypto", icon: "◈" },
-      { href: "/politics", label: "Politics", icon: "🗳" },
-      { href: "/finance", label: "Finance", icon: "📈" },
+      { href: "/sports", label: "Sports", icon: "football" },
+      { href: "/esports", label: "Esports", icon: "esports" },
+      { href: "/crypto", label: "Crypto", icon: "crypto" },
+      { href: "/politics", label: "Politics", icon: "politics" },
+      { href: "/finance", label: "Finance", icon: "finance" },
       { href: "/resolvers", label: "Browse Resolvers", icon: "◉" },
       { href: "/action/claimcreator", label: "Claim Creator Fee", icon: "◔" , gate: "connected"},
       { href: "/action/cancel", label: "Cancel Market", icon: "✕" , gate: "creator"},
@@ -140,7 +141,7 @@ export default function MoreSheet() {
                     it.badge && !badgeVisible(it.badge) ? "opacity-50" : ""
                   }`}
                 >
-                  <span className="w-4 text-center text-[14px]">{it.icon}</span>
+                  <span className="w-4 text-center text-[14px]">{(["football","esports","crypto","politics","finance"].includes(it.icon) ? <CatIcon name={it.icon} className="h-4 w-4" /> : it.icon)}</span>
                   <span>{it.label}</span>
                   <BadgeChip kind={it.badge ?? null} />
                 </Link>

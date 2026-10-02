@@ -38,7 +38,7 @@ export function buildRulesWithOutcomes(rules: string, yesLabel: string, noLabel:
   return stripped + (stripped ? " " : "") + "[OUT:" + yl + "|" + nl + "]";
 }
 
-export type FieldType = "wallet" | "addr" | "mid" | "number" | "text" | "hash64" | "outcome" | "cat" | "sub" | "datetime";
+export type FieldType = "wallet" | "addr" | "mid" | "number" | "text" | "hash64" | "outcome" | "cat" | "sub" | "league" | "datetimeOpt" | "datetime";
 export interface FieldDef {
   id: string;
   label: string;
@@ -184,8 +184,8 @@ export const ACTIONS: Record<string, ActionDef> = {
     fields: [
       { id: "cat", label: "Category", type: "cat" },
       { id: "sub", label: "Subcategory", type: "sub" },
-      { id: "lg", label: "League / Tournament (optional)", type: "text", hint: "e.g. ATP, MLB, UCL, KHL — groups games" },
-      { id: "ko", label: "Kickoff / Start (optional)", type: "text", hint: "ISO e.g. 2026-10-03T17:00 — powers Live & schedule" },
+      { id: "lg", label: "League / Tournament (optional)", type: "league", hint: "e.g. ATP, MLB, UCL, KHL — groups games" },
+      { id: "ko", label: "Kickoff / Start (optional)", type: "datetimeOpt", hint: "ISO e.g. 2026-10-03T17:00 — powers Live & schedule" },
       { id: "question", label: "Question", type: "text" },
       { id: "out_yes", label: "Custom YES label (optional)", type: "text" },
       { id: "out_no", label: "Custom NO label (optional)", type: "text" },

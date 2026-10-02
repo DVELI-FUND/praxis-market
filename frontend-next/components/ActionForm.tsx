@@ -16,7 +16,7 @@ import ResolverStatusCard from "./ResolverStatusCard";
 import BannerImg from "./BannerImg";
 import UnstakePlanner from "./UnstakePlanner";
 import { b2b64 } from "@/lib/proto";
-import { CATS_TREE } from "@/lib/cats";
+import { CATS_TREE, TOP_LEAGUES } from "@/lib/cats";
 import CatIcon from "./icons/CatIcon";
 import { fetchMarkets, stripCatPrefix, STATUS, yesPct } from "@/lib/markets";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -56,6 +56,8 @@ export default function ActionForm({ def }: { def: ActionDef }) {
       if (f.type === "number") init[f.id] = f.def ?? 0;
       else if (f.type === "outcome") init[f.id] = true;
       else if (f.type === "cat") init[f.id] = "crypto";
+      else if (f.type === "league") init[f.id] = "";
+      else if (f.type === "datetimeOpt") init[f.id] = "";
       else if (f.type === "datetime") init[f.id] = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 16);
       else init[f.id] = "";
     }
@@ -640,6 +642,17 @@ export default function ActionForm({ def }: { def: ActionDef }) {
                 </div>
               );
             })()
+          ) : f.type === "league" ? (
+              <div>
+                <div className="mb-1.5 flex flex-wrap gap-1.5">
+                  {TOP_LEAGUES.map((l) => (
+                    <button key={l.key} onClick={() => set(f.id, l.key)} className={`rounded-full border px-3 py-1 font-mono text-[12px] ${vals[f.id] === l.key ? "border-up bg-up text-black" : "border-line text-ink-2"}`}>{l.label}</button>
+                  ))}
+                </div>
+                <input value={String(vals[f.id] ?? "")} onChange={(e) => set(f.id, e.target.value)} placeholder="or type a custom league code" className="mt-1.5 w-full rounded-card border border-line bg-surface px-3 py-2.5 font-mono text-[13px] text-ink outline-none transition-colors focus:border-amberx" />
+              </div>
+          ) : f.type === "datetimeOpt" ? (
+              <input type="datetime-local" value={String(vals[f.id] ?? "")} onChange={(e) => set(f.id, e.target.value)} className="w-full rounded-card border border-line bg-surface px-3 py-2.5 font-mono text-[13px] text-ink outline-none transition-colors focus:border-amberx" />
           ) : f.type === "datetime" ? (
             <div>
               <input

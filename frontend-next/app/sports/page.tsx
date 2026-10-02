@@ -1,6 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { fetchMarkets, yesPct, extractOutcomes, extractCat, isCancelled } from "@/lib/markets";
 import type { Market } from "@/lib/markets";
@@ -16,7 +17,7 @@ const PAIRS: [string, string][] = [
 ];
 const DARK = new Set(["#f5d90a", "#d6c7a1"]);
 
-interface Game { m: Market; ko: number; lg: string; sub: string }
+interface Game { m: Market; ko: number; lg: string; lgRaw: string; sub: string }
 const outs = (m: Market) => {
   const o = extractOutcomes(m.rules) as unknown as { yes?: string; no?: string } | null;
   return { a: o?.yes || "YES", b: o?.no || "NO" };
@@ -28,6 +29,7 @@ export default function SportsPage() {
   const [mode, setMode] = useState<"games" | "props">("games");
   const [liveOnly, setLiveOnly] = useState(false);
   const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
+  const router = useRouter();
   const { data: ms = [] } = useQuery({ queryKey: ["markets-" + CAT_KEY], queryFn: fetchMarkets, staleTime: 15000 });
   const now = Date.now();
 
@@ -39,14 +41,14 @@ export default function SportsPage() {
   }, [all]);
 
   const tagged = useMemo(() => all.map((m) => ({
-    m, koStr: parseKo(m.rules), lg: parseLg(m.rules) || parseSub(m.rules)?.toUpperCase() || CAT_KEY.toUpperCase(), sub: parseSub(m.rules) || "",
+    m, koStr: parseKo(m.rules), lgRaw: parseLg(m.rules) || "", lg: parseLg(m.rules) || parseSub(m.rules)?.toUpperCase() || CAT_KEY.toUpperCase(), sub: parseSub(m.rules) || "",
   })), [all]);
 
   const subbed = useMemo(() => tagged.filter((g) => !sub || g.sub === sub), [tagged, sub]);
 
   const leagueCounts = useMemo(() => {
     const c: Record<string, number> = {};
-    subbed.forEach((g) => { c[g.lg] = (c[g.lg] || 0) + 1; });
+    subbed.forEach((g) => { if (g.lgRaw) c[g.lgRaw] = (c[g.lgRaw] || 0) + 1; });
     return c;
   }, [subbed]);
 
@@ -58,7 +60,7 @@ export default function SportsPage() {
       .filter((l) => l.count > 0 || featured.includes(l.key));
   }, [leagueCounts]);
 
-  const filtered = useMemo(() => subbed.filter((g) => !league || g.lg === league), [subbed, league]);
+  const filtered = useMemo(() => subbed.filter((g) => !league || g.lgRaw === league), [subbed, league]);
 
   const games = useMemo(() => filtered
     .filter((g) => g.koStr)
@@ -88,7 +90,7 @@ export default function SportsPage() {
     const vol = g.m.qYes + g.m.qNo;
     const isLive = g.ko <= now;
     return (
-      <div onClick={() => setSelectedMarket(g.m)} className="rounded-card border border-line bg-surface-grad p-4 cursor-pointer hover:border-line-2 transition-colors">
+      <div onClick={() => { if (window.matchMedia("(min-width: 1280px)").matches) setSelectedMarket(g.m); else router.push(`/market/${g.m.marketId}`); }} className="rounded-card border border-line bg-surface-grad p-4 cursor-pointer hover:border-line-2 transition-colors">
         <div className="mb-2 flex items-center justify-between">
           <div className="flex items-center gap-2 font-mono text-[12px] text-ink-3">
             {isLive ? (
@@ -123,7 +125,7 @@ export default function SportsPage() {
 
   return (
     <main className="relative z-10 mx-auto min-h-screen max-w-[1280px] px-4 py-6 pb-24 md:px-8">
-      <div className="mb-5 flex items-end justify-between gap-3">
+      <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <div className="mb-2 flex items-center gap-2.5 font-mono text-[12px] uppercase tracking-[3px] text-up">
             <span className="inline-block h-px w-5 bg-up" /> {CAT_KEY}
