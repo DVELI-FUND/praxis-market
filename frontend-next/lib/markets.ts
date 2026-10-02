@@ -94,7 +94,7 @@ export async function fetchMarkets(): Promise<Market[]> {
 // ── rules-tag grammar — ported verbatim from Frontend/ui-shell.js ──
 export function extractCat(rules: string): string {
   if (!rules) return "other";
-  const m = rules.match(/^\[CAT:(\w+)\]/);
+  const m = rules.match(/\[CAT:(\w+)\]/);
   return m ? m[1] : "other";
 }
 export function stripCatPrefix(rules: string): string {
