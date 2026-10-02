@@ -99,7 +99,17 @@ export function extractCat(rules: string): string {
 }
 export function stripCatPrefix(rules: string): string {
   if (!rules) return "";
-  return rules.replace(/^\[CAT:\w+\]\s*/, "");
+  return rules.replace(/^\[CAT:\w+\]\s*/, "").replace(/\[SUB:[^\]]+\]\s*/g, "");
+}
+export function parseSub(rules: string): string | null {
+  if (!rules) return null;
+  const m = rules.match(/\[SUB:([a-zA-Z0-9-]+)\]/);
+  return m ? m[1].toLowerCase() : null;
+}
+export function parseCat(rules: string): string | null {
+  if (!rules) return null;
+  const m = rules.match(/\[CAT:(\w+)\]/);
+  return m ? m[1].toLowerCase() : null;
 }
 export function extractImg(rules: string): string {
   if (!rules) return "";

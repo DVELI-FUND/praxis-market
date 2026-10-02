@@ -16,6 +16,7 @@ import ResolverStatusCard from "./ResolverStatusCard";
 import BannerImg from "./BannerImg";
 import UnstakePlanner from "./UnstakePlanner";
 import { b2b64 } from "@/lib/proto";
+import { CATS_TREE } from "@/lib/cats";
 import { fetchMarkets, stripCatPrefix, STATUS, yesPct } from "@/lib/markets";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryHeight, getPluginRPC } from "@/lib/rpc";
@@ -615,6 +616,35 @@ export default function ActionForm({ def }: { def: ActionDef }) {
                 </button>
               ))}
             </div>
+          ) : f.type === "sub" ? (
+            (() => {
+              const cat = String(vals.cat ?? "");
+              const subs = CATS_TREE.find((c) => c.key === cat)?.subs ?? [];
+              if (subs.length === 0) return null;
+              return (
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    onClick={() => set("sub", "")}
+                    className={`rounded-full border px-3 py-1 font-mono text-[10px] ${
+                      !vals.sub ? "border-up bg-up text-black" : "border-line text-ink-2"
+                    }`}
+                  >
+                    All
+                  </button>
+                  {subs.map((x) => (
+                    <button
+                      key={x.key}
+                      onClick={() => set("sub", x.key)}
+                      className={`rounded-full border px-3 py-1 font-mono text-[10px] ${
+                        vals.sub === x.key ? "border-up bg-up text-black" : "border-line text-ink-2"
+                      }`}
+                    >
+                      {x.label}
+                    </button>
+                  ))}
+                </div>
+              );
+            })()
           ) : f.type === "datetime" ? (
             <div>
               <input

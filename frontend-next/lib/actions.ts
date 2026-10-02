@@ -1,4 +1,5 @@
 import { TYPE_URLS } from "@/lib/tx";
+import { buildRulesWithSub } from "@/lib/cats";
 import {
   encSend, encCreate, encClaim, encReclaim, encRegister, encPropose, encDispute,
   encCommit, encReveal, encTally, encFinalize, encSlash, encForfeit,
@@ -37,7 +38,7 @@ export function buildRulesWithOutcomes(rules: string, yesLabel: string, noLabel:
   return stripped + (stripped ? " " : "") + "[OUT:" + yl + "|" + nl + "]";
 }
 
-export type FieldType = "wallet" | "addr" | "mid" | "number" | "text" | "hash64" | "outcome" | "cat" | "datetime";
+export type FieldType = "wallet" | "addr" | "mid" | "number" | "text" | "hash64" | "outcome" | "cat" | "sub" | "datetime";
 export interface FieldDef {
   id: string;
   label: string;
@@ -182,6 +183,7 @@ export const ACTIONS: Record<string, ActionDef> = {
     key: "create", msgType: "create_market", title: "Create Market", eye: "Admin", sub: "Deploy a new prediction market on Praxis", gate: "admin",
     fields: [
       { id: "cat", label: "Category", type: "cat" },
+      { id: "sub", label: "Subcategory", type: "sub" },
       { id: "question", label: "Question", type: "text" },
       { id: "out_yes", label: "Custom YES label (optional)", type: "text" },
       { id: "out_no", label: "Custom NO label (optional)", type: "text" },
