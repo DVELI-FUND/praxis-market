@@ -196,7 +196,7 @@ export const ACTIONS: Record<string, ActionDef> = {
     ],
     build: (v, ctx) => {
       const rules = buildRulesWithOutcomes(
-        buildRulesWithImg(buildRulesWithCat(s(v, "cat") || "other", s(v, "rules")), s(v, "img")),
+        buildRulesWithImg(buildRulesWithSub(s(v, "sub") || "", buildRulesWithCat(s(v, "cat") || "other", s(v, "rules"))), s(v, "img")),
         String(v.out_yes ?? ""),
         String(v.out_no ?? "")
       );
