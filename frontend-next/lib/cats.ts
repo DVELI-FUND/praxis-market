@@ -52,3 +52,15 @@ export function parseSub(rules: string): string | null {
 export const catDef = (k?: string | null) => CATS_TREE.find((c) => c.key === k);
 export const subDef = (c?: string | null, s?: string | null) => catDef(c)?.subs.find((x) => x.key === s);
 export const subLabel = (c?: string | null, s?: string | null) => subDef(c, s)?.label ?? (s ? s : "All");
+
+export const KO_RE = /\[KO:([^\]]+)\]/;
+export const LG_RE = /\[LG:([^\]]+)\]/;
+export function buildRulesWithMeta(ko: string, lg: string, rules: string): string {
+  const stripped = rules.replace(new RegExp(KO_RE.source, "g"), "").replace(new RegExp(LG_RE.source, "g"), "").trim();
+  const parts: string[] = [];
+  if (ko && !isNaN(Date.parse(ko))) parts.push("[KO:" + new Date(ko).toISOString() + "]");
+  if (lg) parts.push("[LG:" + lg.trim().toUpperCase().slice(0, 12) + "]");
+  return parts.concat(stripped ? [stripped] : []).join(" ");
+}
+export const parseKo = (rules: string): string | null => { const m = rules.match(KO_RE); return m ? m[1] : null; };
+export const parseLg = (rules: string): string | null => { const m = rules.match(LG_RE); return m ? m[1] : null; };

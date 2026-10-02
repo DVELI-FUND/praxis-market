@@ -1,5 +1,5 @@
 import { TYPE_URLS } from "@/lib/tx";
-import { buildRulesWithSub } from "@/lib/cats";
+import { buildRulesWithSub, buildRulesWithMeta } from "@/lib/cats";
 import {
   encSend, encCreate, encClaim, encReclaim, encRegister, encPropose, encDispute,
   encCommit, encReveal, encTally, encFinalize, encSlash, encForfeit,
@@ -184,6 +184,8 @@ export const ACTIONS: Record<string, ActionDef> = {
     fields: [
       { id: "cat", label: "Category", type: "cat" },
       { id: "sub", label: "Subcategory", type: "sub" },
+      { id: "lg", label: "League / Tournament (optional)", type: "text", hint: "e.g. ATP, MLB, UCL, KHL — groups games" },
+      { id: "ko", label: "Kickoff / Start (optional)", type: "text", hint: "ISO e.g. 2026-10-03T17:00 — powers Live & schedule" },
       { id: "question", label: "Question", type: "text" },
       { id: "out_yes", label: "Custom YES label (optional)", type: "text" },
       { id: "out_no", label: "Custom NO label (optional)", type: "text" },
@@ -196,7 +198,7 @@ export const ACTIONS: Record<string, ActionDef> = {
     ],
     build: (v, ctx) => {
       const rules = buildRulesWithOutcomes(
-        buildRulesWithImg(buildRulesWithSub(s(v, "sub") || "", buildRulesWithCat(s(v, "cat") || "other", s(v, "rules"))), s(v, "img")),
+        buildRulesWithImg(buildRulesWithMeta(String(v.ko || ""), String(v.lg || ""), buildRulesWithSub(s(v, "sub") || "", buildRulesWithCat(s(v, "cat") || "other", s(v, "rules")))), s(v, "img")),
         String(v.out_yes ?? ""),
         String(v.out_no ?? "")
       );

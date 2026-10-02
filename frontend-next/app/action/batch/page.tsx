@@ -20,6 +20,8 @@ interface MarketSpec {
   yes?: string;
   no?: string;
   img?: string;
+  lg?: string;
+  ko?: string;
   b0?: number;
   status?: "pending" | "success" | "error";
   error?: string;
@@ -85,6 +87,8 @@ export default function BatchSeederPage() {
         const vals = {
           cat: m.cat,
           sub: m.sub || "",
+          lg: m.lg || "",
+          ko: m.ko || "",
           question: m.q,
           out_yes: m.yes || "",
           out_no: m.no || "",
