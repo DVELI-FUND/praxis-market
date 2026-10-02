@@ -54,26 +54,26 @@ export default function SearchPage() {
   return (
     <main className="relative z-10 mx-auto min-h-screen max-w-[980px] px-4 py-6 pb-24 md:px-8">
       <div className="mb-6">
-        <div className="mb-2 flex items-center gap-2.5 font-mono text-[9px] uppercase tracking-[3px] text-up">
+        <div className="mb-2 flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-[3px] text-up">
           <span className="inline-block h-px w-5 bg-up" /> Discover
         </div>
         <h1 className="font-display text-[22px] font-extrabold tracking-[-0.3px]">Search Markets</h1>
-        <p className="mt-1 text-[13px] text-ink-2">Find markets by keyword, category, or creator</p>
+        <p className="mt-1 text-[15px] text-ink-2">Find markets by keyword, category, or creator</p>
       </div>
 
       <input
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder="Search markets..."
-        className="mb-4 w-full rounded-card border border-line-2 bg-bg px-4 py-3 font-mono text-[13px] text-ink outline-none focus:border-up"
+        className="mb-4 w-full rounded-card border border-line-2 bg-bg px-4 py-3 font-mono text-[15px] text-ink outline-none focus:border-up"
       />
 
       <div className="mb-5 flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none]">
-        {CATS.map((c) => (<button key={c.key} onClick={() => setCat(c.key)} className={`flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[10px] ${cat === c.key ? "border-up bg-up text-black" : "border-line text-ink-2"}`}><CatIcon name={c.icon} className="h-3 w-3" />{c.label}</button>))}
+        {CATS.map((c) => (<button key={c.key} onClick={() => setCat(c.key)} className={`flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[12px] ${cat === c.key ? "border-up bg-up text-black" : "border-line text-ink-2"}`}><CatIcon name={c.icon} className="h-3 w-3" />{c.label}</button>))}
       </div>
 
       {results.length === 0 ? (
-        <div className="py-10 text-center font-mono text-[11px] text-ink-3">
+        <div className="py-10 text-center font-mono text-[13px] text-ink-3">
           {q || cat !== "all" ? "No markets found" : "Type to search markets"}
         </div>
       ) : (

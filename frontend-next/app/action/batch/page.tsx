@@ -136,7 +136,7 @@ export default function BatchSeederPage() {
   if (!praxisAddress) {
     return (
       <main className="relative z-10 mx-auto min-h-screen max-w-[980px] px-4 py-6 pb-24 md:px-8">
-        <div className="rounded-card border border-line bg-surface p-6 text-center font-mono text-[11px] text-ink-3">
+        <div className="rounded-card border border-line bg-surface p-6 text-center font-mono text-[13px] text-ink-3">
           Connect wallet to access batch seeder
         </div>
       </main>
@@ -148,8 +148,8 @@ export default function BatchSeederPage() {
       <main className="relative z-10 mx-auto min-h-screen max-w-[980px] px-4 py-6 pb-24 md:px-8">
         <div className="rounded-card border border-line bg-surface p-10 text-center">
           <div className="mb-3 text-ink-3">🔒</div>
-          <div className="mb-1 font-display text-[16px] font-bold text-ink">Master Authority Required</div>
-          <div className="font-mono text-[11px] text-ink-3">
+          <div className="mb-1 font-display text-[18px] font-bold text-ink">Master Authority Required</div>
+          <div className="font-mono text-[13px] text-ink-3">
             Batch seeding is restricted to the master authority wallet
           </div>
         </div>
@@ -163,37 +163,37 @@ export default function BatchSeederPage() {
   return (
     <main className="relative z-10 mx-auto min-h-screen max-w-[980px] px-4 py-6 pb-24 md:px-8">
       <div className="mb-6">
-        <div className="mb-2 flex items-center gap-2.5 font-mono text-[9px] uppercase tracking-[3px] text-amberx">
+        <div className="mb-2 flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-[3px] text-amberx">
           <span className="inline-block h-px w-5 bg-amberx" /> Admin
         </div>
         <h1 className="font-display text-[22px] font-extrabold tracking-[-0.3px]">Batch Market Seeder</h1>
-        <p className="mt-1 text-[13px] text-ink-2">
+        <p className="mt-1 text-[15px] text-ink-2">
           Paste JSON array of markets → validate → execute sequential creation
         </p>
       </div>
 
       <div className="space-y-4">
         <div className="rounded-card border border-line bg-surface p-5">
-          <div className="mb-2 font-mono text-[10px] uppercase tracking-wider text-ink-3">JSON Input</div>
+          <div className="mb-2 font-mono text-[12px] uppercase tracking-wider text-ink-3">JSON Input</div>
           <textarea
             value={json}
             onChange={(e) => setJson(e.target.value)}
             placeholder='[{"q":"Will BTC hit $150k?","cat":"crypto","sub":"bitcoin","exp":"2027-01-01T12:00","rules":"CoinGecko close"}]'
-            className="w-full rounded-card border border-line bg-surface-2 p-3 font-mono text-[11px] text-ink outline-none focus:border-amberx"
+            className="w-full rounded-card border border-line bg-surface-2 p-3 font-mono text-[13px] text-ink outline-none focus:border-amberx"
             rows={12}
           />
           <div className="mt-3 flex gap-2">
             <button
               onClick={validate}
               disabled={running || !json.trim()}
-              className="flex-1 rounded-card border border-amberx bg-amberx/10 py-2.5 font-display text-[12px] font-bold text-amberx transition-all hover:bg-amberx/20 disabled:opacity-50"
+              className="flex-1 rounded-card border border-amberx bg-amberx/10 py-2.5 font-display text-[14px] font-bold text-amberx transition-all hover:bg-amberx/20 disabled:opacity-50"
             >
               Validate
             </button>
             <button
               onClick={execute}
               disabled={running || markets.length === 0}
-              className="flex-1 rounded-card bg-up py-2.5 font-display text-[12px] font-bold text-black transition-all hover:bg-up/90 disabled:opacity-50"
+              className="flex-1 rounded-card bg-up py-2.5 font-display text-[14px] font-bold text-black transition-all hover:bg-up/90 disabled:opacity-50"
             >
               {running ? "Executing..." : `Execute (${markets.length} markets)`}
             </button>
@@ -203,10 +203,10 @@ export default function BatchSeederPage() {
         {markets.length > 0 && (
           <div className="rounded-card border border-line bg-surface p-5">
             <div className="mb-3 flex items-center justify-between">
-              <div className="font-mono text-[10px] uppercase tracking-wider text-ink-3">
+              <div className="font-mono text-[12px] uppercase tracking-wider text-ink-3">
                 Batch Status: {successCount}/{markets.length} success, {errorCount} errors
               </div>
-              <div className="font-mono text-[11px] text-ink-2">
+              <div className="font-mono text-[13px] text-ink-2">
                 Cost: {fmtPRX(BigInt(markets.length * 5060 * 1000000))} PRX (bonds return at finalize)
               </div>
             </div>
@@ -223,22 +223,22 @@ export default function BatchSeederPage() {
                   }`}
                 >
                   <div className="flex items-start gap-2">
-                    <div className="mt-0.5 font-mono text-[10px] font-bold text-ink-3">#{i + 1}</div>
+                    <div className="mt-0.5 font-mono text-[12px] font-bold text-ink-3">#{i + 1}</div>
                     <div className="min-w-0 flex-1">
-                      <div className="mb-1 font-display text-[12px] font-bold text-ink">{m.q}</div>
-                      <div className="flex items-center gap-2 font-mono text-[9px] text-ink-3">
+                      <div className="mb-1 font-display text-[14px] font-bold text-ink">{m.q}</div>
+                      <div className="flex items-center gap-2 font-mono text-[11px] text-ink-3">
                         <span className="uppercase">{m.cat}{m.sub ? ` · ${m.sub}` : ""}</span>
                         <span>·</span>
                         <span>Expires {m.exp}</span>
                       </div>
                       {m.error && (
-                        <div className="mt-1 font-mono text-[10px] text-down">{m.error}</div>
+                        <div className="mt-1 font-mono text-[12px] text-down">{m.error}</div>
                       )}
                     </div>
                     <div className="shrink-0">
-                      {m.status === "success" && <span className="font-mono text-[11px] font-bold text-up">✓</span>}
-                      {m.status === "error" && <span className="font-mono text-[11px] font-bold text-down">✗</span>}
-                      {m.status === "pending" && <span className="font-mono text-[11px] text-ink-3">⏳</span>}
+                      {m.status === "success" && <span className="font-mono text-[13px] font-bold text-up">✓</span>}
+                      {m.status === "error" && <span className="font-mono text-[13px] font-bold text-down">✗</span>}
+                      {m.status === "pending" && <span className="font-mono text-[13px] text-ink-3">⏳</span>}
                     </div>
                   </div>
                 </div>

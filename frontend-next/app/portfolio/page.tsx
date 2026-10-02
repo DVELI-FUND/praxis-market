@@ -61,11 +61,11 @@ const { data: positions = [] } = usePositions();const { data: balance = 0n } = u
         <div className="flex flex-col items-center gap-4 rounded-card border border-line bg-surface-grad p-10 text-center shadow-card">
           <span className="text-ink"><LogoMark className="h-10 w-10" /></span>
           <div>
-            <div className="font-display text-[16px] font-extrabold text-ink">Your portfolio awaits</div>
-            <div className="mt-1 font-mono text-[10px] text-ink-3">Connect your wallet to view balance, assets and positions</div>
+            <div className="font-display text-[18px] font-extrabold text-ink">Your portfolio awaits</div>
+            <div className="mt-1 font-mono text-[12px] text-ink-3">Connect your wallet to view balance, assets and positions</div>
           </div>
           <WalletPill size="lg" />
-          <div className="max-w-[360px] font-mono text-[9px] leading-relaxed text-ink-3">
+          <div className="max-w-[360px] font-mono text-[11px] leading-relaxed text-ink-3">
             Works with MetaMask, Rabby, Coinbase, Trust, Brave and other EVM wallets. One free signature — no gas, non-custodial.
           </div>
         </div>
@@ -88,32 +88,32 @@ const { data: positions = [] } = usePositions();const { data: balance = 0n } = u
   return (
     <main className="relative z-10 mx-auto min-h-screen max-w-[980px] px-4 py-6 pb-24 md:px-8">
       <div className="mb-6">
-        <div className="mb-2 flex items-center gap-2.5 font-mono text-[9px] uppercase tracking-[3px] text-up">
+        <div className="mb-2 flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-[3px] text-up">
           <span className="inline-block h-px w-5 bg-up" /> Portfolio
         </div>
         <h1 className="font-display text-[22px] font-extrabold tracking-[-0.3px]">My Positions</h1>
-        <p className="mt-1 text-[13px] text-ink-2">
+        <p className="mt-1 text-[15px] text-ink-2">
           {enriched.length} active position{enriched.length !== 1 ? "s" : ""} · current value based on live prices
         </p>
       </div>
 
       <div className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-3">
         <div className="rounded-card border border-line bg-surface-grad p-4 shadow-card">
-          <div className="mb-1 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">Spot Balance</div>
+          <div className="mb-1 font-mono text-[11px] uppercase tracking-[2px] text-ink-3">Spot Balance</div>
           <div className="font-display text-[22px] font-extrabold text-cyanx tabular-nums">
-            {fmtPRX(balance)} <span className="text-[12px] text-ink-3">PRX</span>
+            {fmtPRX(balance)} <span className="text-[14px] text-ink-3">PRX</span>
           </div>
         </div>
         <div className="rounded-card border border-line bg-surface-grad p-4 shadow-card">
-          <div className="mb-1 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">Positions Value</div>
+          <div className="mb-1 font-mono text-[11px] uppercase tracking-[2px] text-ink-3">Positions Value</div>
           <div className="font-display text-[22px] font-extrabold text-up tabular-nums">
-            {fmtPRX(positionsValue)} <span className="text-[12px] text-ink-3">PRX</span>
+            {fmtPRX(positionsValue)} <span className="text-[14px] text-ink-3">PRX</span>
           </div>
         </div>
         <div className="rounded-card border border-line bg-surface-grad p-4 shadow-card">
-          <div className="mb-1 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">Net Worth</div>
+          <div className="mb-1 font-mono text-[11px] uppercase tracking-[2px] text-ink-3">Net Worth</div>
           <div className="font-display text-[22px] font-extrabold text-ink tabular-nums">
-            {fmtPRX(netWorth)} <span className="text-[12px] text-ink-3">PRX</span>
+            {fmtPRX(netWorth)} <span className="text-[14px] text-ink-3">PRX</span>
           </div>
         </div>
       </div>
@@ -121,14 +121,14 @@ const { data: positions = [] } = usePositions();const { data: balance = 0n } = u
       {enriched.length === 0 ? (
         <div className="rounded-card border border-line bg-surface p-6 text-center">
           <div className="mb-2 font-mono text-[26px] text-ink-3">◈</div>
-          <div className="font-mono text-[11px] text-ink-3">No positions yet — trade a market to get started</div>
+          <div className="font-mono text-[13px] text-ink-3">No positions yet — trade a market to get started</div>
         </div>
       ) : (
         <div className="space-y-2">
           {enriched.map((pos) => {
             if (!pos.market) {
               return (
-                <div key={pos.marketId} className="rounded-card border border-line bg-surface p-3 font-mono text-[10px] text-ink-3">
+                <div key={pos.marketId} className="rounded-card border border-line bg-surface p-3 font-mono text-[12px] text-ink-3">
                   {pos.marketId.slice(0, 16)}… (market not found)
                 </div>
               );
@@ -141,10 +141,10 @@ const { data: positions = [] } = usePositions();const { data: balance = 0n } = u
                 href={`/market/${pos.marketId}`}
                 className="block rounded-card border border-line bg-surface-grad p-3 shadow-card transition-colors hover:border-line-2"
               >
-                <div className="mb-2 line-clamp-2 font-sans text-[12px] font-semibold text-ink">
+                <div className="mb-2 line-clamp-2 font-sans text-[14px] font-semibold text-ink">
                   {question.length > 80 ? question.slice(0, 80) + "…" : question}
                 </div>
-                <div className="flex items-center justify-between font-mono text-[10px]">
+                <div className="flex items-center justify-between font-mono text-[12px]">
                   <div className="flex gap-3">
                     <span className="text-ink-3">
                       YES <b className="text-up">{fmtPRX(pos.sharesYes)}</b>
@@ -154,11 +154,11 @@ const { data: positions = [] } = usePositions();const { data: balance = 0n } = u
                     </span>
                   </div>
                   <div className="text-right">
-                    <div className="text-[9px] text-ink-3">Value</div>
-                    <div className="text-[12px] text-up tabular-nums">{fmtPRX(pos.value)} PRX</div>
+                    <div className="text-[11px] text-ink-3">Value</div>
+                    <div className="text-[14px] text-up tabular-nums">{fmtPRX(pos.value)} PRX</div>
                   </div>
                 </div>
-                <div className="mt-1 flex items-center justify-between font-mono text-[8px] text-ink-3">
+                <div className="mt-1 flex items-center justify-between font-mono text-[11px] text-ink-3">
                   <span>{pos.market.status}</span>
                   <span className="tabular-nums">YES {pct}%</span>
                 </div>

@@ -115,11 +115,11 @@ export default function MoreSheet() {
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-ink"><LogoMark className="h-6 w-6" /></span>
-            <span className="font-display text-[15px] font-extrabold tracking-widest text-ink">PRAXIS</span>
+            <span className="font-display text-[16px] font-extrabold tracking-widest text-ink">PRAXIS</span>
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <button className="font-mono text-[14px] text-ink-2" onClick={() => setMore(false)}>✕</button>
+            <button className="font-mono text-[16px] text-ink-2" onClick={() => setMore(false)}>✕</button>
           </div>
         </div>
 
@@ -129,18 +129,18 @@ export default function MoreSheet() {
 
         {visibleSections.map((sec) => (
           <div key={sec.name} className="mb-4">
-            <div className="mb-1.5 font-mono text-[8px] uppercase tracking-[3px] text-ink-3">{sec.name}</div>
+            <div className="mb-1.5 font-mono text-[11px] uppercase tracking-[3px] text-ink-3">{sec.name}</div>
             <div className="space-y-1">
               {sec.items.map((it) => (
                 <Link
                   key={it.href + it.label}
                   href={it.href}
                   onClick={() => setMore(false)}
-                  className={`flex items-center gap-2.5 rounded-card border border-line bg-bg-2 px-3 py-2 font-mono text-[10px] text-ink-2 transition-colors hover:border-up hover:text-up ${
+                  className={`flex items-center gap-2.5 rounded-card border border-line bg-bg-2 px-3 py-2 font-mono text-[12px] text-ink-2 transition-colors hover:border-up hover:text-up ${
                     it.badge && !badgeVisible(it.badge) ? "opacity-50" : ""
                   }`}
                 >
-                  <span className="w-4 text-center text-[12px]">{it.icon}</span>
+                  <span className="w-4 text-center text-[14px]">{it.icon}</span>
                   <span>{it.label}</span>
                   <BadgeChip kind={it.badge ?? null} />
                 </Link>

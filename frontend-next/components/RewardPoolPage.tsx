@@ -57,9 +57,9 @@ interface RewardContext {
 function StatCard({ label, value, sub, accent }: { label: string; value: string; sub: string; accent: string }) {
   return (
     <div className="rounded-card border border-line bg-surface p-3">
-      <div className="mb-2 font-mono text-[8px] uppercase tracking-[2px] text-ink-3">{label}</div>
+      <div className="mb-2 font-mono text-[11px] uppercase tracking-[2px] text-ink-3">{label}</div>
       <div className={`font-display text-[18px] font-extrabold tabular-nums ${accent}`}>{value}</div>
-      <div className="mt-1 font-mono text-[8px] text-ink-3">{sub}</div>
+      <div className="mt-1 font-mono text-[11px] text-ink-3">{sub}</div>
     </div>
   );
 }
@@ -140,11 +140,11 @@ export default function RewardPoolPage({ pool }: { pool: PoolKey }) {
   return (
     <div className="animate-fadeUp">
       <div className="mb-5">
-        <div className="mb-2 flex items-center gap-2.5 font-mono text-[9px] uppercase tracking-[3px] text-up">
+        <div className="mb-2 flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-[3px] text-up">
           <span className="inline-block h-px w-5 bg-up" /> Rewards
         </div>
         <h1 className="font-display text-[22px] font-extrabold tracking-[-0.3px]">{meta.title}</h1>
-        <p className="mt-1 text-[13px] text-ink-2">{meta.sub}</p>
+        <p className="mt-1 text-[15px] text-ink-2">{meta.sub}</p>
       </div>
 
       <div className="mb-4 grid grid-cols-3 gap-2">
@@ -169,22 +169,22 @@ export default function RewardPoolPage({ pool }: { pool: PoolKey }) {
       </div>
 
       {pool === "investor" && (
-        <div className="mb-4 rounded-card border border-amberx/40 bg-amberx/5 p-3 font-mono text-[10px] text-amberx">
+        <div className="mb-4 rounded-card border border-amberx/40 bg-amberx/5 p-3 font-mono text-[12px] text-amberx">
           Vesting window: 241,920 blocks (~28 days). Rewards vest linearly.
         </div>
       )}
 
       {pool === "resolver" && (
         <div className="mb-4 rounded-card border border-line bg-surface p-4">
-          <div className="mb-3 border-b border-line pb-2 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">
+          <div className="mb-3 border-b border-line pb-2 font-mono text-[11px] uppercase tracking-[2px] text-ink-3">
             Your Resolver Status
           </div>
           {myResolver ? (
             <>
-              <span className={`inline-block rounded border px-2 py-1 font-mono text-[10px] ${tierOf(myResolver.rrsScore).cls}`}>
+              <span className={`inline-block rounded border px-2 py-1 font-mono text-[12px] ${tierOf(myResolver.rrsScore).cls}`}>
                 {tierOf(myResolver.rrsScore).label} — RRS {myResolver.rrsScore}
               </span>
-              <div className="mt-3 grid grid-cols-3 gap-2 font-mono text-[10px]">
+              <div className="mt-3 grid grid-cols-3 gap-2 font-mono text-[12px]">
                 <div className="rounded-card border border-line bg-bg-2 px-2 py-1.5">
                   Resolutions <b className="text-ink">{myResolver.resolutions}</b>
                 </div>
@@ -195,7 +195,7 @@ export default function RewardPoolPage({ pool }: { pool: PoolKey }) {
                   Weight <b className="text-ink">{tierOf(myResolver.rrsScore).weight}×</b>
                 </div>
               </div>
-              <div className="mt-3 rounded-card border border-line bg-bg-2 p-2.5 font-mono text-[9px] leading-relaxed">
+              <div className="mt-3 rounded-card border border-line bg-bg-2 p-2.5 font-mono text-[11px] leading-relaxed">
                 <span className="text-ink-3">Payout formula:</span>
                 <br />
                 <span className="text-ink">epoch_pool × (resolutions × weight) / Σ(weighted resolutions)</span>
@@ -203,15 +203,15 @@ export default function RewardPoolPage({ pool }: { pool: PoolKey }) {
             </>
           ) : (
             <div className="text-center">
-              <div className="mb-3 font-mono text-[11px] text-ink-3">
+              <div className="mb-3 font-mono text-[13px] text-ink-3">
                 {!praxisAddress ? "Connect your wallet to view resolver rewards" : "You are not a registered resolver"}
               </div>
               {!praxisAddress ? (
-                <div className="font-mono text-[10px] text-ink-3">Load a key in Signer or connect MetaMask</div>
+                <div className="font-mono text-[12px] text-ink-3">Load a key in Signer or connect MetaMask</div>
               ) : (
                 <a
                   href="/action/register"
-                  className="inline-block rounded border border-up bg-up/10 px-4 py-2 font-mono text-[11px] text-up transition-colors hover:bg-up/20"
+                  className="inline-block rounded border border-up bg-up/10 px-4 py-2 font-mono text-[13px] text-up transition-colors hover:bg-up/20"
                 >
                   Register as Resolver (500k PRX)
                 </a>
@@ -223,16 +223,16 @@ export default function RewardPoolPage({ pool }: { pool: PoolKey }) {
 
       {pool !== "resolver" && !praxisAddress && (
         <div className="mb-4 rounded-card border border-line bg-surface p-4 text-center">
-          <div className="font-mono text-[11px] text-ink-3">Connect your wallet to view {meta.title}</div>
+          <div className="font-mono text-[13px] text-ink-3">Connect your wallet to view {meta.title}</div>
         </div>
       )}
 
       {pool !== "resolver" && praxisAddress && !isAuthorized && epochs.length > 0 && (
         <div className="mb-4 rounded-card border border-down/40 bg-down/5 p-4 text-center">
-          <div className="mb-2 font-mono text-[11px] text-down">
+          <div className="mb-2 font-mono text-[13px] text-down">
             {epochs[0]?.eligible_reason || "Not authorized for this reward pool"}
           </div>
-          <div className="font-mono text-[9px] text-ink-3">
+          <div className="font-mono text-[11px] text-ink-3">
             This pool requires an authorized wallet address. Contact the protocol team for access.
           </div>
         </div>
@@ -240,16 +240,16 @@ export default function RewardPoolPage({ pool }: { pool: PoolKey }) {
 
       {praxisAddress && (pool === "resolver" || isAuthorized) && (
         <>
-          <div className="mb-3 border-b border-line pb-2 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">
+          <div className="mb-3 border-b border-line pb-2 font-mono text-[11px] uppercase tracking-[2px] text-ink-3">
             Epoch History
           </div>
           {loading ? (
-            <div className="py-10 text-center font-mono text-[10px] text-ink-3">Loading reward epochs…</div>
+            <div className="py-10 text-center font-mono text-[12px] text-ink-3">Loading reward epochs…</div>
           ) : epochs.length === 0 ? (
-            <div className="py-10 text-center font-mono text-[10px] text-ink-3">No reward data available</div>
+            <div className="py-10 text-center font-mono text-[12px] text-ink-3">No reward data available</div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full font-mono text-[10px]">
+              <table className="w-full font-mono text-[12px]">
                 <thead>
                   <tr className="border-b border-line text-ink-3">
                     <th className="pb-2 text-left font-normal">Epoch</th>

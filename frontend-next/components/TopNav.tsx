@@ -31,7 +31,7 @@ export default function TopNav() {
           <span className="text-ink">
             <LogoMark className="h-[22px] w-[22px]" />
           </span>
-          <span className="font-display text-[15px] font-extrabold tracking-widest text-ink">PRAXIS</span>
+          <span className="font-display text-[16px] font-extrabold tracking-widest text-ink">PRAXIS</span>
         </Link>
 
         {/* links */}
@@ -40,7 +40,7 @@ export default function TopNav() {
             <Link
               key={l.href}
               href={l.href}
-              className={`whitespace-nowrap rounded-pill px-2.5 py-1.5 font-mono text-[10px] transition-colors lg:px-3 lg:text-[11px] ${
+              className={`whitespace-nowrap rounded-pill px-2.5 py-1.5 font-mono text-[12px] transition-colors lg:px-3 lg:text-[13px] ${
                 pathname === l.href ? "bg-surface-2 text-up" : "text-ink-2 hover:text-ink"
               }`}
             >
@@ -53,16 +53,16 @@ export default function TopNav() {
         <div className="ml-auto flex shrink-0 items-center gap-2">
           <Link
             href="/search"
-            className="hidden items-center gap-2 rounded-pill border border-line bg-surface px-3 py-1.5 font-mono text-[10px] text-ink-3 transition-colors hover:border-line-2 hover:text-ink lg:flex"
+            className="hidden items-center gap-2 rounded-pill border border-line bg-surface px-3 py-1.5 font-mono text-[12px] text-ink-3 transition-colors hover:border-line-2 hover:text-ink lg:flex"
             title="Search markets (Ctrl+K)"
           >
             ⌕ Search
-            <span className="rounded border border-line px-1 text-[8px] text-ink-3">/</span>
+            <span className="rounded border border-line px-1 text-[11px] text-ink-3">/</span>
           </Link>
           <ThemeToggle />
           <button
             onClick={() => useUi.getState().setMore(true)}
-            className="flex h-8 w-8 items-center justify-center rounded-pill border border-line-2 bg-surface font-mono text-[12px] text-ink-2 transition-colors hover:border-up hover:text-up"
+            className="flex h-8 w-8 items-center justify-center rounded-pill border border-line-2 bg-surface font-mono text-[14px] text-ink-2 transition-colors hover:border-up hover:text-up"
             title="More actions"
           >
             ≡

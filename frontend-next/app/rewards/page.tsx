@@ -25,34 +25,34 @@ export default function RewardsPage() {
   return (
     <main className="relative z-10 mx-auto min-h-screen max-w-[980px] px-4 py-6 pb-24 md:px-8">
       <div className="mb-6">
-        <div className="mb-2 flex items-center gap-2.5 font-mono text-[9px] uppercase tracking-[3px] text-up">
+        <div className="mb-2 flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-[3px] text-up">
           <span className="inline-block h-px w-5 bg-up" /> Earn
         </div>
         <h1 className="font-display text-[22px] font-extrabold tracking-[-0.3px]">Claim Rewards</h1>
-        <p className="mt-1 text-[13px] text-ink-2">5 pools × 20% of fees — claim per completed epoch</p>
+        <p className="mt-1 text-[15px] text-ink-2">5 pools × 20% of fees — claim per completed epoch</p>
       </div>
 
       {!roles.hasAnyRole ? (
         <div className="rounded-card border border-line bg-surface p-10 text-center">
           <div className="mb-3 text-ink-3">🔒</div>
-          <div className="mb-1 font-display text-[16px] font-bold text-ink">Restricted Access</div>
-          <div className="font-mono text-[11px] text-ink-3">Rewards are earned by resolvers and protocol admins.</div>
+          <div className="mb-1 font-display text-[18px] font-bold text-ink">Restricted Access</div>
+          <div className="font-mono text-[13px] text-ink-3">Rewards are earned by resolvers and protocol admins.</div>
         </div>
       ) : !praxisAddress ? (
-        <div className="rounded-card border border-line bg-surface p-6 text-center font-mono text-[11px] text-ink-3">
+        <div className="rounded-card border border-line bg-surface p-6 text-center font-mono text-[13px] text-ink-3">
           Connect wallet to claim rewards
         </div>
       ) : (
         <>
           <div className="mb-4 flex gap-1.5 overflow-x-auto pb-1">
-            <div className="flex items-center gap-1.5 whitespace-nowrap rounded-card border border-line bg-surface px-2.5 py-1.5 font-mono text-[9px] text-ink-2">
-              Epoch <b className="font-display text-[13px] font-bold text-up tabular-nums">#{currentEpoch}</b>
+            <div className="flex items-center gap-1.5 whitespace-nowrap rounded-card border border-line bg-surface px-2.5 py-1.5 font-mono text-[11px] text-ink-2">
+              Epoch <b className="font-display text-[15px] font-bold text-up tabular-nums">#{currentEpoch}</b>
             </div>
-            <div className="flex items-center gap-1.5 whitespace-nowrap rounded-card border border-line bg-surface px-2.5 py-1.5 font-mono text-[9px] text-ink-2">
-              Block <b className="font-display text-[13px] font-bold text-ink tabular-nums">#{chain?.height ?? 0}</b>
+            <div className="flex items-center gap-1.5 whitespace-nowrap rounded-card border border-line bg-surface px-2.5 py-1.5 font-mono text-[11px] text-ink-2">
+              Block <b className="font-display text-[15px] font-bold text-ink tabular-nums">#{chain?.height ?? 0}</b>
             </div>
             {myResolver && (
-              <div className={`flex items-center gap-1.5 whitespace-nowrap rounded-card border px-2.5 py-1.5 font-mono text-[9px] ${tierOf(myResolver.rrsScore).cls}`}>
+              <div className={`flex items-center gap-1.5 whitespace-nowrap rounded-card border px-2.5 py-1.5 font-mono text-[11px] ${tierOf(myResolver.rrsScore).cls}`}>
                 {tierOf(myResolver.rrsScore).label} · RRS {myResolver.rrsScore} · {tierOf(myResolver.rrsScore).weight}× weight
               </div>
             )}
@@ -66,23 +66,23 @@ export default function RewardsPage() {
                 className={`rounded-card border ${p.border} bg-surface p-3 transition-colors hover:bg-bg-2`}
               >
                 <div className="flex items-center gap-2">
-                  <div className={`flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full border border-line bg-bg-2 text-[15px] ${p.color}`}>
+                  <div className={`flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full border border-line bg-bg-2 text-[16px] ${p.color}`}>
                     {p.icon}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-display text-[13px] font-bold text-ink">{p.name}</span>
-                      <span className="rounded border border-line bg-bg-2 px-1.5 py-0.5 font-mono text-[8px] text-ink-3">{p.share}</span>
+                      <span className="font-display text-[15px] font-bold text-ink">{p.name}</span>
+                      <span className="rounded border border-line bg-bg-2 px-1.5 py-0.5 font-mono text-[11px] text-ink-3">{p.share}</span>
                     </div>
-                    <div className="mt-0.5 font-mono text-[9px] text-ink-3">{p.desc}</div>
+                    <div className="mt-0.5 font-mono text-[11px] text-ink-3">{p.desc}</div>
                   </div>
-                  <span className="font-mono text-[11px] text-up">→</span>
+                  <span className="font-mono text-[13px] text-up">→</span>
                 </div>
               </Link>
             ))}
           </div>
 
-          <div className="mt-4 rounded-card border border-line bg-bg-2 p-3 font-mono text-[9px] text-ink-3">
+          <div className="mt-4 rounded-card border border-line bg-bg-2 p-3 font-mono text-[11px] text-ink-3">
             <div className="mb-1 text-ink-2">How rewards work:</div>
             <ul className="space-y-0.5">
               <li>• 1% creator fee + 1% resolver fee on every trade</li>

@@ -45,14 +45,14 @@ export default function ActivityTab({ mid, holders }: Props) {
 
   if (loading) {
     return (
-      <div className="py-5 text-center font-mono text-[11px] text-ink-3">
+      <div className="py-5 text-center font-mono text-[13px] text-ink-3">
         <span className="animate-pulseDot">▪ ▪ ▪</span>&nbsp;&nbsp;loading activity
       </div>
     );
   }
 
   if (!activities.length) {
-    return <div className="py-5 text-center font-mono text-[11px] text-ink-3">No activity found</div>;
+    return <div className="py-5 text-center font-mono text-[13px] text-ink-3">No activity found</div>;
   }
 
   return (
@@ -87,17 +87,17 @@ export default function ActivityTab({ mid, holders }: Props) {
 
         return (
           <div key={i} className="flex items-start gap-3 border-b border-line px-4 py-3 last:border-b-0">
-            <div className={`mt-0.5 min-w-[18px] text-[15px] ${color}`}>{icon}</div>
+            <div className={`mt-0.5 min-w-[18px] text-[16px] ${color}`}>{icon}</div>
             <div className="min-w-0 flex-1">
               <div className="mb-0.5 flex items-center justify-between">
-                <span className={`font-mono text-[10px] uppercase tracking-[0.5px] ${color}`}>
+                <span className={`font-mono text-[12px] uppercase tracking-[0.5px] ${color}`}>
                   {tx.messageType.replace(/_/g, " ")}
                 </span>
-                <span className="font-mono text-[9px] text-ink-3">blk #{tx.height}</span>
+                <span className="font-mono text-[11px] text-ink-3">blk #{tx.height}</span>
               </div>
-              {shortSender && <div className="mb-0.5 font-mono text-[9px] text-ink-3">{shortSender}</div>}
+              {shortSender && <div className="mb-0.5 font-mono text-[11px] text-ink-3">{shortSender}</div>}
               {detail && (
-                <div className="font-mono text-[11px] text-ink-2" dangerouslySetInnerHTML={{ __html: detail }} />
+                <div className="font-mono text-[13px] text-ink-2" dangerouslySetInnerHTML={{ __html: detail }} />
               )}
             </div>
           </div>

@@ -95,11 +95,11 @@ const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
         <div className="flex flex-col items-center gap-4 rounded-card border border-line bg-surface-grad p-10 text-center shadow-card">
           <span className="text-ink"><LogoMark className="h-10 w-10" /></span>
           <div>
-            <div className="font-display text-[16px] font-extrabold text-ink">Your portfolio awaits</div>
-            <div className="mt-1 font-mono text-[10px] text-ink-3">Connect your wallet to view balance, assets and positions</div>
+            <div className="font-display text-[18px] font-extrabold text-ink">Your portfolio awaits</div>
+            <div className="mt-1 font-mono text-[12px] text-ink-3">Connect your wallet to view balance, assets and positions</div>
           </div>
           <WalletPill size="lg" />
-          <div className="max-w-[360px] font-mono text-[9px] leading-relaxed text-ink-3">
+          <div className="max-w-[360px] font-mono text-[11px] leading-relaxed text-ink-3">
             Works with MetaMask, Rabby, Coinbase, Trust, Brave and other EVM wallets. One free signature — no gas, non-custodial.
           </div>
         </div>
@@ -121,9 +121,9 @@ const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
         </div>
         <div className="min-w-0">
           <h1 className="font-display text-[24px] font-extrabold tracking-[-0.4px] text-ink">Profile</h1>
-          <button onClick={copyAddr} className="mt-0.5 flex items-center gap-1.5 font-mono text-[10px] text-ink-3 transition-colors hover:text-up" title="Copy address">
+          <button onClick={copyAddr} className="mt-0.5 flex items-center gap-1.5 font-mono text-[12px] text-ink-3 transition-colors hover:text-up" title="Copy address">
             {praxisAddress.slice(0, 10)}…{praxisAddress.slice(-6)}
-            <span className="text-[9px]">{copied ? "✓ copied" : "⎘"}</span>
+            <span className="text-[11px]">{copied ? "✓ copied" : "⎘"}</span>
           </button>
         </div>
       </div>
@@ -132,11 +132,11 @@ const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
       <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="rounded-card border border-line shadow-card">
           <div className="rounded-card bg-surface-grad p-6">
-            <div className="mb-1 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">Net Worth</div>
+            <div className="mb-1 font-mono text-[11px] uppercase tracking-[2px] text-ink-3">Net Worth</div>
             <div className="font-display text-[34px] font-extrabold text-up tabular-nums">
-              {fmtPRX(netWorth)} <span className="text-[15px] text-ink-3">PRX</span>
+              {fmtPRX(netWorth)} <span className="text-[16px] text-ink-3">PRX</span>
             </div>
-            <div className="mt-2 flex flex-wrap gap-4 font-mono text-[10px] text-ink-2">
+            <div className="mt-2 flex flex-wrap gap-4 font-mono text-[12px] text-ink-2">
               <span>Available <b className="text-cyanx tabular-nums">{fmtPRX(balance)}</b></span>
               <span>In positions <b className="text-up tabular-nums">{fmtPRX(positionsValue)}</b></span>
             </div>
@@ -145,18 +145,18 @@ const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
 
         {/* assets */}
         <div className="rounded-card border border-line bg-surface-grad p-5 shadow-card">
-          <div className="mb-3 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">Assets</div>
+          <div className="mb-3 font-mono text-[11px] uppercase tracking-[2px] text-ink-3">Assets</div>
           <div className="flex items-center gap-3 rounded-card border border-line bg-bg-2 p-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-card border border-line-2 bg-surface text-ink">
               <LogoMark className="h-6 w-6" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="font-sans text-[13px] font-bold text-ink">PRX</div>
-              <div className="font-mono text-[9px] text-ink-3">Praxis Token · available</div>
+              <div className="font-sans text-[15px] font-bold text-ink">PRX</div>
+              <div className="font-mono text-[11px] text-ink-3">Praxis Token · available</div>
             </div>
             <div className="text-right">
-              <div className="font-display text-[15px] font-extrabold text-ink tabular-nums">{fmtPRX(balance)}</div>
-              <div className="font-mono text-[9px] text-ink-3">PRX</div>
+              <div className="font-display text-[16px] font-extrabold text-ink tabular-nums">{fmtPRX(balance)}</div>
+              <div className="font-mono text-[11px] text-ink-3">PRX</div>
             </div>
           </div>
         </div>
@@ -166,7 +166,7 @@ const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
       <div className="mb-6 grid grid-cols-2 gap-3">
         <button
           onClick={() => setPanel(panel === "send" ? "" : "send")}
-          className={`rounded-card border py-3 font-sans text-[13px] font-extrabold transition-all ${
+          className={`rounded-card border py-3 font-sans text-[15px] font-extrabold transition-all ${
             panel === "send" ? "border-up bg-up-dim text-up shadow-glowUp" : "border-line-2 bg-surface-grad text-ink hover:border-up hover:text-up"
           }`}
         >
@@ -174,7 +174,7 @@ const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
         </button>
         <button
           onClick={() => setPanel(panel === "receive" ? "" : "receive")}
-          className={`rounded-card border py-3 font-sans text-[13px] font-extrabold transition-all ${
+          className={`rounded-card border py-3 font-sans text-[15px] font-extrabold transition-all ${
             panel === "receive" ? "border-cyanx bg-cyanx/10 text-cyanx" : "border-line-2 bg-surface-grad text-ink hover:border-cyanx hover:text-cyanx"
           }`}
         >
@@ -190,33 +190,33 @@ const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
 
       {panel === "receive" && (
         <div className="mb-6 rounded-card border border-line bg-surface-grad p-5 shadow-card">
-          <div className="mb-2 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">Your PRX address</div>
-          <div className="mb-3 break-all rounded-card border border-line bg-bg p-3 font-mono text-[11px] text-cyanx">{praxisAddress}</div>
-          <button onClick={copyAddr} className="w-full rounded-card bg-up py-2.5 font-sans text-[12px] font-extrabold text-black shadow-glowUp hover:brightness-110">
+          <div className="mb-2 font-mono text-[11px] uppercase tracking-[2px] text-ink-3">Your PRX address</div>
+          <div className="mb-3 break-all rounded-card border border-line bg-bg p-3 font-mono text-[13px] text-cyanx">{praxisAddress}</div>
+          <button onClick={copyAddr} className="w-full rounded-card bg-up py-2.5 font-sans text-[14px] font-extrabold text-black shadow-glowUp hover:brightness-110">
             {copied ? "✓ Copied" : "⎘ Copy address"}
           </button>
-          <div className="mt-2 font-mono text-[8px] text-ink-3">Share this address to receive PRX</div>
+          <div className="mt-2 font-mono text-[11px] text-ink-3">Share this address to receive PRX</div>
         </div>
       )}
 
       {/* category breakdown */}
       <div className="mb-6 rounded-card border border-line bg-surface-grad p-5 shadow-card">
-        <div className="mb-3 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">By Category</div>
+        <div className="mb-3 font-mono text-[11px] uppercase tracking-[2px] text-ink-3">By Category</div>
         {byCategory.length === 0 ? (
-          <div className="py-6 text-center font-mono text-[10px] text-ink-3">No positions</div>
+          <div className="py-6 text-center font-mono text-[12px] text-ink-3">No positions</div>
         ) : (
           <div className="space-y-2">
             {byCategory.slice(0, 4).map(([cat, val]) => {
               const pct = netWorth > 0n ? Number((val * 100n) / netWorth) : 0;
               return (
                 <div key={cat} className="flex items-center gap-3">
-                  <span className="w-[60px] font-mono text-[10px] text-ink-2">{cat}</span>
+                  <span className="w-[60px] font-mono text-[12px] text-ink-2">{cat}</span>
                   <div className="flex-1">
                     <div className="h-[6px] overflow-hidden rounded-pill bg-line">
                       <div className="h-full bg-up" style={{ width: `${pct}%` }} />
                     </div>
                   </div>
-                  <span className="w-[80px] text-right font-mono text-[10px] text-ink tabular-nums">{fmtPRX(val)}</span>
+                  <span className="w-[80px] text-right font-mono text-[12px] text-ink tabular-nums">{fmtPRX(val)}</span>
                 </div>
               );
             })}
@@ -229,7 +229,7 @@ const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
         <div className="mb-4 flex gap-2">
           <button
             onClick={() => setTab("positions")}
-            className={`rounded-pill px-4 py-2 font-mono text-[11px] font-bold transition-colors ${
+            className={`rounded-pill px-4 py-2 font-mono text-[13px] font-bold transition-colors ${
               tab === "positions" ? "bg-up text-black" : "bg-surface-grad text-ink-2 hover:text-ink"
             }`}
           >
@@ -237,7 +237,7 @@ const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
           </button>
           <button
             onClick={() => setTab("stats")}
-            className={`rounded-pill px-4 py-2 font-mono text-[11px] font-bold transition-colors ${
+            className={`rounded-pill px-4 py-2 font-mono text-[13px] font-bold transition-colors ${
               tab === "stats" ? "bg-up text-black" : "bg-surface-grad text-ink-2 hover:text-ink"
             }`}
           >
@@ -249,7 +249,7 @@ const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
           <div className="space-y-3">
             {enriched.length === 0 ? (
               <div className="rounded-card border border-line bg-surface-grad p-10 text-center shadow-card">
-                <div className="font-mono text-[10px] text-ink-3">No positions yet — trade a market to get started</div>
+                <div className="font-mono text-[12px] text-ink-3">No positions yet — trade a market to get started</div>
               </div>
             ) : (
               enriched.map((pos) => {
@@ -277,16 +277,16 @@ const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="mb-1 flex items-start gap-2">
-                          <span className={`shrink-0 rounded-full px-2 py-0.5 font-mono text-[8px] font-bold ${
+                          <span className={`shrink-0 rounded-full px-2 py-0.5 font-mono text-[11px] font-bold ${
                             status === "LIVE" ? "bg-up/20 text-up" : "bg-ink-3/20 text-ink-3"
                           }`}>
                             {status}
                           </span>
-                          <span className="line-clamp-2 font-display text-[13px] font-semibold text-ink">
+                          <span className="line-clamp-2 font-display text-[15px] font-semibold text-ink">
                             {stripCatPrefix(pos.market.question || pos.market.rules || "")}
                           </span>
                         </div>
-                        <div className="flex items-center gap-4 font-mono text-[10px] text-ink-3">
+                        <div className="flex items-center gap-4 font-mono text-[12px] text-ink-3">
                           <span>
                             <b className={held === "YES" ? "text-up" : "text-down"}>{held}</b> {fmtPRX(shares)} shares
                           </span>
@@ -294,10 +294,10 @@ const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
                         </div>
                       </div>
                       <div className="flex shrink-0 flex-col items-end justify-between">
-                        <div className={`font-display text-[16px] font-extrabold tabular-nums ${pnl >= 0n ? "text-up" : "text-down"}`}>
+                        <div className={`font-display text-[18px] font-extrabold tabular-nums ${pnl >= 0n ? "text-up" : "text-down"}`}>
                           {pnl >= 0n ? "+" : ""}{fmtNum(pnl)}
                         </div>
-                        <div className={`font-mono text-[10px] tabular-nums ${pnl >= 0n ? "text-up" : "text-down"}`}>
+                        <div className={`font-mono text-[12px] tabular-nums ${pnl >= 0n ? "text-up" : "text-down"}`}>
                           {pnlPct > 0 ? "+" : ""}{pnlPct.toFixed(1) === "-0.0" ? pnlPct.toFixed(2) : pnlPct.toFixed(1)}%
                         </div>
                       </div>
@@ -313,21 +313,21 @@ const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
           <div className="space-y-3">
             {enriched.length === 0 ? (
               <div className="rounded-card border border-line bg-surface-grad p-10 text-center shadow-card">
-                <div className="font-mono text-[10px] text-ink-3">No stats yet — trade a market to see performance</div>
+                <div className="font-mono text-[12px] text-ink-3">No stats yet — trade a market to see performance</div>
               </div>
             ) : (
               <>
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                   <div className="rounded-card border border-line bg-surface-grad p-4 shadow-card">
-                    <div className="font-mono text-[9px] uppercase tracking-[2px] text-ink-3">Positions</div>
+                    <div className="font-mono text-[11px] uppercase tracking-[2px] text-ink-3">Positions</div>
                     <div className="mt-1 font-display text-[20px] font-extrabold text-ink tabular-nums">{enriched.length}</div>
                   </div>
                   <div className="rounded-card border border-line bg-surface-grad p-4 shadow-card">
-                    <div className="font-mono text-[9px] uppercase tracking-[2px] text-ink-3">Total Value</div>
+                    <div className="font-mono text-[11px] uppercase tracking-[2px] text-ink-3">Total Value</div>
                     <div className="mt-1 font-display text-[20px] font-extrabold text-up tabular-nums">{fmtPRX(positionsValue)}</div>
                   </div>
                   <div className="rounded-card border border-line bg-surface-grad p-4 shadow-card">
-                    <div className="font-mono text-[9px] uppercase tracking-[2px] text-ink-3">Best Performer</div>
+                    <div className="font-mono text-[11px] uppercase tracking-[2px] text-ink-3">Best Performer</div>
                     <div className="mt-1 font-display text-[20px] font-extrabold text-up tabular-nums">
                       {(() => {
                         const best = enriched.reduce((acc, p) => {
@@ -339,7 +339,7 @@ const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
                     </div>
                   </div>
                   <div className="rounded-card border border-line bg-surface-grad p-4 shadow-card">
-                    <div className="font-mono text-[9px] uppercase tracking-[2px] text-ink-3">Worst Performer</div>
+                    <div className="font-mono text-[11px] uppercase tracking-[2px] text-ink-3">Worst Performer</div>
                     <div className="mt-1 font-display text-[20px] font-extrabold text-down tabular-nums">
                       {(() => {
                         const worst = enriched.reduce((acc, p) => {
@@ -352,7 +352,7 @@ const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
                   </div>
                 </div>
                 <div className="rounded-card border border-line bg-surface-grad p-4 shadow-card">
-                  <div className="mb-3 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">Avg Position Size</div>
+                  <div className="mb-3 font-mono text-[11px] uppercase tracking-[2px] text-ink-3">Avg Position Size</div>
                   <div className="font-display text-[24px] font-extrabold text-ink tabular-nums">
                     {fmtPRX(positionsValue / BigInt(enriched.length || 1))}
                   </div>

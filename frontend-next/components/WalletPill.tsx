@@ -43,7 +43,7 @@ export default function WalletPill({ size = "sm" }: { size?: "sm" | "lg" }) {
         onClick={() => void connect()}
         disabled={status === "connecting"}
         className={`inline-flex items-center justify-center gap-2 rounded-pill bg-grad-up font-mono font-bold text-black shadow-glowUp transition hover:brightness-110 disabled:opacity-60 ${
-          big ? "px-8 py-3.5 text-[13px]" : "px-4 py-2 text-[11px]"
+          big ? "px-8 py-3.5 text-[15px]" : "px-4 py-2 text-[13px]"
         }`}
       >
         <span className="text-[1.1em] leading-none">◈</span>
@@ -67,7 +67,7 @@ export default function WalletPill({ size = "sm" }: { size?: "sm" | "lg" }) {
         onClick={() => setMenu((m) => !m)}
         aria-haspopup="menu"
         aria-expanded={menu}
-        className={`flex items-center gap-2 rounded-pill border px-3 py-2 font-mono text-[10px] transition-colors ${
+        className={`flex items-center gap-2 rounded-pill border px-3 py-2 font-mono text-[12px] transition-colors ${
           drift ? "border-amberx/50 bg-amberx/10 text-amberx" : "border-up/30 bg-up-dim text-up"
         }`}
       >
@@ -81,13 +81,13 @@ export default function WalletPill({ size = "sm" }: { size?: "sm" | "lg" }) {
           role="menu"
           className="absolute right-0 top-full z-[200] mt-2 w-[260px] max-w-[calc(100vw-2rem)] rounded-card border border-line bg-surface-grad p-3 shadow-card"
         >
-          <div className="font-mono text-[9px] uppercase tracking-[2px] text-ink-3">{walletName || "Wallet"}</div>
-          <div className="mt-1 font-mono text-[10px] leading-snug text-ink">{praxisAddress?.slice(0, 20)}<br />{praxisAddress?.slice(20)}</div>
+          <div className="font-mono text-[11px] uppercase tracking-[2px] text-ink-3">{walletName || "Wallet"}</div>
+          <div className="mt-1 font-mono text-[12px] leading-snug text-ink">{praxisAddress?.slice(0, 20)}<br />{praxisAddress?.slice(20)}</div>
           <div className="mt-3 flex flex-col gap-1.5">
             <button
               role="menuitem"
               onClick={copy}
-              className="rounded-card border border-line bg-surface px-3 py-2 text-left font-mono text-[10px] text-ink-2 hover:text-ink"
+              className="rounded-card border border-line bg-surface px-3 py-2 text-left font-mono text-[12px] text-ink-2 hover:text-ink"
             >
               {copied ? "✓ Copied" : "Copy address"}
             </button>
@@ -95,7 +95,7 @@ export default function WalletPill({ size = "sm" }: { size?: "sm" | "lg" }) {
               role="menuitem"
               href="/profile"
               onClick={() => setMenu(false)}
-              className="rounded-card border border-line bg-surface px-3 py-2 font-mono text-[10px] text-ink-2 hover:text-ink"
+              className="rounded-card border border-line bg-surface px-3 py-2 font-mono text-[12px] text-ink-2 hover:text-ink"
             >
               Portfolio
             </Link>
@@ -105,7 +105,7 @@ export default function WalletPill({ size = "sm" }: { size?: "sm" | "lg" }) {
                 setMenu(false);
                 openModal();
               }}
-              className="rounded-card border border-line bg-surface px-3 py-2 text-left font-mono text-[10px] text-ink-2 hover:text-ink"
+              className="rounded-card border border-line bg-surface px-3 py-2 text-left font-mono text-[12px] text-ink-2 hover:text-ink"
             >
               Switch wallet
             </button>
@@ -115,7 +115,7 @@ export default function WalletPill({ size = "sm" }: { size?: "sm" | "lg" }) {
                 setMenu(false);
                 disconnect();
               }}
-              className="rounded-card border border-down/40 bg-down-dim px-3 py-2 text-left font-mono text-[10px] text-down hover:brightness-110"
+              className="rounded-card border border-down/40 bg-down-dim px-3 py-2 text-left font-mono text-[12px] text-down hover:brightness-110"
             >
               Disconnect
             </button>

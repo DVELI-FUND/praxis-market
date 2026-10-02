@@ -17,7 +17,7 @@ export default function StatusPill({ status }: { status: number }) {
   if (!p) return null;
   return (
     <span
-      className={`inline-flex items-center gap-1 font-mono text-[8px] font-semibold uppercase tracking-[0.5px] ${p.cls}`}
+      className={`inline-flex items-center gap-1 font-mono text-[11px] font-semibold uppercase tracking-[0.5px] ${p.cls}`}
     >
       {p.dot && <span className="h-1 w-1 animate-pulseDot rounded-full bg-current" />}
       {p.label}

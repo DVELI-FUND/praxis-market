@@ -10,7 +10,7 @@ export default function RewardPoolRoute({ params }: { params: { pool: string } }
       {valid ? (
         <RewardPoolPage pool={pool} />
       ) : (
-        <div className="rounded-card border border-down/40 bg-down-dim p-4 font-mono text-[11px] text-down">
+        <div className="rounded-card border border-down/40 bg-down-dim p-4 font-mono text-[13px] text-down">
           ⚠ Unknown reward pool
         </div>
       )}

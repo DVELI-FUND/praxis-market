@@ -78,7 +78,7 @@ export default function MarketDetail({ mid }: Props) {
   }
 
   if (isError || !market) {
-    return <div className="rounded-card border border-down/40 bg-down-dim p-4 font-mono text-[11px] text-down">⚠ Market not found</div>;
+    return <div className="rounded-card border border-down/40 bg-down-dim p-4 font-mono text-[13px] text-down">⚠ Market not found</div>;
   }
 
   const pct = yesPct(market);
@@ -94,7 +94,7 @@ export default function MarketDetail({ mid }: Props) {
 
   return (
     <div className="animate-fadeUp">
-      <Link href="/" className="mb-4 inline-flex items-center gap-1 font-mono text-[10px] text-ink-2 transition-colors hover:text-up">← Back</Link>
+      <Link href="/" className="mb-4 inline-flex items-center gap-1 font-mono text-[12px] text-ink-2 transition-colors hover:text-up">← Back</Link>
 
       <BannerImg rules={market.rules} className="mb-4 h-40 w-full rounded-card border border-line object-cover" />
       <div className="md:grid md:grid-cols-[1fr_340px] md:items-start md:gap-5">
@@ -115,15 +115,15 @@ export default function MarketDetail({ mid }: Props) {
             <div className="min-w-0 flex-1">
               <div className="mb-2 flex items-center gap-2">
                 <StatusPill status={market.status} />
-                <span className="rounded-pill border border-line bg-bg px-2 py-0.5 font-mono text-[8px] uppercase tracking-[1.5px] text-ink-2">{catKey}</span>
+                <span className="rounded-pill border border-line bg-bg px-2 py-0.5 font-mono text-[11px] uppercase tracking-[1.5px] text-ink-2">{catKey}</span>
                 <ShareButton mid={mid} question={question} />
-                <button onClick={toggleBm} className={`rounded-pill border border-line bg-bg px-2 py-0.5 font-mono text-[11px] transition-colors ${bookmarked ? "text-amberx" : "text-ink-3 hover:text-amberx"}`}>{bookmarked ? "★" : "☆"}</button>
+                <button onClick={toggleBm} className={`rounded-pill border border-line bg-bg px-2 py-0.5 font-mono text-[13px] transition-colors ${bookmarked ? "text-amberx" : "text-ink-3 hover:text-amberx"}`}>{bookmarked ? "★" : "☆"}</button>
               </div>
               <h1 className="font-display text-[20px] font-extrabold leading-tight tracking-[-0.3px] text-ink md:text-[24px]">{question}</h1>
-              <div className="mt-2 flex flex-wrap items-center gap-4 font-mono text-[11px]">
-                <span className="text-ink-2">Vol <b className="text-[13px] text-cyanx tabular-nums">{vol}</b></span>
+              <div className="mt-2 flex flex-wrap items-center gap-4 font-mono text-[13px]">
+                <span className="text-ink-2">Vol <b className="text-[15px] text-cyanx tabular-nums">{vol}</b></span>
                 <span className="text-ink-3">·</span>
-                <span className="text-ink-2">Ends <b className="text-[13px] text-up tabular-nums">{fmtCountdown(Number(market.expiry), chain?.height ?? 0)}</b></span>
+                <span className="text-ink-2">Ends <b className="text-[15px] text-up tabular-nums">{fmtCountdown(Number(market.expiry), chain?.height ?? 0)}</b></span>
               </div>
             </div>
           </div>
@@ -132,12 +132,12 @@ export default function MarketDetail({ mid }: Props) {
           {rulesText && (
             <div className="mb-4 overflow-hidden rounded-card border border-line bg-surface-grad shadow-card">
               <button onClick={() => setRulesOpen(!rulesOpen)} className="flex w-full items-center justify-between px-4 py-3 text-left">
-                <span className="font-mono text-[10px] font-bold uppercase tracking-[2px] text-ink-3">Rules</span>
-                <span className="font-mono text-[14px] text-ink-3">{rulesOpen ? "−" : "+"}</span>
+                <span className="font-mono text-[12px] font-bold uppercase tracking-[2px] text-ink-3">Rules</span>
+                <span className="font-mono text-[16px] text-ink-3">{rulesOpen ? "−" : "+"}</span>
               </button>
               {rulesOpen && (
                 <div className="border-t border-line px-4 py-3">
-                  <p className="font-sans text-[12px] leading-relaxed text-ink-2 whitespace-pre-wrap">{rulesText}</p>
+                  <p className="font-sans text-[14px] leading-relaxed text-ink-2 whitespace-pre-wrap">{rulesText}</p>
                 </div>
               )}
             </div>
@@ -145,7 +145,7 @@ export default function MarketDetail({ mid }: Props) {
 
           {/* outcome row */}
           <div className="mb-4 overflow-hidden rounded-card border border-line bg-surface-grad shadow-card">
-            <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-3 border-b border-line px-4 py-2.5 font-mono text-[8px] uppercase tracking-[1.5px] text-ink-3">
+            <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-3 border-b border-line px-4 py-2.5 font-mono text-[11px] uppercase tracking-[1.5px] text-ink-3">
               <span>Outcome</span>
               <span className="w-[80px] text-right">Chance</span>
               <span className="w-[80px] text-right">Change</span>
@@ -154,39 +154,39 @@ export default function MarketDetail({ mid }: Props) {
             <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-3 px-4 py-4">
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-up" />
-                <span className="font-display text-[14px] font-bold text-ink">{outLbl.yes}</span>
+                <span className="font-display text-[16px] font-bold text-ink">{outLbl.yes}</span>
               </div>
               <div className="w-[80px] text-right font-display text-[18px] font-extrabold text-up tabular-nums">{pct}%</div>
-              <div className={`w-[80px] text-right font-mono text-[11px] tabular-nums ${chg > 0 ? "text-up" : chg < 0 ? "text-down" : "text-ink-3"}`}>{fmtChg(chg)}</div>
+              <div className={`w-[80px] text-right font-mono text-[13px] tabular-nums ${chg > 0 ? "text-up" : chg < 0 ? "text-down" : "text-ink-3"}`}>{fmtChg(chg)}</div>
               <div className="w-[120px] text-right">
-                <button onClick={() => setOutcome(true)} className="rounded-card bg-up px-4 py-1.5 font-sans text-[11px] font-extrabold text-black transition-all hover:brightness-110">Buy {outLbl.yes}</button>
+                <button onClick={() => setOutcome(true)} className="rounded-card bg-up px-4 py-1.5 font-sans text-[13px] font-extrabold text-black transition-all hover:brightness-110">Buy {outLbl.yes}</button>
               </div>
             </div>
             <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-3 border-t border-line px-4 py-4">
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-down" />
-                <span className="font-display text-[14px] font-bold text-ink">{outLbl.no}</span>
+                <span className="font-display text-[16px] font-bold text-ink">{outLbl.no}</span>
               </div>
               <div className="w-[80px] text-right font-display text-[18px] font-extrabold text-down tabular-nums">{noPct}%</div>
-              <div className={`w-[80px] text-right font-mono text-[11px] tabular-nums ${chg < 0 ? "text-up" : chg > 0 ? "text-down" : "text-ink-3"}`}>{fmtChg(-chg)}</div>
+              <div className={`w-[80px] text-right font-mono text-[13px] tabular-nums ${chg < 0 ? "text-up" : chg > 0 ? "text-down" : "text-ink-3"}`}>{fmtChg(-chg)}</div>
               <div className="w-[120px] text-right">
-                <button onClick={() => setOutcome(false)} className="rounded-card bg-down px-4 py-1.5 font-sans text-[11px] font-extrabold text-black transition-all hover:brightness-110">Buy {outLbl.no}</button>
+                <button onClick={() => setOutcome(false)} className="rounded-card bg-down px-4 py-1.5 font-sans text-[13px] font-extrabold text-black transition-all hover:brightness-110">Buy {outLbl.no}</button>
               </div>
             </div>
           </div>
 
           {/* status banners */}
           {market.status === STATUS.CANCELLED && (
-            <div className="mb-4 rounded-card border border-down/40 bg-down-dim p-4 font-mono text-[11px] text-down">✕ This market has been cancelled.</div>
+            <div className="mb-4 rounded-card border border-down/40 bg-down-dim p-4 font-mono text-[13px] text-down">✕ This market has been cancelled.</div>
           )}
           {market.status === STATUS.EXPIRED && (
-            <div className="mb-4 rounded-card border border-amberx/40 bg-amberx/5 p-4 font-mono text-[11px] text-amberx">⏱ Expired and awaiting resolution.</div>
+            <div className="mb-4 rounded-card border border-amberx/40 bg-amberx/5 p-4 font-mono text-[13px] text-amberx">⏱ Expired and awaiting resolution.</div>
           )}
           {market.status === STATUS.FINALIZED && (
-            <div className="mb-4 rounded-card border border-bluex/40 bg-bluex/5 p-4 font-mono text-[11px] text-bluex">✓ Finalized.</div>
+            <div className="mb-4 rounded-card border border-bluex/40 bg-bluex/5 p-4 font-mono text-[13px] text-bluex">✓ Finalized.</div>
           )}
           {market.status === STATUS.VOIDED && (
-            <div className="mb-4 rounded-card border border-ink-3/40 bg-ink-3/5 p-4 font-mono text-[11px] text-ink-2">✕ Voided.</div>
+            <div className="mb-4 rounded-card border border-ink-3/40 bg-ink-3/5 p-4 font-mono text-[13px] text-ink-2">✕ Voided.</div>
           )}
 
           {/* position card */}
@@ -202,8 +202,8 @@ export default function MarketDetail({ mid }: Props) {
 
           {/* timeline & payout */}
           <div className="mb-4 overflow-hidden rounded-card border border-line bg-surface-grad shadow-card">
-            <div className="border-b border-line px-4 py-3 font-display text-[13px] font-bold text-ink">Timeline & payout</div>
-            <div className="space-y-2 px-4 py-3 font-mono text-[10px] text-ink-2">
+            <div className="border-b border-line px-4 py-3 font-display text-[15px] font-bold text-ink">Timeline & payout</div>
+            <div className="space-y-2 px-4 py-3 font-mono text-[12px] text-ink-2">
               <div className="flex justify-between gap-3"><span>Trading opened</span><span className="text-right text-ink-3">{(() => { const ob = Number((market as unknown as { openTime?: number }).openTime ?? 0); return ob > 0 ? `blk ${ob.toLocaleString()} · ${blkDate(ob)}` : "—"; })()}</span></div>
               <div className="flex justify-between gap-3"><span>Trading closes</span><span className="text-right text-amberx">blk {Number(market.expiry).toLocaleString()} · {blkDate(Number(market.expiry))}</span></div>
               <div className="flex justify-between gap-3"><span>Resolution</span><span className="text-right text-ink-3">bonded propose → dispute window → finalize</span></div>
@@ -214,15 +214,15 @@ export default function MarketDetail({ mid }: Props) {
           {/* people are also trading */}
           {related.length > 0 && (
             <div className="mb-4">
-              <div className="mb-2 font-display text-[13px] font-bold text-ink">People are also trading</div>
+              <div className="mb-2 font-display text-[15px] font-bold text-ink">People are also trading</div>
               <div className="space-y-1.5">
                 {related.map((rm) => (
                   <Link key={rm.marketId} href={`/market/${rm.marketId}`} className="flex items-center gap-3 rounded-card border border-line bg-surface px-3 py-2 transition-colors hover:border-line-2">
                     <div className="h-9 w-9 shrink-0 overflow-hidden rounded-card border border-line bg-surface-2">
-                      <BannerImg rules={rm.rules} className="h-full w-full object-cover" fallback={<div className="flex h-full w-full items-center justify-center text-[14px] text-ink-2">◈</div>} />
+                      <BannerImg rules={rm.rules} className="h-full w-full object-cover" fallback={<div className="flex h-full w-full items-center justify-center text-[16px] text-ink-2">◈</div>} />
                     </div>
-                    <div className="min-w-0 flex-1 truncate font-sans text-[12px] font-semibold text-ink">{stripCatPrefix(rm.question || rm.rules)}</div>
-                    <div className="font-display text-[13px] font-extrabold text-up tabular-nums">{yesPct(rm)}%</div>
+                    <div className="min-w-0 flex-1 truncate font-sans text-[14px] font-semibold text-ink">{stripCatPrefix(rm.question || rm.rules)}</div>
+                    <div className="font-display text-[15px] font-extrabold text-up tabular-nums">{yesPct(rm)}%</div>
                   </Link>
                 ))}
               </div>
@@ -255,15 +255,15 @@ function FaqSection({ pct, ends }: { pct: number; ends: string }) {
   return (
 
     <div className="mt-4">
-      <div className="mb-2 font-display text-[15px] font-bold text-ink">Frequently Asked Questions</div>
+      <div className="mb-2 font-display text-[16px] font-bold text-ink">Frequently Asked Questions</div>
       <div className="overflow-hidden rounded-card border border-line bg-surface-grad shadow-card">
         {faqs.map((f, i) => (
           <div key={i} className="border-b border-line last:border-b-0">
             <button onClick={() => setOpen(open === i ? null : i)} className="flex w-full items-center justify-between px-4 py-3 text-left">
-              <span className="font-sans text-[12px] font-semibold text-ink">{f.q}</span>
-              <span className="font-mono text-[12px] text-ink-3">{open === i ? "−" : "+"}</span>
+              <span className="font-sans text-[14px] font-semibold text-ink">{f.q}</span>
+              <span className="font-mono text-[14px] text-ink-3">{open === i ? "−" : "+"}</span>
             </button>
-            {open === i && <div className="border-t border-line bg-bg-2 px-4 py-3 font-sans text-[11px] leading-relaxed text-ink-2">{f.a}</div>}
+            {open === i && <div className="border-t border-line bg-bg-2 px-4 py-3 font-sans text-[13px] leading-relaxed text-ink-2">{f.a}</div>}
           </div>
         ))}
       </div>

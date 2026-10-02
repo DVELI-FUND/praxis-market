@@ -48,21 +48,21 @@ export default function ResolutionPlanner({ mid, mode, wallet, bondValue = 0, on
 
   if (!valid) {
     return (
-      <div className="mb-3 rounded-card border border-line bg-bg-2 p-3 font-mono text-[10px] text-ink-3">
+      <div className="mb-3 rounded-card border border-line bg-bg-2 p-3 font-mono text-[12px] text-ink-3">
         Enter a 40-hex Market ID to compute bond, risk & eligibility.
       </div>
     );
   }
   if (marketQ.isLoading) {
     return (
-      <div className="mb-3 rounded-card border border-line bg-bg-2 p-3 font-mono text-[10px] text-ink-3">
+      <div className="mb-3 rounded-card border border-line bg-bg-2 p-3 font-mono text-[12px] text-ink-3">
         <span className="animate-pulseDot">▪ ▪ ▪</span>&nbsp;&nbsp;computing resolution context
       </div>
     );
   }
   if (!m) {
     return (
-      <div className="mb-3 rounded-card border border-down/40 bg-down-dim p-3 font-mono text-[10px] text-down">
+      <div className="mb-3 rounded-card border border-down/40 bg-down-dim p-3 font-mono text-[12px] text-down">
         Market not found — browse Markets first
       </div>
     );
@@ -94,8 +94,8 @@ export default function ResolutionPlanner({ mid, mode, wallet, bondValue = 0, on
         ];
 
   return (
-    <div className="mb-3 rounded-card border border-line bg-bg-2 p-3 font-mono text-[10px]">
-      <div className="mb-2 text-[9px] uppercase tracking-[2px] text-ink-3">
+    <div className="mb-3 rounded-card border border-line bg-bg-2 p-3 font-mono text-[12px]">
+      <div className="mb-2 text-[11px] uppercase tracking-[2px] text-ink-3">
         // {mode === "propose" ? "propose_planner" : "dispute_planner"}
       </div>
 

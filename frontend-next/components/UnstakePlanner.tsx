@@ -40,8 +40,8 @@ export default function UnstakePlanner({ rec, amount, onAmount, currentHeight }:
   ];
 
   return (
-    <div className="mb-3 rounded-card border border-line bg-bg-2 p-3 font-mono text-[10px]">
-      <div className="mb-2 text-[9px] uppercase tracking-[2px] text-ink-3">// unstake_planner</div>
+    <div className="mb-3 rounded-card border border-line bg-bg-2 p-3 font-mono text-[12px]">
+      <div className="mb-2 text-[11px] uppercase tracking-[2px] text-ink-3">// unstake_planner</div>
 
       <input
         type="range"
@@ -57,14 +57,14 @@ export default function UnstakePlanner({ rec, amount, onAmount, currentHeight }:
           <button
             key={p}
             onClick={() => onAmount(Math.floor((stakePRX * p) / 100))}
-            className="rounded-card border border-line px-1 py-1 text-[9px] text-ink-2 transition-colors hover:border-up hover:text-up"
+            className="rounded-card border border-line px-1 py-1 text-[11px] text-ink-2 transition-colors hover:border-up hover:text-up"
           >
             {p}%
           </button>
         ))}
         <button
           onClick={() => onAmount(0)}
-          className="rounded-card border border-line px-1 py-1 text-[9px] text-ink-2 transition-colors hover:border-amberx hover:text-amberx"
+          className="rounded-card border border-line px-1 py-1 text-[11px] text-ink-2 transition-colors hover:border-amberx hover:text-amberx"
         >
           Full exit
         </button>

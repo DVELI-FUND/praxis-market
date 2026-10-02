@@ -19,7 +19,7 @@ export default function LiveTicker() {
             <Link
               key={m.marketId + i}
               href={`/market/${m.marketId}`}
-              className="flex shrink-0 items-center gap-2 font-mono text-[10px]"
+              className="flex shrink-0 items-center gap-2 font-mono text-[12px]"
             >
               <span className="h-1 w-1 rounded-full bg-up animate-pulseDot" />
               <span className="max-w-[220px] truncate text-ink-2">{stripCatPrefix(m.question || m.rules || "")}</span>

@@ -27,7 +27,7 @@ export default function ShareButton({ mid, question }: Props) {
   return (
     <button
       onClick={share}
-      className="rounded-card border border-line-2 px-3 py-1.5 font-mono text-[9px] text-ink-2 transition-colors hover:border-up hover:text-up"
+      className="rounded-card border border-line-2 px-3 py-1.5 font-mono text-[11px] text-ink-2 transition-colors hover:border-up hover:text-up"
       title="Share market"
     >
       {copied ? "✓ Copied" : "⎘ Share"}

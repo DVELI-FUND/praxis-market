@@ -5,10 +5,10 @@ import { b2h } from "@/lib/format";
 import { useWallet } from "@/store/wallet";
 import { decryptKeystore, encryptKey, PRAXIS_KEYSTORE_LS, type KeystoreFile } from "@/lib/keystore";
 
-const inp = "w-full rounded-card border border-line bg-bg-2 px-3 py-2 font-mono text-[11px] text-ink outline-none focus:border-up/60";
-const lbl = "mb-1 block font-mono text-[9px] uppercase tracking-[2px] text-ink-3";
-const btnUp = "rounded border border-up bg-up px-4 py-2 font-mono text-[11px] font-bold text-black transition-opacity hover:opacity-90 disabled:opacity-50";
-const btnGhost = "rounded border border-line bg-surface px-4 py-2 font-mono text-[11px] text-ink-2 hover:text-ink";
+const inp = "w-full rounded-card border border-line bg-bg-2 px-3 py-2 font-mono text-[13px] text-ink outline-none focus:border-up/60";
+const lbl = "mb-1 block font-mono text-[11px] uppercase tracking-[2px] text-ink-3";
+const btnUp = "rounded border border-up bg-up px-4 py-2 font-mono text-[13px] font-bold text-black transition-opacity hover:opacity-90 disabled:opacity-50";
+const btnGhost = "rounded border border-line bg-surface px-4 py-2 font-mono text-[13px] text-ink-2 hover:text-ink";
 
 export default function KeystorePanel() {
   const [open, setOpen] = useState(false);
@@ -110,7 +110,7 @@ export default function KeystorePanel() {
     <section className="mt-6">
       <button
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between rounded-card border border-line bg-surface px-4 py-3 font-mono text-[9px] uppercase tracking-[2px] text-ink-2 hover:text-ink"
+        className="flex w-full items-center justify-between rounded-card border border-line bg-surface px-4 py-3 font-mono text-[11px] uppercase tracking-[2px] text-ink-2 hover:text-ink"
       >
         Advanced — Manual Keystore
         <span>{open ? "▲" : "▼"}</span>
@@ -120,8 +120,8 @@ export default function KeystorePanel() {
         <div className="mt-2 space-y-4">
           {saved && (
             <div className="rounded-card border border-line bg-surface p-4">
-              <div className="mb-3 border-b border-line pb-2 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">// quick_unlock</div>
-              <div className="mb-2 font-mono text-[10px] text-ink-2">Saved: {(saved.keyAddress || "").slice(0, 8)}…{(saved.keyAddress || "").slice(-6)}</div>
+              <div className="mb-3 border-b border-line pb-2 font-mono text-[11px] uppercase tracking-[2px] text-ink-3">// quick_unlock</div>
+              <div className="mb-2 font-mono text-[12px] text-ink-2">Saved: {(saved.keyAddress || "").slice(0, 8)}…{(saved.keyAddress || "").slice(-6)}</div>
               <input type="password" className={inp} placeholder="Keystore password…" value={quickPw} onChange={(e) => setQuickPw(e.target.value)} />
               <div className="mt-2 flex gap-2">
                 <button className={btnUp} disabled={busy !== ""} onClick={doQuick}>{busy === "quick" ? "…" : "🔓 Unlock Keystore"}</button>
@@ -131,10 +131,10 @@ export default function KeystorePanel() {
           )}
 
           <div className="rounded-card border border-line bg-surface p-4">
-            <div className="mb-3 border-b border-line pb-2 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">// import_keystore</div>
+            <div className="mb-3 border-b border-line pb-2 font-mono text-[11px] uppercase tracking-[2px] text-ink-3">// import_keystore</div>
             <label className={lbl}>Keystore file (.json)</label>
-            <input ref={fileRef} type="file" accept=".json,application/json" className="mb-1 w-full font-mono text-[10px] text-ink-2 file:mr-3 file:rounded file:border-0 file:bg-ink-2 file:px-3 file:py-1.5 file:text-[10px] file:text-black" />
-            <div className="mb-3 font-mono text-[9px] text-ink-3">Upload your encrypted Praxis keystore JSON</div>
+            <input ref={fileRef} type="file" accept=".json,application/json" className="mb-1 w-full font-mono text-[12px] text-ink-2 file:mr-3 file:rounded file:border-0 file:bg-ink-2 file:px-3 file:py-1.5 file:text-[12px] file:text-black" />
+            <div className="mb-3 font-mono text-[11px] text-ink-3">Upload your encrypted Praxis keystore JSON</div>
             <label className={lbl}>Password</label>
             <input type="password" className={inp} placeholder="Keystore password…" value={impPw} onChange={(e) => setImpPw(e.target.value)} />
             <div className="mt-3 flex gap-2">
@@ -144,8 +144,8 @@ export default function KeystorePanel() {
           </div>
 
           <div className="rounded-card border border-line bg-surface p-4">
-            <div className="mb-3 border-b border-line pb-2 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">// create_keystore</div>
-            <div className="mb-3 rounded-card border border-amberx/40 bg-amberx/5 p-2.5 font-mono text-[10px] text-amberx">
+            <div className="mb-3 border-b border-line pb-2 font-mono text-[11px] uppercase tracking-[2px] text-ink-3">// create_keystore</div>
+            <div className="mb-3 rounded-card border border-amberx/40 bg-amberx/5 p-2.5 font-mono text-[12px] text-amberx">
               Generates a new BLS12-381 keypair and downloads an encrypted keystore file.
             </div>
             <label className={lbl}>Password</label>
@@ -156,8 +156,8 @@ export default function KeystorePanel() {
           </div>
 
           <div className="rounded-card border border-line bg-surface p-4">
-            <div className="mb-3 border-b border-line pb-2 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">// signing_spec</div>
-            <pre className="font-mono text-[9px] leading-relaxed text-ink-3">{`1. sign_bytes = proto.Marshal(Transaction{…, signature:nil})
+            <div className="mb-3 border-b border-line pb-2 font-mono text-[11px] uppercase tracking-[2px] text-ink-3">// signing_spec</div>
+            <pre className="font-mono text-[11px] leading-relaxed text-ink-3">{`1. sign_bytes = proto.Marshal(Transaction{…, signature:nil})
 2. time = BigInt(Date.now()) × 1000n — microseconds
 3. BLS12-381 G2 signature (96 bytes) — @noble/curves
 4. address = SHA256(pubKey).slice(0,20)
@@ -165,7 +165,7 @@ export default function KeystorePanel() {
           </div>
 
           {msg && (
-            <div className={`rounded-card border p-3 font-mono text-[10px] ${msg.ok ? "border-up/40 bg-up/5 text-up" : "border-down/40 bg-down/5 text-down"}`}>
+            <div className={`rounded-card border p-3 font-mono text-[12px] ${msg.ok ? "border-up/40 bg-up/5 text-up" : "border-down/40 bg-down/5 text-down"}`}>
               {msg.text}
             </div>
           )}

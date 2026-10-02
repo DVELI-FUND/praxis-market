@@ -28,7 +28,7 @@ export default function DetailTabs({ mid, market, holders, disputeContext }: Pro
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`rounded-t-card px-4 py-2 font-mono text-[10px] tracking-[1px] transition-colors ${
+            className={`rounded-t-card px-4 py-2 font-mono text-[12px] tracking-[1px] transition-colors ${
               tab === t.id
                 ? "border border-b-0 border-line bg-surface text-up shadow-[0_-4px_16px_rgba(0,232,138,0.06)]"
                 : "text-ink-3 hover:text-ink-2"

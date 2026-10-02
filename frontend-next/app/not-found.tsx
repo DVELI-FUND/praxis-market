@@ -4,8 +4,8 @@ export default function NotFound() {
     <main className="relative z-10 mx-auto flex min-h-[70vh] max-w-[980px] items-center justify-center px-4">
       <div className="text-center">
         <div className="mb-2 font-display text-[52px] font-extrabold text-ink">404</div>
-        <p className="mb-5 font-mono text-[11px] text-ink-3">This market doesn't exist.</p>
-        <Link href="/" className="rounded-card bg-up px-5 py-2.5 font-sans text-[12px] font-extrabold text-black shadow-glowUp hover:brightness-110">
+        <p className="mb-5 font-mono text-[13px] text-ink-3">This market doesn't exist.</p>
+        <Link href="/" className="rounded-card bg-up px-5 py-2.5 font-sans text-[14px] font-extrabold text-black shadow-glowUp hover:brightness-110">
           ← Back to Markets
         </Link>
       </div>

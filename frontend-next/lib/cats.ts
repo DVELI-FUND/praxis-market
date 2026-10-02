@@ -64,3 +64,16 @@ export function buildRulesWithMeta(ko: string, lg: string, rules: string): strin
 }
 export const parseKo = (rules: string): string | null => { const m = rules.match(KO_RE); return m ? m[1] : null; };
 export const parseLg = (rules: string): string | null => { const m = rules.match(LG_RE); return m ? m[1] : null; };
+
+export const TOP_LEAGUES: { key: string; label: string; country: string }[] = [
+  { key: "PL", label: "Premier League", country: "England" },
+  { key: "LALIGA", label: "LaLiga", country: "Spain" },
+  { key: "SERIEA", label: "Serie A", country: "Italy" },
+  { key: "BUNDESLIGA", label: "Bundesliga", country: "Germany" },
+  { key: "LIGUE1", label: "Ligue 1", country: "France" },
+  { key: "UCL", label: "Champions League", country: "Europe" },
+  { key: "UEL", label: "Europa League", country: "Europe" },
+  { key: "MLS", label: "MLS", country: "USA" },
+  { key: "LIGAPORTUGAL", label: "Liga Portugal", country: "Portugal" },
+  { key: "EREDIVISIE", label: "Eredivisie", country: "Netherlands" },
+];

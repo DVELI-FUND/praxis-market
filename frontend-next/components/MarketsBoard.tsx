@@ -78,14 +78,14 @@ export default function MarketsBoard() {
       {/* header row */}
       <div className="mb-3.5 flex flex-wrap items-center justify-between gap-2.5">
         <div>
-          <div className="mb-1 flex items-center gap-2 font-mono text-[9px] uppercase tracking-[3px] text-up">
+          <div className="mb-1 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[3px] text-up">
             <span className="inline-block h-px w-[18px] bg-up" /> Live on Canopy
           </div>
           <div className="font-display text-[22px] font-extrabold tracking-[-0.3px]">Prediction Markets</div>
         </div>
         <button
           onClick={() => void refetch()}
-          className="rounded-card border border-line-2 bg-transparent px-3 py-1.5 font-mono text-[9px] text-ink-2 transition-colors hover:border-up hover:text-up"
+          className="rounded-card border border-line-2 bg-transparent px-3 py-1.5 font-mono text-[11px] text-ink-2 transition-colors hover:border-up hover:text-up"
         >
           ↻ Refresh
         </button>
@@ -93,30 +93,30 @@ export default function MarketsBoard() {
 
       {/* stat chips */}
       <div className="mb-3.5 flex gap-1.5 overflow-x-auto pb-1">
-        <div className="flex items-center gap-1.5 whitespace-nowrap rounded-card border border-line bg-surface px-2.5 py-1.5 font-mono text-[9px] text-ink-2">
-          Markets <b className="font-display text-[13px] font-bold text-ink">{liveCount}</b>
+        <div className="flex items-center gap-1.5 whitespace-nowrap rounded-card border border-line bg-surface px-2.5 py-1.5 font-mono text-[11px] text-ink-2">
+          Markets <b className="font-display text-[15px] font-bold text-ink">{liveCount}</b>
         </div>
-        <div className="flex items-center gap-1.5 whitespace-nowrap rounded-card border border-line bg-surface px-2.5 py-1.5 font-mono text-[9px] text-ink-2">
-          Block <b className="font-display text-[13px] font-bold text-ink tabular-nums">{heightInfo?.height ?? "—"}</b>
+        <div className="flex items-center gap-1.5 whitespace-nowrap rounded-card border border-line bg-surface px-2.5 py-1.5 font-mono text-[11px] text-ink-2">
+          Block <b className="font-display text-[15px] font-bold text-ink tabular-nums">{heightInfo?.height ?? "—"}</b>
         </div>
-        <div className="flex items-center gap-1.5 whitespace-nowrap rounded-card border border-line bg-surface px-2.5 py-1.5 font-mono text-[9px] text-ink-2">
-          Vol <b className="font-display text-[13px] font-bold text-up tabular-nums">{fmtPRX(totalVolume)}</b>
+        <div className="flex items-center gap-1.5 whitespace-nowrap rounded-card border border-line bg-surface px-2.5 py-1.5 font-mono text-[11px] text-ink-2">
+          Vol <b className="font-display text-[15px] font-bold text-up tabular-nums">{fmtPRX(totalVolume)}</b>
         </div>
       </div>
 
       {/* category pills */}
       <div className="mb-5 flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none]">
-        {CATS.map((c) => (<button key={c.key} onClick={() => setCat(c.key)} className={`flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[10px] ${cat === c.key ? "border-up bg-up text-black" : "border-line text-ink-2"}`}><CatIcon name={c.icon} className="h-3 w-3" />{c.label}</button>))}
+        {CATS.map((c) => (<button key={c.key} onClick={() => setCat(c.key)} className={`flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[12px] ${cat === c.key ? "border-up bg-up text-black" : "border-line text-ink-2"}`}><CatIcon name={c.icon} className="h-3 w-3" />{c.label}</button>))}
       </div>
 
-      {subs.length > 0 && (<div className="flex flex-wrap gap-1.5 mt-2"><button onClick={() => setSub("")} className={`rounded-full border px-2.5 py-0.5 font-mono text-[9px] ${!sub ? "border-amberx bg-amberx/10 text-amberx" : "border-line text-ink-3"}`}>All</button>{subs.map(x => (<button key={x.key} onClick={() => setSub(x.key)} className={`flex items-center gap-1 rounded-full border px-2.5 py-0.5 font-mono text-[9px] ${sub === x.key ? "border-amberx bg-amberx/10 text-amberx" : "border-line text-ink-3"}`}><CatIcon name={x.icon} className="h-2.5 w-2.5" />{x.label}</button>))}</div>)}{/* status tabs + sort */}
+      {subs.length > 0 && (<div className="flex flex-wrap gap-1.5 mt-2"><button onClick={() => setSub("")} className={`rounded-full border px-2.5 py-0.5 font-mono text-[11px] ${!sub ? "border-amberx bg-amberx/10 text-amberx" : "border-line text-ink-3"}`}>All</button>{subs.map(x => (<button key={x.key} onClick={() => setSub(x.key)} className={`flex items-center gap-1 rounded-full border px-2.5 py-0.5 font-mono text-[11px] ${sub === x.key ? "border-amberx bg-amberx/10 text-amberx" : "border-line text-ink-3"}`}><CatIcon name={x.icon} className="h-2.5 w-2.5" />{x.label}</button>))}</div>)}{/* status tabs + sort */}
       <div className="mb-4 flex items-center justify-between gap-2 border-b border-line">
         <div className="flex flex-1 gap-1">
           {TABS.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`-mb-px border-b-2 px-4 py-2 font-mono text-[10px] tracking-[1px] transition-colors ${
+              className={`-mb-px border-b-2 px-4 py-2 font-mono text-[12px] tracking-[1px] transition-colors ${
                 tab === t.key
                   ? "border-up text-up"
                   : "border-transparent text-ink-3 hover:text-ink-2"
@@ -126,12 +126,12 @@ export default function MarketsBoard() {
             </button>
           ))}
         </div>
-        <label className="flex cursor-pointer items-center gap-1.5 rounded-card border border-line bg-surface px-2.5 py-1.5 font-mono text-[9px] text-ink-2 transition-colors hover:border-up hover:text-up">
+        <label className="flex cursor-pointer items-center gap-1.5 rounded-card border border-line bg-surface px-2.5 py-1.5 font-mono text-[11px] text-ink-2 transition-colors hover:border-up hover:text-up">
           <span className="opacity-60">↑↓</span>
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value as SortKey)}
-            className="rounded-card border border-line bg-surface-grad px-3 py-1.5 font-mono text-[10px] text-ink-2 outline-none focus:border-line-2"
+            className="rounded-card border border-line bg-surface-grad px-3 py-1.5 font-mono text-[12px] text-ink-2 outline-none focus:border-line-2"
           >
             <option value="vol">24H Volume</option>
             <option value="totalVol">Total Volume</option>
@@ -174,11 +174,11 @@ export default function MarketsBoard() {
           ))}
         </div>
       ) : isError ? (
-        <div className="rounded-card border border-down/40 bg-down-dim p-4 font-mono text-[11px] text-down">
+        <div className="rounded-card border border-down/40 bg-down-dim p-4 font-mono text-[13px] text-down">
            Cannot reach plugin RPC at <code>{String(error?.message || error)}</code>
         </div>
       ) : visible.length === 0 ? (
-        <div className="rounded-card border border-amberx/30 bg-amberx/5 p-4 font-mono text-[11px] text-amberx">
+        <div className="rounded-card border border-amberx/30 bg-amberx/5 p-4 font-mono text-[13px] text-amberx">
           {emptyLabel}
         </div>
       ) : (

@@ -60,12 +60,12 @@ export default function PriceChart({ mid, initialYes, initialNo }: Props) {
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-1">
           {(Object.keys(RANGES) as RangeKey[]).map((r) => (
-            <button key={r} onClick={() => setRange(r)} className={`rounded-pill px-2.5 py-1 font-mono text-[9px] transition-colors ${range === r ? "bg-up font-bold text-black" : "text-ink-3 hover:text-ink-2"}`}>
+            <button key={r} onClick={() => setRange(r)} className={`rounded-pill px-2.5 py-1 font-mono text-[11px] transition-colors ${range === r ? "bg-up font-bold text-black" : "text-ink-3 hover:text-ink-2"}`}>
               {r}
             </button>
           ))}
         </div>
-        <div className={`font-display text-[15px] font-extrabold tabular-nums ${up ? "text-up" : "text-down"}`}>{currentPct.toFixed(1)}%</div>
+        <div className={`font-display text-[16px] font-extrabold tabular-nums ${up ? "text-up" : "text-down"}`}>{currentPct.toFixed(1)}%</div>
       </div>
 
       <svg viewBox={`0 0 ${w} ${h}`} className="w-full">
@@ -81,7 +81,7 @@ export default function PriceChart({ mid, initialYes, initialNo }: Props) {
         <text x={0} y={h - 4} fontSize="8" fill="rgb(var(--ink-3))">{fmtD(blockToTime(points[0].height))}</text>
         <text x={w - padR} y={h - 4} fontSize="8" fill="rgb(var(--ink-3))" textAnchor="end">{fmtD(blockToTime(points[points.length - 1].height))}</text>
       </svg>
-      <div className="mt-1 text-right font-mono text-[8px] text-ink-3">{points.length} data point{points.length !== 1 ? "s" : ""}</div>
+      <div className="mt-1 text-right font-mono text-[11px] text-ink-3">{points.length} data point{points.length !== 1 ? "s" : ""}</div>
     </div>
   );
 }

@@ -88,9 +88,9 @@ export default function TradeRail({ market, onClose }: Props) {
   return (
     <div className="rounded-card border border-line bg-surface-grad shadow-card overflow-hidden">
       <div className="flex items-center justify-between border-b border-line bg-surface-2 px-4 py-3">
-        <span className="font-mono text-[11px] uppercase tracking-[2px] text-ink-3">Trade</span>
+        <span className="font-mono text-[13px] uppercase tracking-[2px] text-ink-3">Trade</span>
         {onClose && (
-          <button onClick={onClose} className="font-mono text-[11px] text-ink-3 hover:text-ink">✕</button>
+          <button onClick={onClose} className="font-mono text-[13px] text-ink-3 hover:text-ink">✕</button>
         )}
       </div>
 
@@ -99,7 +99,7 @@ export default function TradeRail({ market, onClose }: Props) {
         <div className="grid grid-cols-2 gap-2">
           <button
             onClick={() => setOutcome(true)}
-            className={`rounded-card border-2 py-3 font-mono text-[12px] font-bold transition-all ${
+            className={`rounded-card border-2 py-3 font-mono text-[14px] font-bold transition-all ${
               outcome ? "border-up bg-up/10 text-up" : "border-line text-ink-3"
             }`}
           >
@@ -107,7 +107,7 @@ export default function TradeRail({ market, onClose }: Props) {
           </button>
           <button
             onClick={() => setOutcome(false)}
-            className={`rounded-card border-2 py-3 font-mono text-[12px] font-bold transition-all ${
+            className={`rounded-card border-2 py-3 font-mono text-[14px] font-bold transition-all ${
               !outcome ? "border-up bg-up/10 text-up" : "border-line text-ink-3"
             }`}
           >
@@ -117,12 +117,12 @@ export default function TradeRail({ market, onClose }: Props) {
 
         {/* Amount input */}
         <div>
-          <div className="mb-1.5 font-mono text-[11px] text-ink-3">Amount (PRX)</div>
+          <div className="mb-1.5 font-mono text-[13px] text-ink-3">Amount (PRX)</div>
           <input
             type="number"
             value={amount}
             onChange={(e) => setAmount(Number(e.target.value) || 0)}
-            className="w-full rounded-card border border-line bg-surface px-3 py-2.5 font-mono text-[13px] text-ink outline-none focus:border-up"
+            className="w-full rounded-card border border-line bg-surface px-3 py-2.5 font-mono text-[15px] text-ink outline-none focus:border-up"
             placeholder="0"
           />
           <div className="mt-2 flex gap-1.5">
@@ -130,7 +130,7 @@ export default function TradeRail({ market, onClose }: Props) {
               <button
                 key={c}
                 onClick={() => setAmount(c)}
-                className={`flex-1 rounded-card border py-1.5 font-mono text-[10px] font-bold transition-all ${
+                className={`flex-1 rounded-card border py-1.5 font-mono text-[12px] font-bold transition-all ${
                   amount === c ? "border-up bg-up/10 text-up" : "border-line text-ink-3 hover:border-ink-2"
                 }`}
               >
@@ -142,19 +142,19 @@ export default function TradeRail({ market, onClose }: Props) {
 
         {/* Cost breakdown */}
         <div className="space-y-1.5 rounded-card border border-line bg-surface p-3">
-          <div className="flex justify-between font-mono text-[11px]">
+          <div className="flex justify-between font-mono text-[13px]">
             <span className="text-ink-3">Base cost</span>
             <span className="text-ink">{cost.baseCost} PRX</span>
           </div>
-          <div className="flex justify-between font-mono text-[11px]">
+          <div className="flex justify-between font-mono text-[13px]">
             <span className="text-ink-3">Fees (2%)</span>
             <span className="text-ink">{cost.creatorFee + cost.resolverFee} PRX</span>
           </div>
-          <div className="flex justify-between border-t border-line pt-1.5 font-mono text-[12px] font-bold">
+          <div className="flex justify-between border-t border-line pt-1.5 font-mono text-[14px] font-bold">
             <span className="text-ink-3">Total</span>
             <span className="text-ink">{cost.totalCost} PRX</span>
           </div>
-          <div className="flex justify-between font-mono text-[11px]">
+          <div className="flex justify-between font-mono text-[13px]">
             <span className="text-ink-3">To win</span>
             <span className="text-up">{cost.toWin} PRX</span>
           </div>
@@ -164,7 +164,7 @@ export default function TradeRail({ market, onClose }: Props) {
         <button
           onClick={handleSubmit}
           disabled={pending || amount <= 0}
-          className="w-full rounded-card bg-up py-3 font-display text-[13px] font-bold text-black transition-all hover:bg-up/90 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full rounded-card bg-up py-3 font-display text-[15px] font-bold text-black transition-all hover:bg-up/90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {pending ? "Submitting…" : connected ? `Buy ${outcome ? outLbl.yes : outLbl.no}` : "Connect wallet"}
         </button>

@@ -279,8 +279,8 @@ export default function ActionForm({ def }: { def: ActionDef }) {
     return (
       <div className="rounded-card border border-line bg-surface p-6 text-center">
         <div className="mb-2 font-mono text-[20px] text-ink-3">locked</div>
-        <div className="font-display text-[15px] font-extrabold">Not Authorized</div>
-        <div className="mt-1 font-mono text-[10px] text-ink-3">
+        <div className="font-display text-[16px] font-extrabold">Not Authorized</div>
+        <div className="mt-1 font-mono text-[12px] text-ink-3">
           This address is not registered for {def.gate} actions
         </div>
       </div>
@@ -299,18 +299,18 @@ export default function ActionForm({ def }: { def: ActionDef }) {
         <div className="rounded-card border border-line bg-surface-grad p-5">
           <div className="mb-1 flex items-center gap-2">
             <span className="text-ink">💰</span>
-            <span className="font-display text-[15px] font-bold text-ink">{def.title}</span>
+            <span className="font-display text-[16px] font-bold text-ink">{def.title}</span>
           </div>
-          <div className="font-mono text-[11px] text-ink-3">{def.sub}</div>
+          <div className="font-mono text-[13px] text-ink-3">{def.sub}</div>
         </div>
 
         {/* Rules card */}
         <div className="rounded-card border border-line bg-bg-2 p-4">
           <div className="mb-2 flex items-center gap-2">
-            <span className="text-[13px]">💰</span>
-            <span className="font-display text-[12px] font-bold text-ink">Claim rules</span>
+            <span className="text-[15px]">💰</span>
+            <span className="font-display text-[14px] font-bold text-ink">Claim rules</span>
           </div>
-          <ul className="space-y-1.5 font-mono text-[10px] leading-relaxed text-ink-2">
+          <ul className="space-y-1.5 font-mono text-[12px] leading-relaxed text-ink-2">
             <li className="flex gap-2"><span className="text-ink-3">•</span>Only finalized markets with winning shares can be claimed.</li>
             <li className="flex gap-2"><span className="text-ink-3">•</span>Payout = winning shares × 1 PRX per share.</li>
             <li className="flex gap-2"><span className="text-ink-3">•</span>Losers forfeit their shares to the finalized pool.</li>
@@ -320,9 +320,9 @@ export default function ActionForm({ def }: { def: ActionDef }) {
 
         {/* Picker */}
         <div>
-          <div className="mb-2 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">Your claimable winnings</div>
+          <div className="mb-2 font-mono text-[11px] uppercase tracking-[2px] text-ink-3">Your claimable winnings</div>
           {claimable.length === 0 ? (
-            <div className="rounded-card border border-line bg-bg-2 p-4 font-mono text-[10px] text-ink-3">
+            <div className="rounded-card border border-line bg-bg-2 p-4 font-mono text-[12px] text-ink-3">
               No finalized markets with winning shares yet.
             </div>
           ) : (
@@ -349,14 +349,14 @@ export default function ActionForm({ def }: { def: ActionDef }) {
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="mb-1 flex items-start gap-2">
-                          <span className="shrink-0 rounded-full bg-ink-3/20 px-2 py-0.5 font-mono text-[8px] font-bold text-ink-3">
+                          <span className="shrink-0 rounded-full bg-ink-3/20 px-2 py-0.5 font-mono text-[11px] font-bold text-ink-3">
                             FINALIZED
                           </span>
-                          <span className="truncate font-display text-[12px] font-semibold text-ink">
+                          <span className="truncate font-display text-[14px] font-semibold text-ink">
                             {stripCatPrefix(c.market.question || c.market.rules)}
                           </span>
                         </div>
-                        <div className="flex items-center gap-3 font-mono text-[10px] text-ink-3">
+                        <div className="flex items-center gap-3 font-mono text-[12px] text-ink-3">
                           <span>
                             held <b className={c.held === "YES" ? "text-up" : "text-down"}>{c.held}</b> {fmtPRX(c.shares)} shares
                           </span>
@@ -366,8 +366,8 @@ export default function ActionForm({ def }: { def: ActionDef }) {
                         </div>
                       </div>
                       <div className="flex shrink-0 flex-col items-end justify-center">
-                        <div className="font-mono text-[9px] text-ink-3">est. payout</div>
-                        <div className="font-display text-[14px] font-extrabold text-up tabular-nums">
+                        <div className="font-mono text-[11px] text-ink-3">est. payout</div>
+                        <div className="font-display text-[16px] font-extrabold text-up tabular-nums">
                           {fmtPRX(c.payout)} PRX
                         </div>
                       </div>
@@ -381,7 +381,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
 
         {/* Summary strip */}
         {selected && (
-          <div className="rounded-card border border-line bg-bg-2 px-4 py-3 font-mono text-[10px] text-ink-2">
+          <div className="rounded-card border border-line bg-bg-2 px-4 py-3 font-mono text-[12px] text-ink-2">
             <div className="flex items-center justify-between">
               <span>claim {fmtPRX(selected.payout)} PRX</span>
               <span>fee {Number(vals.fee || 10000).toLocaleString()} uPRX</span>
@@ -391,18 +391,18 @@ export default function ActionForm({ def }: { def: ActionDef }) {
 
         {/* Advanced disclosure */}
         <details className="rounded-card border border-line bg-bg-2 p-3">
-          <summary className="cursor-pointer font-mono text-[10px] font-bold uppercase tracking-[2px] text-ink-3 hover:text-ink-2">
+          <summary className="cursor-pointer font-mono text-[12px] font-bold uppercase tracking-[2px] text-ink-3 hover:text-ink-2">
             ⚙ Advanced — manual override
           </summary>
           <div className="mt-3 space-y-2.5">
             {def.fields.filter(f => f.type !== "wallet").map((f) => (
               <div key={f.id}>
-                <label className="mb-1 block font-mono text-[9px] uppercase tracking-[2px] text-ink-3">{f.label}</label>
+                <label className="mb-1 block font-mono text-[11px] uppercase tracking-[2px] text-ink-3">{f.label}</label>
                 <input
                   type={f.type === "number" ? "number" : "text"}
                   value={String(vals[f.id] ?? "")}
                   onChange={(e) => set(f.id, e.target.value)}
-                  className="w-full rounded border border-line bg-bg px-3 py-2 font-mono text-[11px] text-ink outline-none focus:border-line-2"
+                  className="w-full rounded border border-line bg-bg px-3 py-2 font-mono text-[13px] text-ink outline-none focus:border-line-2"
                   placeholder={f.hint}
                 />
               </div>
@@ -414,7 +414,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
         <button
           onClick={submit}
           disabled={pending || !vals.mid}
-          className="w-full rounded-card bg-up py-3.5 font-display text-[13px] font-bold text-bg transition-all hover:bg-up/90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-full rounded-card bg-up py-3.5 font-display text-[15px] font-bold text-bg transition-all hover:bg-up/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {pending ? "Confirming…" : vals.mid ? `Claim ${selected ? fmtPRX(selected.payout) : ""} PRX` : "Select a market to claim"}
         </button>
@@ -431,18 +431,18 @@ export default function ActionForm({ def }: { def: ActionDef }) {
         <div className="rounded-card border border-line bg-surface-grad p-5">
           <div className="mb-1 flex items-center gap-2">
             <span className="text-ink">⚠</span>
-            <span className="font-display text-[15px] font-bold text-ink">{def.title}</span>
+            <span className="font-display text-[16px] font-bold text-ink">{def.title}</span>
           </div>
-          <div className="font-mono text-[11px] text-ink-3">{def.sub}</div>
+          <div className="font-mono text-[13px] text-ink-3">{def.sub}</div>
         </div>
 
         {/* Rules card */}
         <div className="rounded-card border border-line bg-bg-2 p-4">
           <div className="mb-2 flex items-center gap-2">
-            <span className="text-[13px]">⚠</span>
-            <span className="font-display text-[12px] font-bold text-ink">Cancellation rules</span>
+            <span className="text-[15px]">⚠</span>
+            <span className="font-display text-[14px] font-bold text-ink">Cancellation rules</span>
           </div>
-          <ul className="space-y-1.5 font-mono text-[10px] leading-relaxed text-ink-2">
+          <ul className="space-y-1.5 font-mono text-[12px] leading-relaxed text-ink-2">
             <li className="flex gap-2"><span className="text-ink-3">•</span>Only the wallet that created the market can cancel it.</li>
             <li className="flex gap-2"><span className="text-ink-3">•</span>Only while live and before expiry.</li>
             <li className="flex gap-2"><span className="text-ink-3">•</span>No predictions placed yet — traded markets must resolve normally.</li>
@@ -453,9 +453,9 @@ export default function ActionForm({ def }: { def: ActionDef }) {
 
         {/* Picker */}
         <div>
-          <div className="mb-2 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">Your cancellable markets</div>
+          <div className="mb-2 font-mono text-[11px] uppercase tracking-[2px] text-ink-3">Your cancellable markets</div>
           {mine.length === 0 ? (
-            <div className="rounded-card border border-line bg-bg-2 p-4 font-mono text-[10px] text-ink-3">
+            <div className="rounded-card border border-line bg-bg-2 p-4 font-mono text-[12px] text-ink-3">
               {isFetchingCancel ? "Loading your markets…" : "No live markets created by this wallet."}
             </div>
           ) : (
@@ -489,16 +489,16 @@ export default function ActionForm({ def }: { def: ActionDef }) {
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="mb-1 flex items-start gap-2">
-                          <span className={`shrink-0 rounded-full px-2 py-0.5 font-mono text-[8px] font-bold ${
+                          <span className={`shrink-0 rounded-full px-2 py-0.5 font-mono text-[11px] font-bold ${
                             mm.status === STATUS.LIVE ? "bg-up/20 text-up" : "bg-ink-3/20 text-ink-3"
                           }`}>
                             {mm.status === STATUS.LIVE ? "LIVE" : "ENDED"}
                           </span>
-                          <span className="truncate font-display text-[12px] font-semibold text-ink">
+                          <span className="truncate font-display text-[14px] font-semibold text-ink">
                             {stripCatPrefix(mm.question || mm.rules)}
                           </span>
                         </div>
-                        <div className="flex items-center gap-3 font-mono text-[10px] text-ink-3">
+                        <div className="flex items-center gap-3 font-mono text-[12px] text-ink-3">
                           <span>ends {ends}</span>
                           {total > 0n && <span>vol {vol}</span>}
                           <span className="ml-auto text-ink-2">
@@ -516,7 +516,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
 
         {/* Summary strip */}
         {selected && (
-          <div className="rounded-card border border-line bg-bg-2 px-4 py-3 font-mono text-[10px] text-ink-2">
+          <div className="rounded-card border border-line bg-bg-2 px-4 py-3 font-mono text-[12px] text-ink-2">
             <div className="flex items-center justify-between">
               <span>from {(praxisAddress || "").slice(0, 6)}…{(praxisAddress || "").slice(-4)}</span>
               <span>fee {Number(vals.fee || 10000).toLocaleString()} uPRX</span>
@@ -526,18 +526,18 @@ export default function ActionForm({ def }: { def: ActionDef }) {
 
         {/* Advanced disclosure */}
         <details className="rounded-card border border-line bg-bg-2 p-3">
-          <summary className="cursor-pointer font-mono text-[10px] font-bold uppercase tracking-[2px] text-ink-3 hover:text-ink-2">
+          <summary className="cursor-pointer font-mono text-[12px] font-bold uppercase tracking-[2px] text-ink-3 hover:text-ink-2">
             ⚙ Advanced — manual override
           </summary>
           <div className="mt-3 space-y-2.5">
             {def.fields.filter(f => f.type !== "wallet").map((f) => (
               <div key={f.id}>
-                <label className="mb-1 block font-mono text-[9px] uppercase tracking-[2px] text-ink-3">{f.label}</label>
+                <label className="mb-1 block font-mono text-[11px] uppercase tracking-[2px] text-ink-3">{f.label}</label>
                 <input
                   type={f.type === "number" ? "number" : "text"}
                   value={String(vals[f.id] ?? "")}
                   onChange={(e) => set(f.id, e.target.value)}
-                  className="w-full rounded border border-line bg-bg px-3 py-2 font-mono text-[11px] text-ink outline-none focus:border-line-2"
+                  className="w-full rounded border border-line bg-bg px-3 py-2 font-mono text-[13px] text-ink outline-none focus:border-line-2"
                   placeholder={f.hint}
                 />
               </div>
@@ -549,7 +549,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
         <button
           onClick={submit}
           disabled={pending || !vals.mid}
-          className="w-full rounded-card bg-up py-3.5 font-display text-[13px] font-bold text-bg transition-all hover:bg-up/90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-full rounded-card bg-up py-3.5 font-display text-[15px] font-bold text-bg transition-all hover:bg-up/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {pending ? "Confirming…" : vals.mid ? `Cancel market ${String(vals.mid).slice(0, 6)}…` : "Select a market to cancel"}
         </button>
@@ -559,7 +559,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
 
   return (
     <div className="rounded-card border border-line bg-surface p-4">
-      <div className="mb-4 border-b border-line pb-2.5 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">
+      <div className="mb-4 border-b border-line pb-2.5 font-mono text-[11px] uppercase tracking-[2px] text-ink-3">
         // {def.msgType}
       </div>
 
@@ -577,12 +577,12 @@ export default function ActionForm({ def }: { def: ActionDef }) {
 
       {def.fields.map((f) => (
         <div key={f.id} className="mb-2.5">
-          <div className="mb-1 font-mono text-[9px] uppercase tracking-[2px] text-ink-2">{f.label}</div>
+          <div className="mb-1 font-mono text-[11px] uppercase tracking-[2px] text-ink-2">{f.label}</div>
           {f.type === "outcome" ? (
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => set(f.id, true)}
-                className={`rounded-card border py-2 font-display text-[11px] font-bold ${
+                className={`rounded-card border py-2 font-display text-[13px] font-bold ${
                   vals[f.id] ? "border-up bg-up-dim text-up" : "border-line text-ink-3"
                 }`}
               >
@@ -590,7 +590,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
               </button>
               <button
                 onClick={() => set(f.id, false)}
-                className={`rounded-card border py-2 font-display text-[11px] font-bold ${
+                className={`rounded-card border py-2 font-display text-[13px] font-bold ${
                   !vals[f.id] ? "border-down bg-down-dim text-down" : "border-line text-ink-3"
                 }`}
               >
@@ -603,7 +603,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
                 <button
                   key={c.key}
                   onClick={() => set(f.id, c.key)}
-                  className={`rounded-full border px-3 py-1 font-mono text-[10px] ${
+                  className={`rounded-full border px-3 py-1 font-mono text-[12px] ${
                     vals[f.id] === c.key ? "border-up bg-up text-black" : "border-line text-ink-2"
                   }`}
                 >
@@ -620,7 +620,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
                 <div className="flex flex-wrap gap-1.5">
                   <button
                     onClick={() => set("sub", "")}
-                    className={`rounded-full border px-3 py-1 font-mono text-[10px] ${
+                    className={`rounded-full border px-3 py-1 font-mono text-[12px] ${
                       !vals.sub ? "border-up bg-up text-black" : "border-line text-ink-2"
                     }`}
                   >
@@ -630,7 +630,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
                     <button
                       key={x.key}
                       onClick={() => set("sub", x.key)}
-                      className={`rounded-full border px-3 py-1 font-mono text-[10px] ${
+                      className={`rounded-full border px-3 py-1 font-mono text-[12px] ${
                         vals.sub === x.key ? "border-up bg-up text-black" : "border-line text-ink-2"
                       }`}
                     >
@@ -646,10 +646,10 @@ export default function ActionForm({ def }: { def: ActionDef }) {
                 type="datetime-local"
                 value={String(vals[f.id] ?? "")}
                 onChange={(e) => set(f.id, e.target.value)}
-                className="w-full rounded-card border border-line-2 bg-bg px-3 py-2 font-mono text-[12px] text-ink outline-none focus:border-up"
+                className="w-full rounded-card border border-line-2 bg-bg px-3 py-2 font-mono text-[14px] text-ink outline-none focus:border-up"
               />
               {String(vals[f.id] || "") && chain?.height ? (
-                <div className="mt-1 rounded border border-amberx/40 bg-amberx/5 px-2 py-1 font-mono text-[9px] text-amberx">
+                <div className="mt-1 rounded border border-amberx/40 bg-amberx/5 px-2 py-1 font-mono text-[11px] text-amberx">
                   Block #{datetimeToBlock(String(vals[f.id]), chain.height).toLocaleString()}
                   {" (~"}
                   {(() => {
@@ -672,12 +672,12 @@ export default function ActionForm({ def }: { def: ActionDef }) {
               onChange={(e) =>
                 set(f.id, f.type === "number" ? parseInt(e.target.value) || 0 : e.target.value)
               }
-              className={`w-full rounded-card border border-line-2 bg-bg px-3 py-2 font-mono text-[12px] text-ink outline-none focus:border-up ${
+              className={`w-full rounded-card border border-line-2 bg-bg px-3 py-2 font-mono text-[14px] text-ink outline-none focus:border-up ${
                 f.type === "wallet" ? "opacity-60" : ""
               }`}
             />
           )}
-          {f.hint && <div className="mt-0.5 font-mono text-[9px] text-ink-3">{f.hint}</div>}
+          {f.hint && <div className="mt-0.5 font-mono text-[11px] text-ink-3">{f.hint}</div>}
         </div>
       ))}
 
@@ -691,7 +691,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
       )}
 
       {def.key === "register" && myResolver && (
-        <div className="mb-2.5 rounded-card border border-line bg-bg-2 p-2 font-mono text-[9px] text-ink-3">
+        <div className="mb-2.5 rounded-card border border-line bg-bg-2 p-2 font-mono text-[11px] text-ink-3">
           Existing record — new stake tops up current {fmtPRX(myResolver.stake)} PRX (total must be ≥{" "}
           {fmtPRX(MIN_RESOLVER_STAKE)})
         </div>
@@ -706,12 +706,12 @@ export default function ActionForm({ def }: { def: ActionDef }) {
             onLoad={() => setImgLoaded(true)}
             onError={() => setImgLoaded(false)}
           />
-          {imgLoaded && <div className="mt-1 font-mono text-[9px] text-up">✓ Image loaded</div>}
+          {imgLoaded && <div className="mt-1 font-mono text-[11px] text-up">✓ Image loaded</div>}
         </div>
       )}
 
       {def.key === "create" && (
-        <div className="mb-3 rounded-card border border-line bg-bg-2 p-3 font-mono text-[10px] text-ink-2">
+        <div className="mb-3 rounded-card border border-line bg-bg-2 p-3 font-mono text-[12px] text-ink-2">
           <div className="flex justify-between py-1">
             <span>B0 liquidity seed</span>
             <span className="text-up">{Number(vals.b0) || 0} PRX</span>
@@ -732,7 +732,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
       )}
 
       {def.key === "cancel" && (
-        <div className="mb-3 rounded-card border border-line bg-bg-2 p-3 font-mono text-[10px] text-ink-2">
+        <div className="mb-3 rounded-card border border-line bg-bg-2 p-3 font-mono text-[12px] text-ink-2">
           <div className="mb-1 font-bold text-ink">Cancellation rules</div>
           <ul className="list-disc space-y-1 pl-4">
             <li>Only the wallet that created the market can cancel it.</li>
@@ -745,9 +745,9 @@ export default function ActionForm({ def }: { def: ActionDef }) {
 
       {def.key === "cancel" && (
         <div className="mb-3">
-          <div className="mb-1.5 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">Your cancellable markets</div>
+          <div className="mb-1.5 font-mono text-[11px] uppercase tracking-[2px] text-ink-3">Your cancellable markets</div>
           {mine.length === 0 ? (
-            <div className="rounded-card border border-line bg-bg-2 p-3 font-mono text-[10px] text-ink-3">{isFetchingCancel ? "Loading your markets…" : "No live markets created by this wallet."}</div>
+            <div className="rounded-card border border-line bg-bg-2 p-3 font-mono text-[12px] text-ink-3">{isFetchingCancel ? "Loading your markets…" : "No live markets created by this wallet."}</div>
           ) : (
             <div className="space-y-1.5">
               {mine.map((mm) => (
@@ -755,10 +755,10 @@ export default function ActionForm({ def }: { def: ActionDef }) {
                   key={mm.marketId}
                   type="button"
                   onClick={() => set("mid", mm.marketId)}
-                  className={`flex w-full items-center gap-2 rounded-card border px-3 py-2 text-left font-sans text-[11px] transition-colors ${vals.mid === mm.marketId ? "border-up bg-up/10 text-ink" : "border-line bg-bg-2 text-ink-2 hover:border-line-2"}`}
+                  className={`flex w-full items-center gap-2 rounded-card border px-3 py-2 text-left font-sans text-[13px] transition-colors ${vals.mid === mm.marketId ? "border-up bg-up/10 text-ink" : "border-line bg-bg-2 text-ink-2 hover:border-line-2"}`}
                 >
                   <span className="min-w-0 flex-1 truncate">{stripCatPrefix(mm.question || mm.rules)}</span>
-                  <span className="shrink-0 font-mono text-[9px] text-amberx">{mm.marketId.slice(0, 6)}…</span>
+                  <span className="shrink-0 font-mono text-[11px] text-amberx">{mm.marketId.slice(0, 6)}…</span>
                 </button>
               ))}
             </div>
@@ -770,13 +770,13 @@ export default function ActionForm({ def }: { def: ActionDef }) {
         <button
           onClick={() => void submit()}
           disabled={pending || !connected || unstakeBlocked}
-          className="flex-1 rounded-card bg-up py-2.5 font-sans text-[12px] font-extrabold text-black shadow-glowUp transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex-1 rounded-card bg-up py-2.5 font-sans text-[14px] font-extrabold text-black shadow-glowUp transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {pending ? "▪▪▪ broadcasting…" : "⚡ Sign & Submit"}
         </button>
         <button
           onClick={buildPayload}
-          className="rounded-card border border-line-2 px-3 py-2.5 font-mono text-[10px] text-ink-2 transition-colors hover:border-up hover:text-up"
+          className="rounded-card border border-line-2 px-3 py-2.5 font-mono text-[12px] text-ink-2 transition-colors hover:border-up hover:text-up"
           title="Build unsigned payload"
         >
           ⎘ Payload
@@ -787,12 +787,12 @@ export default function ActionForm({ def }: { def: ActionDef }) {
           readOnly
           value={payload}
           rows={7}
-          className="mt-2 w-full break-all rounded-card border border-line bg-bg p-2 font-mono text-[9px] text-ink-2 outline-none"
+          className="mt-2 w-full break-all rounded-card border border-line bg-bg p-2 font-mono text-[11px] text-ink-2 outline-none"
           onFocus={(e) => e.currentTarget.select()}
         />
       )}
       {unstakeBlocked && myResolver && (
-        <div className="mt-1.5 text-center font-mono text-[9px] text-amberx">
+        <div className="mt-1.5 text-center font-mono text-[11px] text-amberx">
           {myResolver.unbonding > 0n
             ? (chain?.height ?? 0) >= myResolver.releaseHeight
               ? "unbonding released — claim it via Claim Unbonded Stake, then you can unstake again"
@@ -801,7 +801,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
         </div>
       )}
       {!connected && (
-        <div className="mt-1.5 text-center font-mono text-[9px] text-ink-3">connect wallet to sign</div>
+        <div className="mt-1.5 text-center font-mono text-[11px] text-ink-3">connect wallet to sign</div>
       )}
     </div>
   );

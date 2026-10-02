@@ -71,17 +71,17 @@ export default function GenesisPage() {
   return (
     <main className="relative z-10 mx-auto min-h-screen max-w-[980px] px-4 py-6 pb-24 md:px-8">
       <div className="mb-6">
-        <div className="mb-2 flex items-center gap-2.5 font-mono text-[9px] uppercase tracking-[3px] text-amberx">
+        <div className="mb-2 flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-[3px] text-amberx">
           <span className="inline-block h-px w-5 bg-amberx" /> Genesis
         </div>
         <h1 className="font-display text-[22px] font-extrabold tracking-[-0.3px]">Genesis Allocations</h1>
-        <p className="mt-1 text-[13px] text-ink-2">
+        <p className="mt-1 text-[15px] text-ink-2">
           Live on-chain state, refreshed every 15s. Each pool is privacy-gated: its balance and claim form appear only when its own wallet is connected.
         </p>
       </div>
 
       {!praxisAddress ? (
-        <div className="rounded-card border border-line bg-surface p-6 text-center font-mono text-[11px] text-ink-3">
+        <div className="rounded-card border border-line bg-surface p-6 text-center font-mono text-[13px] text-ink-3">
           Connect a genesis wallet (Profile → Advanced — Manual Keystore) to view and claim its allocation
         </div>
       ) : (
@@ -91,8 +91,8 @@ export default function GenesisPage() {
             const def = (ACTIONS as Record<string, any>)[p.action];
             return (
               <div key={p.key} className="rounded-card border border-line bg-surface-grad p-5">
-                <div className={`mb-1 font-display text-[16px] font-bold ${p.color}`}>{p.label}</div>
-                <div className="mb-4 font-mono text-[10px] text-ink-3">{p.desc}</div>
+                <div className={`mb-1 font-display text-[18px] font-bold ${p.color}`}>{p.label}</div>
+                <div className="mb-4 font-mono text-[12px] text-ink-3">{p.desc}</div>
 
                 {st.status === "loading" && (
                   <div className="space-y-2">
@@ -102,7 +102,7 @@ export default function GenesisPage() {
                 )}
 
                 {st.status === "locked" && (
-                  <div className="rounded-card border border-line bg-surface p-3 text-center font-mono text-[11px] text-ink-3">
+                  <div className="rounded-card border border-line bg-surface p-3 text-center font-mono text-[13px] text-ink-3">
                     Balance hidden on-chain — unlock this pool&apos;s keystore to view &amp; claim
                   </div>
                 )}
@@ -116,17 +116,17 @@ export default function GenesisPage() {
                     return (
                       <div className="space-y-2">
                         <div className="flex items-center justify-between rounded-card border border-line bg-surface p-3">
-                          <span className="font-mono text-[9px] uppercase tracking-wider text-ink-3">Remaining balance</span>
-                          <span className="font-display text-[16px] font-bold text-ink">{fmtPRX(remaining)} PRX</span>
+                          <span className="font-mono text-[11px] uppercase tracking-wider text-ink-3">Remaining balance</span>
+                          <span className="font-display text-[18px] font-bold text-ink">{fmtPRX(remaining)} PRX</span>
                         </div>
                         {remaining === 0n ? (
-                          <div className="rounded-card border border-up/30 bg-up/5 p-3 text-center font-mono text-[11px] text-up">
+                          <div className="rounded-card border border-up/30 bg-up/5 p-3 text-center font-mono text-[13px] text-up">
                             Pool fully claimed ✅
                           </div>
                         ) : a.eligible && def ? (
                           <div className="pt-2"><ActionForm def={def} /></div>
                         ) : (
-                          <div className="rounded-card border border-line bg-surface p-3 text-center font-mono text-[11px] text-ink-3">
+                          <div className="rounded-card border border-line bg-surface p-3 text-center font-mono text-[13px] text-ink-3">
                             {a.eligible_reason || "Not claimable at this height"}
                           </div>
                         )}
@@ -148,34 +148,34 @@ export default function GenesisPage() {
                   return (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between rounded-card border border-line bg-surface p-3">
-                        <span className="font-mono text-[9px] uppercase tracking-wider text-ink-3">Total allocation</span>
-                        <span className="font-display text-[16px] font-bold text-ink">{fmtPRX(total)} PRX</span>
+                        <span className="font-mono text-[11px] uppercase tracking-wider text-ink-3">Total allocation</span>
+                        <span className="font-display text-[18px] font-bold text-ink">{fmtPRX(total)} PRX</span>
                       </div>
                       
                       <div className="flex items-center justify-between rounded-card border border-line bg-surface p-3">
-                        <span className="font-mono text-[9px] uppercase tracking-wider text-ink-3">Claimed so far</span>
-                        <span className="font-display text-[14px] font-bold text-ink">{fmtPRX(claimed)} PRX</span>
+                        <span className="font-mono text-[11px] uppercase tracking-wider text-ink-3">Claimed so far</span>
+                        <span className="font-display text-[16px] font-bold text-ink">{fmtPRX(claimed)} PRX</span>
                       </div>
                       
                       <div className="flex items-center justify-between rounded-card border border-line bg-surface p-3">
-                        <span className="font-mono text-[9px] uppercase tracking-wider text-ink-3">Vested now</span>
-                        <span className="font-display text-[14px] font-bold text-ink">{fmtPRX(vested)} PRX</span>
+                        <span className="font-mono text-[11px] uppercase tracking-wider text-ink-3">Vested now</span>
+                        <span className="font-display text-[16px] font-bold text-ink">{fmtPRX(vested)} PRX</span>
                       </div>
                       
                       {claimable > 0n && (
                         <div className="flex items-center justify-between rounded-card border border-amberx/30 bg-amberx/5 p-3">
-                          <span className="font-mono text-[9px] uppercase tracking-wider text-amberx">Claimable now</span>
-                          <span className="font-display text-[16px] font-bold text-amberx">{fmtPRX(claimable)} PRX</span>
+                          <span className="font-mono text-[11px] uppercase tracking-wider text-amberx">Claimable now</span>
+                          <span className="font-display text-[18px] font-bold text-amberx">{fmtPRX(claimable)} PRX</span>
                         </div>
                       )}
                       
                       {blocksToCliff > 0 && (
                         <div className="rounded-card border border-line bg-surface p-3">
                           <div className="mb-1 flex items-center justify-between">
-                            <span className="font-mono text-[9px] uppercase tracking-wider text-ink-3">Cliff reached in</span>
-                            <span className="font-mono text-[11px] font-bold text-ink">{fmtCountdown(cliffHeight, currentHeight)}</span>
+                            <span className="font-mono text-[11px] uppercase tracking-wider text-ink-3">Cliff reached in</span>
+                            <span className="font-mono text-[13px] font-bold text-ink">{fmtCountdown(cliffHeight, currentHeight)}</span>
                           </div>
-                          <div className="font-mono text-[10px] text-ink-3">
+                          <div className="font-mono text-[12px] text-ink-3">
                             Block #{cliffHeight} (current: #{currentHeight})
                           </div>
                         </div>
@@ -184,23 +184,23 @@ export default function GenesisPage() {
                       {blocksToFullyVested > 0 && blocksToCliff === 0 && (
                         <div className="rounded-card border border-line bg-surface p-3">
                           <div className="mb-1 flex items-center justify-between">
-                            <span className="font-mono text-[9px] uppercase tracking-wider text-ink-3">Fully vested in</span>
-                            <span className="font-mono text-[11px] font-bold text-ink">{fmtCountdown(fullyVestedHeight, currentHeight)}</span>
+                            <span className="font-mono text-[11px] uppercase tracking-wider text-ink-3">Fully vested in</span>
+                            <span className="font-mono text-[13px] font-bold text-ink">{fmtCountdown(fullyVestedHeight, currentHeight)}</span>
                           </div>
-                          <div className="font-mono text-[10px] text-ink-3">
+                          <div className="font-mono text-[12px] text-ink-3">
                             Block #{fullyVestedHeight} (current: #{currentHeight})
                           </div>
                         </div>
                       )}
                       
                       {claimed === total && vested === total ? (
-                        <div className="rounded-card border border-up/30 bg-up/5 p-3 text-center font-mono text-[11px] text-up">
+                        <div className="rounded-card border border-up/30 bg-up/5 p-3 text-center font-mono text-[13px] text-up">
                           Pool fully claimed ✅
                         </div>
                       ) : claimable > 0n && a.eligible && def ? (
                         <div className="pt-2"><ActionForm def={def} /></div>
                       ) : (
-                        <div className="rounded-card border border-line bg-surface p-3 text-center font-mono text-[11px] text-ink-3">
+                        <div className="rounded-card border border-line bg-surface p-3 text-center font-mono text-[13px] text-ink-3">
                           {a.eligible_reason || "No claimable amount at this height"}
                         </div>
                       )}
@@ -212,8 +212,8 @@ export default function GenesisPage() {
           })}
 
           <div className="rounded-card border border-line bg-surface p-4">
-            <div className="mb-2 font-mono text-[10px] uppercase tracking-wider text-ink-3">How genesis claims work</div>
-            <ul className="space-y-1.5 font-mono text-[11px] text-ink-2">
+            <div className="mb-2 font-mono text-[12px] uppercase tracking-wider text-ink-3">How genesis claims work</div>
+            <ul className="space-y-1.5 font-mono text-[13px] text-ink-2">
               <li>• <span className="font-bold text-amberx">Community:</span> 5M PRX liquid from genesis, claim anytime</li>
               <li>• <span className="font-bold text-up">Investor:</span> 6.5M PRX vesting over 24 months with 91-day cliff</li>
               <li>• <span className="font-bold">Foundation:</span> 6.5M PRX vesting over 24 months with 91-day cliff</li>

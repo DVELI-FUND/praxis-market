@@ -14,7 +14,7 @@ export default function ActivityFeed({ mid }: Props) {
 
   return (
     <div className="rounded-card border border-line bg-surface-grad p-4 shadow-card">
-      <div className="mb-3 border-b border-line pb-2 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">
+      <div className="mb-3 border-b border-line pb-2 font-mono text-[11px] uppercase tracking-[2px] text-ink-3">
         Recent Activity
       </div>
       <div className="space-y-2">
@@ -24,7 +24,7 @@ export default function ActivityFeed({ mid }: Props) {
           const outcome = tx.transaction.msg.outcome;
           const addr = (tx.transaction.msg.bettorAddress || tx.sender || "").slice(0, 10);
           return (
-            <div key={i} className="flex items-center justify-between font-mono text-[10px]">
+            <div key={i} className="flex items-center justify-between font-mono text-[12px]">
               <span className="text-ink-3">{addr}…</span>
               <span className={isPredict ? (outcome ? "text-up" : "text-down") : "text-ink-2"}>
                 {isPredict ? `bought ${outcome ? "YES" : "NO"}` : tx.messageType}

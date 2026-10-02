@@ -27,7 +27,7 @@ export default function BottomNav() {
       {filteredItems.map((it) => {
         const active = it.href !== null && pathname === it.href;
         const isMore = it.label === "More";
-        const cls = `relative flex flex-1 flex-col items-center justify-center gap-[3px] border-none bg-transparent font-mono text-[8px] uppercase tracking-[0.5px] transition-colors ${
+        const cls = `relative flex flex-1 flex-col items-center justify-center gap-[3px] border-none bg-transparent font-mono text-[11px] uppercase tracking-[0.5px] transition-colors ${
           active ? "text-up" : "text-ink-3 hover:text-ink-2"
         }`;
         const inner = (

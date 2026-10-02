@@ -34,11 +34,11 @@ export default function HomeSidebar() {
   const RailCard = ({ title, items, accent }: { title: string; items: typeof markets; accent: string }) => (
     <div className="rounded-card border border-line bg-surface-grad shadow-card">
       <div className="border-b border-line px-4 py-2.5">
-        <div className="font-mono text-[9px] uppercase tracking-[2px] text-ink-3">{title}</div>
+        <div className="font-mono text-[11px] uppercase tracking-[2px] text-ink-3">{title}</div>
       </div>
       <div className="p-3">
         {items.length === 0 ? (
-          <div className="py-4 text-center font-mono text-[9px] text-ink-3">No markets</div>
+          <div className="py-4 text-center font-mono text-[11px] text-ink-3">No markets</div>
         ) : (
           <div className="space-y-2">
             {items.map((m) => {
@@ -50,10 +50,10 @@ export default function HomeSidebar() {
                   href={`/market/${m.marketId}`}
                   className="group block rounded-card border border-line bg-bg-2 p-2.5 transition-colors hover:border-line-2 hover:bg-surface-2"
                 >
-                  <div className="mb-1.5 line-clamp-2 font-sans text-[11px] font-semibold leading-tight text-ink group-hover:text-ink">
+                  <div className="mb-1.5 line-clamp-2 font-sans text-[13px] font-semibold leading-tight text-ink group-hover:text-ink">
                     {stripCatPrefix(m.question || m.rules || "").slice(0, 60)}
                   </div>
-                  <div className="flex items-center justify-between font-mono text-[9px]">
+                  <div className="flex items-center justify-between font-mono text-[11px]">
                     <span className="text-up tabular-nums">{pct}%</span>
                     <span className={`${accent} tabular-nums`}>
                       {title === "Ending Soon" ? fmtCountdown(Number(m.expiry), chain?.height ?? 0) : fmtPRX(vol)}

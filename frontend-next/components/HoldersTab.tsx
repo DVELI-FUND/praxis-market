@@ -18,24 +18,24 @@ export default function HoldersTab({ holders }: { holders: Holder[] }) {
     <div className="p-4">
       <div className="mb-3 grid grid-cols-2 gap-1 rounded-card border border-line bg-bg-2 p-1">
         {(["yes", "no"] as const).map((s) => (
-          <button key={s} onClick={() => setSide(s)} className={`rounded-card py-1.5 font-mono text-[10px] font-bold uppercase transition-colors ${side === s ? (s === "yes" ? "bg-up text-black" : "bg-down text-black") : "text-ink-3 hover:text-ink-2"}`}>
+          <button key={s} onClick={() => setSide(s)} className={`rounded-card py-1.5 font-mono text-[12px] font-bold uppercase transition-colors ${side === s ? (s === "yes" ? "bg-up text-black" : "bg-down text-black") : "text-ink-3 hover:text-ink-2"}`}>
             {s}
           </button>
         ))}
       </div>
       {rows.length === 0 ? (
-        <div className="py-6 text-center font-mono text-[10px] text-ink-3">No {side.toUpperCase()} holders yet</div>
+        <div className="py-6 text-center font-mono text-[12px] text-ink-3">No {side.toUpperCase()} holders yet</div>
       ) : (
         <div className="space-y-1.5">
           {rows.map((r, i) => (
             <div key={r.addr} className="flex items-center gap-3 rounded-card border border-line bg-bg-2 px-3 py-2">
-              <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-mono text-[9px] font-bold ${i < 3 ? MEDAL[i] : "bg-surface-3 text-ink-3"}`}>{i + 1}</span>
+              <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-mono text-[11px] font-bold ${i < 3 ? MEDAL[i] : "bg-surface-3 text-ink-3"}`}>{i + 1}</span>
               <span
                 className="h-6 w-6 shrink-0 rounded-full border border-line"
                 style={{ background: `conic-gradient(from 0deg, hsl(${(parseInt(r.addr.slice(2, 6), 16) || 0) % 360} 70% 45%), hsl(${(parseInt(r.addr.slice(6, 10), 16) || 0) % 360} 70% 35%), hsl(${(parseInt(r.addr.slice(2, 6), 16) || 0) % 360} 70% 45%))` }}
               />
-              <span className="min-w-0 flex-1 truncate font-mono text-[10px] text-ink-2">{r.addr.slice(0, 10)}…{r.addr.slice(-4)}</span>
-              <span className={`font-mono text-[11px] font-bold tabular-nums ${side === "yes" ? "text-up" : "text-down"}`}>{fmtPRX(r.amt)}</span>
+              <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-ink-2">{r.addr.slice(0, 10)}…{r.addr.slice(-4)}</span>
+              <span className={`font-mono text-[13px] font-bold tabular-nums ${side === "yes" ? "text-up" : "text-down"}`}>{fmtPRX(r.amt)}</span>
             </div>
           ))}
         </div>

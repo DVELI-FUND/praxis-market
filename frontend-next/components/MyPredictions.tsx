@@ -88,24 +88,24 @@ export default function MyPredictions() {
       className="mb-3.5 animate-fadeUp rounded-card border border-line bg-surface p-4"
       style={{ animationDelay: "150ms" }}
     >
-      <div className="mb-4 border-b border-line pb-2.5 font-mono text-[9px] uppercase tracking-[2px] text-ink-3">
+      <div className="mb-4 border-b border-line pb-2.5 font-mono text-[11px] uppercase tracking-[2px] text-ink-3">
         // my_predictions
       </div>
       {!praxisAddress ? (
-        <div className="font-mono text-[10px] text-ink-3">Load wallet to see predictions</div>
+        <div className="font-mono text-[12px] text-ink-3">Load wallet to see predictions</div>
       ) : txs.length === 0 ? (
-        <div className="font-mono text-[10px] text-ink-3">No transactions yet</div>
+        <div className="font-mono text-[12px] text-ink-3">No transactions yet</div>
       ) : (
         <div className="space-y-1.5">
           {txs.slice(0, 10).map((tx) => (
             <div key={tx.txHash} className="rounded-card border border-line bg-bg-2 px-2.5 py-2">
-              <div className="flex items-center justify-between font-mono text-[9px]">
+              <div className="flex items-center justify-between font-mono text-[11px]">
                 <span className="uppercase tracking-[0.5px] text-ink-2">
                   {ICONS[tx.messageType || ""] || "▪"} {(tx.messageType || "unknown").replace(/_/g, " ")}
                 </span>
                 <span className="text-ink-3">#{tx.height}</span>
               </div>
-              <div className="mt-0.5 truncate font-mono text-[10px] text-ink-2">{detail(tx)}</div>
+              <div className="mt-0.5 truncate font-mono text-[12px] text-ink-2">{detail(tx)}</div>
             </div>
           ))}
         </div>
