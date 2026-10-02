@@ -12,7 +12,7 @@ export default function LiveTicker() {
 
   return (
     <div className="ticker-wrap mb-5 overflow-hidden rounded-card border border-line bg-surface-grad">
-      <div className="ticker-track flex w-max items-center gap-8 px-4 py-2">
+      <div className="ticker-track flex animate-ticker items-center gap-8 px-4 py-2">
         {items.map((m, i) => {
           const pct = yesPct(m);
           return (
