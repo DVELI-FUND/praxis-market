@@ -175,3 +175,8 @@ export function yesPct(m: { qYes: bigint; qNo: bigint }): number {
   const total = m.qYes + m.qNo;
   return total > 0n ? Number((m.qYes * 100n) / total) : 50;
 }
+
+
+export function isCancelled(m: Market): boolean {
+  return m.status === STATUS.CANCELLED || m.status === STATUS.VOIDED;
+}

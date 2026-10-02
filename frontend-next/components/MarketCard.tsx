@@ -69,7 +69,7 @@ export default function MarketCard({ market, featured = false, bookmarked, onTog
           </div>
           <div
             className={`font-sans font-semibold leading-[1.35] text-ink transition-colors group-hover:text-white ${
-              featured ? "line-clamp-3 text-[15px]" : "line-clamp-2 text-[13px]"
+              featured ? "line-clamp-3 text-[15px]" : "line-clamp-2 text-[14px]"
             }`}
           >
             {qTrunc}
@@ -91,7 +91,7 @@ export default function MarketCard({ market, featured = false, bookmarked, onTog
             {pct}
             <span className="text-[12px] opacity-60">%</span>
           </span>
-          <span className="font-mono text-[9px] uppercase tracking-[1px] text-ink-3">chance</span>
+          <span className="font-mono text-[11px] uppercase tracking-[1px] text-ink-3">chance</span>
         </div>
         <div className="mb-3 h-[4px] overflow-hidden rounded-pill bg-line">
           <div className="h-full rounded-pill bg-up transition-all duration-500" style={{ width: `${pct}%` }} />
@@ -99,24 +99,24 @@ export default function MarketCard({ market, featured = false, bookmarked, onTog
 
         <div className="mb-3 grid grid-cols-2 gap-2">
           <div className="flex items-center justify-between rounded-card border border-up/25 bg-up-dim px-3 py-2 transition-colors group-hover:border-up/50">
-            <span className="max-w-[55%] truncate font-mono text-[10px] font-bold text-up">{outLbl.yes}</span>
+            <span className="max-w-[55%] truncate font-mono text-[12px] font-bold text-up">{outLbl.yes}</span>
             <span className="font-display text-[14px] font-bold text-up tabular-nums">{pct}¢</span>
           </div>
           <div className="flex items-center justify-between rounded-card border border-down/25 bg-down-dim px-3 py-2 transition-colors group-hover:border-down/50">
-            <span className="max-w-[55%] truncate font-mono text-[10px] font-bold text-down">{outLbl.no}</span>
+            <span className="max-w-[55%] truncate font-mono text-[12px] font-bold text-down">{outLbl.no}</span>
             <span className="font-display text-[14px] font-bold text-down tabular-nums">{noPct}¢</span>
           </div>
         </div>
 
-        <div className="mt-auto flex items-center justify-between border-t border-line pt-2 font-mono text-[9px] text-ink-3">
+        <div className="mt-auto flex items-center justify-between border-t border-line pt-2 font-mono text-[11px] text-ink-3">
           <span>
-            Vol <b className="text-[10px] text-cyanx">{vol}</b>
+            Vol <b className="text-[12px] text-cyanx">{vol}</b>
           </span>
           <span className="tabular-nums">
             {market.expiry ? "Ends " + fmtCountdown(Number(market.expiry), chain?.height ?? 0) : "—"}
           </span>
           <button
-            className={`p-0.5 text-[13px] transition-colors ${bookmarked ? "text-amberx" : "text-ink-3 hover:text-amberx"}`}
+            className={`p-0.5 text-[14px] transition-colors ${bookmarked ? "text-amberx" : "text-ink-3 hover:text-amberx"}`}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();

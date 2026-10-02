@@ -2,7 +2,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { fetchMarkets, yesPct, extractOutcomes, extractCat } from "@/lib/markets";
+import { fetchMarkets, yesPct, extractOutcomes, extractCat, isCancelled } from "@/lib/markets";
 import type { Market } from "@/lib/markets";
 import { CATS_TREE, parseSub, parseKo, parseLg } from "@/lib/cats";
 import CatIcon from "@/components/icons/CatIcon";
@@ -27,7 +27,7 @@ export default function SportsPage() {
   const { data: ms = [] } = useQuery({ queryKey: ["markets-esports"], queryFn: fetchMarkets, staleTime: 15000 });
   const now = Date.now();
 
-  const sports = useMemo(() => ms.filter((m) => extractCat(m.rules) === "esports"), [ms]);
+  const sports = useMemo(() => ms.filter((m) => extractCat(m.rules) === "esports" && !isCancelled(m)), [ms]);
   const counts = useMemo(() => {
     const c: Record<string, number> = {};
     sports.forEach((m) => { const s = parseSub(m.rules) || ""; c[s] = (c[s] || 0) + 1; });
