@@ -7,6 +7,7 @@ import type { Market } from "@/lib/markets";
 import { CATS_TREE, parseSub, parseKo, parseLg } from "@/lib/cats";
 import CatIcon from "@/components/icons/CatIcon";
 import { fmtPRX } from "@/lib/format";
+import TradeRail from "@/components/TradeRail";
 
 const PAIRS: [string, string][] = [
   ["#e5484d", "#3e63dd"], ["#f5d90a", "#3e63dd"], ["#e5484d", "#46a758"],
@@ -20,10 +21,11 @@ const outs = (m: Market) => {
   return { a: o?.yes || "YES", b: o?.no || "NO" };
 };
 
-export default function SportsPage() {
+export default function EsportsPage() {
   const [sub, setSub] = useState("");
   const [mode, setMode] = useState<"games" | "props">("games");
   const [liveOnly, setLiveOnly] = useState(false);
+  const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
   const { data: ms = [] } = useQuery({ queryKey: ["markets-esports"], queryFn: fetchMarkets, staleTime: 15000 });
   const now = Date.now();
 
@@ -66,7 +68,7 @@ export default function SportsPage() {
     const vol = g.m.qYes + g.m.qNo;
     const isLive = g.ko <= now;
     return (
-      <div className="rounded-card border border-line bg-surface-grad p-3">
+      <div onClick={() => setSelectedMarket(g.m)} className="rounded-card border border-line bg-surface-grad p-3 cursor-pointer hover:border-line-2 transition-colors">
         <div className="mb-2 flex items-center justify-between">
           <div className="flex items-center gap-2 font-mono text-[10px] text-ink-3">
             {isLive ? (
@@ -77,20 +79,20 @@ export default function SportsPage() {
             <span className="rounded bg-surface-2 px-1.5 py-0.5 font-bold text-ink-2">{g.lg}</span>
             {vol > 0n && <span>Vol {fmtPRX(vol)}</span>}
           </div>
-          <Link href={`/market/${g.m.marketId}`} className="rounded-full border border-line px-2 py-0.5 font-mono text-[10px] text-ink-2 hover:border-up hover:text-up">Game View ›</Link>
+          <span className="rounded-full border border-line px-2 py-0.5 font-mono text-[9px] text-ink-2">Trade ›</span>
         </div>
         <div className="space-y-1.5">
           <div className="flex items-center justify-between gap-2">
-            <span className="truncate font-display text-[14px] font-bold text-ink">{a}</span>
-            <Link href={`/market/${g.m.marketId}`} style={{ background: cA, color: DARK.has(cA) ? "#0a0a0a" : "#fff" }} className="shrink-0 rounded-lg px-3 py-1.5 font-mono text-[11px] font-bold">
+            <span className="truncate font-display text-[12px] font-bold text-ink">{a}</span>
+            <div style={{ background: cA, color: DARK.has(cA) ? "#0a0a0a" : "#fff" }} className="shrink-0 rounded-lg px-3 py-1.5 font-mono text-[10px] font-bold">
               {a.slice(0, 8).toUpperCase()} {pct}¢
-            </Link>
+            </div>
           </div>
           <div className="flex items-center justify-between gap-2">
-            <span className="truncate font-display text-[14px] font-bold text-ink">{b}</span>
-            <Link href={`/market/${g.m.marketId}`} style={{ background: cB, color: DARK.has(cB) ? "#0a0a0a" : "#fff" }} className="shrink-0 rounded-lg px-3 py-1.5 font-mono text-[11px] font-bold">
+            <span className="truncate font-display text-[12px] font-bold text-ink">{b}</span>
+            <div style={{ background: cB, color: DARK.has(cB) ? "#0a0a0a" : "#fff" }} className="shrink-0 rounded-lg px-3 py-1.5 font-mono text-[10px] font-bold">
               {b.slice(0, 8).toUpperCase()} {100 - pct}¢
-            </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -105,7 +107,7 @@ export default function SportsPage() {
             <span className="inline-block h-px w-5 bg-up" /> Esports
           </div>
           <h1 className="font-display text-[26px] font-extrabold tracking-[-0.3px]">
-            Esports · {sub ? CATS_TREE.find((c) => c.key === "esports")?.subs.find((s) => s.key === sub)?.label ?? "All" : "All"}
+            Sports · {sub ? CATS_TREE.find((c) => c.key === "esports")?.subs.find((s) => s.key === sub)?.label ?? "All" : "All"}
           </h1>
         </div>
         <div className="flex rounded-full border border-line p-0.5">
@@ -118,13 +120,12 @@ export default function SportsPage() {
       </div>
 
       <div className="flex gap-6">
-        {/* left rail: sports with counts */}
         <aside className="hidden w-44 shrink-0 md:block">
-          <button onClick={() => setSub("")} className={`mb-1 flex w-full items-center justify-between rounded-card px-3 py-2 font-mono text-[12px] ${!sub ? "bg-surface text-up" : "text-ink-3 hover:text-ink-2"}`}>
+          <button onClick={() => setSub("")} className={`mb-1 flex w-full items-center justify-between rounded-card px-2.5 py-1.5 font-mono text-[11px] ${!sub ? "bg-surface text-up" : "text-ink-3 hover:text-ink-2"}`}>
             <span>All</span><span>{sports.length}</span>
           </button>
           {CATS_TREE.find((c) => c.key === "esports")!.subs.map((s) => (
-            <button key={s.key} onClick={() => setSub(s.key)} className={`mb-1 flex w-full items-center justify-between rounded-card px-3 py-2 font-mono text-[12px] ${sub === s.key ? "bg-surface text-up" : "text-ink-3 hover:text-ink-2"}`}>
+            <button key={s.key} onClick={() => setSub(s.key)} className={`mb-1 flex w-full items-center justify-between rounded-card px-2.5 py-1.5 font-mono text-[11px] ${sub === s.key ? "bg-surface text-up" : "text-ink-3 hover:text-ink-2"}`}>
               <span className="flex items-center gap-1.5"><CatIcon name={s.icon} className="h-3 w-3" />{s.label}</span>
               <span>{counts[s.key] || 0}</span>
             </button>
@@ -132,18 +133,17 @@ export default function SportsPage() {
         </aside>
 
         <div className="min-w-0 flex-1">
-          {/* mobile sub chips */}
           <div className="mb-3 flex gap-1.5 overflow-x-auto pb-1 md:hidden [scrollbar-width:none]">
-            <button onClick={() => setSub("")} className={`shrink-0 rounded-full border px-3.5 py-1.5 font-mono text-[12px] ${!sub ? "border-up bg-up text-black" : "border-line text-ink-2"}`}>All</button>
+            <button onClick={() => setSub("")} className={`shrink-0 rounded-full border px-3 py-1 font-mono text-[11px] ${!sub ? "border-up bg-up text-black" : "border-line text-ink-2"}`}>All</button>
             {CATS_TREE.find((c) => c.key === "esports")!.subs.map((s) => (
-              <button key={s.key} onClick={() => setSub(s.key)} className={`flex shrink-0 items-center gap-1 rounded-full border px-3.5 py-1.5 font-mono text-[12px] ${sub === s.key ? "border-up bg-up text-black" : "border-line text-ink-2"}`}>
+              <button key={s.key} onClick={() => setSub(s.key)} className={`flex shrink-0 items-center gap-1 rounded-full border px-3 py-1 font-mono text-[11px] ${sub === s.key ? "border-up bg-up text-black" : "border-line text-ink-2"}`}>
                 <CatIcon name={s.icon} className="h-3 w-3" />{s.label}
               </button>
             ))}
           </div>
 
           <div className="mb-4 flex items-center justify-between">
-            <div className="flex items-center gap-2 font-mono text-[10px] text-down">
+            <div className="flex items-center gap-2 font-mono text-[11px] text-down">
               <span className="h-1.5 w-1.5 animate-pulseDot rounded-full bg-down" /> Live Now · {live.length}
             </div>
             <button onClick={() => setLiveOnly(!liveOnly)} className={`rounded-full border px-2.5 py-1 font-mono text-[10px] ${liveOnly ? "border-up bg-up/10 text-up" : "border-line text-ink-3"}`}>
@@ -161,19 +161,19 @@ export default function SportsPage() {
               )}
               {[...byDate.entries()].map(([date, leagues]) => (
                 <section key={date}>
-                  <div className="mb-2 flex items-center gap-2 font-display text-[15px] font-bold text-ink">
+                  <div className="mb-2 flex items-center gap-2 font-display text-[14px] font-bold text-ink">
                     {date} <span className="font-mono text-[10px] text-ink-3">· {[...leagues.values()].reduce((n, l) => n + l.length, 0)}</span>
                   </div>
                   {[...leagues.entries()].map(([lg, gs]) => (
                     <div key={lg} className="mb-4">
-                      <div className="mb-1.5 font-mono text-[11px] font-bold uppercase tracking-wider text-ink-3">{lg}</div>
+                      <div className="mb-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-ink-3">{lg}</div>
                       <div className="grid gap-3 md:grid-cols-2">{gs.map((g, i) => <GameCard key={g.m.marketId} g={g} i={i + lg.length} />)}</div>
                     </div>
                   ))}
                 </section>
               ))}
               {games.length === 0 && (
-                <div className="rounded-card border border-line bg-surface p-6 text-center font-mono text-[11px] text-ink-3">
+                <div className="rounded-card border border-line bg-surface p-6 text-center font-mono text-[12px] text-ink-3">
                   No scheduled matches yet — create tournament markets with a start time to populate
                 </div>
               )}
@@ -185,17 +185,29 @@ export default function SportsPage() {
                 return (
                   <Link key={g.m.marketId} href={`/market/${g.m.marketId}`} className="flex items-center justify-between gap-3 rounded-card border border-line bg-surface-grad p-3 hover:border-line-2">
                     <div className="min-w-0">
-                      <div className="truncate font-display text-[14px] font-bold text-ink">{g.m.question || g.m.rules}</div>
+                      <div className="truncate font-display text-[13px] font-bold text-ink">{g.m.question || g.m.rules}</div>
                       <div className="font-mono text-[10px] text-ink-3">{g.lg} · Vol {fmtPRX(g.m.qYes + g.m.qNo)}</div>
                     </div>
                     <div className="shrink-0 rounded-lg bg-up px-2.5 py-1 font-mono text-[11px] font-bold text-black">{pct}¢</div>
                   </Link>
                 );
               })}
-              {props.length === 0 && <div className="rounded-card border border-line bg-surface p-6 text-center font-mono text-[11px] text-ink-3">No props yet</div>}
+              {props.length === 0 && <div className="rounded-card border border-line bg-surface p-6 text-center font-mono text-[12px] text-ink-3">No props yet</div>}
             </div>
           )}
         </div>
+
+        <aside className="hidden w-80 shrink-0 xl:block">
+          <div className="sticky top-4">
+            {selectedMarket ? (
+              <TradeRail market={selectedMarket} onClose={() => setSelectedMarket(null)} />
+            ) : (
+              <div className="rounded-card border border-line bg-surface p-6 text-center font-mono text-[11px] text-ink-3">
+                Select a game to trade
+              </div>
+            )}
+          </div>
+        </aside>
       </div>
     </main>
   );
