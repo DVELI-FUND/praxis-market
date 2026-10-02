@@ -82,7 +82,7 @@ export default function WalletPill({ size = "sm" }: { size?: "sm" | "lg" }) {
           className="absolute right-0 top-full z-[200] mt-2 w-[260px] max-w-[calc(100vw-2rem)] rounded-card border border-line bg-surface-grad p-3 shadow-card"
         >
           <div className="font-mono text-[9px] uppercase tracking-[2px] text-ink-3">{walletName || "Wallet"}</div>
-          <div className="mt-1 break-all font-mono text-[10px] text-ink">{praxisAddress}</div>
+          <div className="mt-1 font-mono text-[10px] leading-snug text-ink">{praxisAddress?.slice(0, 20)}<br />{praxisAddress?.slice(20)}</div>
           <div className="mt-3 flex flex-col gap-1.5">
             <button
               role="menuitem"
