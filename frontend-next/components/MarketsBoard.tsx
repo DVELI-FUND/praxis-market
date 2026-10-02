@@ -1,4 +1,6 @@
 "use client";
+import CatIcon from "./icons/CatIcon";
+import { CATS_TREE, subDef, parseSub } from "@/lib/cats";
 import { useMemo, useState } from "react";
 import { useMarkets } from "@/hooks/useMarkets";
 import { useHeight } from "@/hooks/useHeight";
@@ -14,7 +16,7 @@ import {
 import { fmtPRX } from "@/lib/format";
 import MarketCard from "./MarketCard";
 
-const CATS = ["all", "crypto", "sports", "politics", "finance", "esports", "other"];
+const CATS = [{ key: "all", label: "All", icon: "other" }, ...CATS_TREE.map(c => ({ key: c.key, label: c.label, icon: c.icon }))];
 const TABS: { key: TabKey; label: string }[] = [
   { key: "live", label: "⬤ Live" },
   { key: "proposed", label: "⚖ Proposed" },
@@ -40,6 +42,8 @@ export default function MarketsBoard() {
   const { data: heightInfo } = useHeight();
   const [tab, setTab] = useState<TabKey>("live");
   const [cat, setCat] = useState<string>("all");
+  const [sub, setSub] = useState("");
+  const subs = cat !== "all" ? CATS_TREE.find(c => c.key === cat)?.subs ?? [] : [];
   const [sort, setSort] = useState<SortKey>("vol");
   const [bookmarks, setBookmarks] = useState<string[]>(loadBookmarks);
 
@@ -55,7 +59,7 @@ export default function MarketsBoard() {
 
   const visible = useMemo(() => {
     let list = filterByTab(markets, tab);
-    if (cat !== "all") list = list.filter((m) => extractCat(m.rules) === cat);
+    if (cat !== "all") list = list.filter((m) => extractCat(m.rules) === cat && (!sub || parseSub(m.rules) === sub));
     return sortMarkets(list, sort);
   }, [markets, tab, cat, sort]);
 
@@ -102,22 +106,10 @@ export default function MarketsBoard() {
 
       {/* category pills */}
       <div className="mb-5 flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none]">
-        {CATS.map((c) => (
-          <button
-            key={c}
-            onClick={() => setCat(c)}
-            className={`whitespace-nowrap rounded-full border px-3.5 py-1.5 font-mono text-[10px] transition-colors ${
-              cat === c
-                ? "border-up bg-up font-semibold text-black"
-                : "border-line bg-transparent text-ink-2 hover:border-up hover:bg-up-dim hover:text-up"
-            }`}
-          >
-            {c === "all" ? "All" : `${CAT_EMOJI[c] || "◈"} ${c.charAt(0).toUpperCase() + c.slice(1)}`}
-          </button>
-        ))}
+        {CATS.map((c) => (<button key={c.key} onClick={() => setCat(c.key)} className={`flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[10px] ${cat === c.key ? "border-up bg-up text-black" : "border-line text-ink-2"}`}><CatIcon name={c.icon} className="h-3 w-3" />{c.label}</button>))}
       </div>
 
-      {/* status tabs + sort */}
+      {subs.length > 0 && (<div className="flex flex-wrap gap-1.5 mt-2"><button onClick={() => setSub("")} className={`rounded-full border px-2.5 py-0.5 font-mono text-[9px] ${!sub ? "border-amberx bg-amberx/10 text-amberx" : "border-line text-ink-3"}`}>All</button>{subs.map(x => (<button key={x.key} onClick={() => setSub(x.key)} className={`flex items-center gap-1 rounded-full border px-2.5 py-0.5 font-mono text-[9px] ${sub === x.key ? "border-amberx bg-amberx/10 text-amberx" : "border-line text-ink-3"}`}><CatIcon name={x.icon} className="h-2.5 w-2.5" />{x.label}</button>))}</div>)}{/* status tabs + sort */}
       <div className="mb-4 flex items-center justify-between gap-2 border-b border-line">
         <div className="flex flex-1 gap-1">
           {TABS.map((t) => (

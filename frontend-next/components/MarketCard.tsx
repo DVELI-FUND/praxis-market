@@ -4,6 +4,8 @@ import Link from "next/link";
 import type { Market } from "@/lib/markets";
 import { CAT_SYMBOLS, extractCat, extractOutcomes, stripCatPrefix, yesPct } from "@/lib/markets";
 import BannerImg from "./BannerImg";
+import CatIcon from "./icons/CatIcon";
+import { catDef, subDef, parseSub } from "@/lib/cats";
 import { fmtPRX, fmtCountdown } from "@/lib/format";
 import { useHeight } from "@/hooks/useHeight";
 import StatusPill from "./StatusPill";
@@ -34,6 +36,8 @@ export default function MarketCard({ market, featured = false, bookmarked, onTog
   }, [pct]);
 
   const catKey = extractCat(market.rules);
+  const subKey = parseSub(market.rules);
+  const subLabel = subDef(catKey, subKey)?.label;
   const outLbl = extractOutcomes(market.rules);
   const catSymbol = CAT_SYMBOLS[catKey] || "◈";
   const question = stripCatPrefix(market.question || market.rules || "(no question)");
@@ -53,7 +57,7 @@ export default function MarketCard({ market, featured = false, bookmarked, onTog
             className="h-full w-full object-cover"
             fallback={
               <div className="flex h-full w-full items-center justify-center text-[22px] text-ink-2">
-                {catSymbol}
+                <CatIcon name={catKey || "other"} className="h-5 w-5 text-ink" />
               </div>
             }
           />
@@ -61,7 +65,7 @@ export default function MarketCard({ market, featured = false, bookmarked, onTog
 
         <div className="min-w-0 flex-1 pr-2">
           <div className="mb-1 flex items-center gap-1.5 font-mono text-[8px] uppercase tracking-[1.5px] text-ink-3">
-            <span>{catSymbol}</span> {catKey}
+            <span><CatIcon name={catKey || "other"} className="h-5 w-5 text-ink" /></span> {catKey}
           </div>
           <div
             className={`font-sans font-semibold leading-[1.35] text-ink transition-colors group-hover:text-white ${

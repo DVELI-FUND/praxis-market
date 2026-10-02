@@ -123,9 +123,7 @@ export function extractOutcomes(rules: string): { yes: string; no: string } {
   return { yes: m[1].trim(), no: m[2].trim() };
 }
 
-export const CAT_SYMBOLS: Record<string, string> = {
-  crypto: "◈", sports: "◉", politics: "◆", finance: "▲", esports: "▣", other: "◈",
-};
+export const CAT_SYMBOLS: Record<string, string> = {};
 export const CAT_EMOJI: Record<string, string> = {
   crypto: "🪙", sports: "⚽", politics: "🗳", finance: "📈", esports: "🎮", other: "◈",
 };

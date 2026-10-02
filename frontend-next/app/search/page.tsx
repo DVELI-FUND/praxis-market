@@ -1,10 +1,12 @@
 "use client";
+import CatIcon from "@/components/icons/CatIcon";
+import { CATS_TREE } from "@/lib/cats";
 import { useEffect, useMemo, useState } from "react";
 import { useMarkets } from "@/hooks/useMarkets";
 import MarketCard from "@/components/MarketCard";
 import { extractCat, stripCatPrefix } from "@/lib/markets";
 
-const CATS = ["all", "crypto", "sports", "politics", "finance", "esports", "other"];
+const CATS = [{ key: "all", label: "All", icon: "other" }, ...CATS_TREE.map(c => ({ key: c.key, label: c.label, icon: c.icon }))];
 
 function loadBookmarks(): string[] {
   if (typeof window === "undefined") return [];
@@ -67,19 +69,7 @@ export default function SearchPage() {
       />
 
       <div className="mb-5 flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none]">
-        {CATS.map((c) => (
-          <button
-            key={c}
-            onClick={() => setCat(c)}
-            className={`whitespace-nowrap rounded-full border px-3.5 py-1.5 font-mono text-[10px] transition-colors ${
-              cat === c
-                ? "border-up bg-up font-semibold text-black"
-                : "border-line bg-transparent text-ink-2 hover:border-up hover:text-up"
-            }`}
-          >
-            {c === "all" ? "All" : c.charAt(0).toUpperCase() + c.slice(1)}
-          </button>
-        ))}
+        {CATS.map((c) => (<button key={c.key} onClick={() => setCat(c.key)} className={`flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[10px] ${cat === c.key ? "border-up bg-up text-black" : "border-line text-ink-2"}`}><CatIcon name={c.icon} className="h-3 w-3" />{c.label}</button>))}
       </div>
 
       {results.length === 0 ? (
