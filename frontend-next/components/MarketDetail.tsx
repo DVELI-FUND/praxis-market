@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useState , useMemo} from "react";
+import MobileTradeBar from "@/components/MobileTradeBar";
+import { useEffect, useState , useMemo, useRef} from "react";
 import Link from "next/link";
 import { useMarketDetail } from "@/hooks/useMarketDetail";
 import { useHeight } from "@/hooks/useHeight";
@@ -22,6 +23,8 @@ export default function MarketDetail({ mid }: Props) {
   const { market, holders, disputeContext, isLoading, isError } = useMarketDetail(mid);
   const [rulesOpen, setRulesOpen] = useState(false);
   const [outcome, setOutcome] = useState(true);
+  const ticketRef = useRef<HTMLDivElement>(null);
+  const scrollToTicket = () => ticketRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   const [bookmarked, setBookmarked] = useState(false);
 
   useEffect(() => {
@@ -233,7 +236,8 @@ export default function MarketDetail({ mid }: Props) {
         </div>
 
         <div className="mt-4 md:mt-0">
-          <PredictPanel market={market} outcome={outcome} onOutcome={setOutcome} />
+          <div ref={ticketRef} className="scroll-mt-4"><PredictPanel market={market} outcome={outcome} onOutcome={setOutcome} /></div>
+          <MobileTradeBar market={market} outcome={outcome} onOutcome={setOutcome} onScrollToTicket={scrollToTicket} />
         </div>
       </div>
     </div>
