@@ -9,6 +9,11 @@ import { useRoles } from "@/lib/roles";
 
 const LINKS = [
   { href: "/", label: "Markets" },
+  { href: "/sports", label: "Sports" },
+  { href: "/esports", label: "Esports" },
+  { href: "/crypto", label: "Crypto" },
+  { href: "/politics", label: "Politics" },
+  { href: "/finance", label: "Finance" },
   { href: "/rewards", label: "Rewards" },
   { href: "/resolvers", label: "Resolvers" },
   { href: "/resolution", label: "Resolution" },
