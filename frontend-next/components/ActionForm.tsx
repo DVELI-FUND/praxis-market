@@ -17,19 +17,14 @@ import BannerImg from "./BannerImg";
 import UnstakePlanner from "./UnstakePlanner";
 import { b2b64 } from "@/lib/proto";
 import { CATS_TREE } from "@/lib/cats";
+import CatIcon from "./icons/CatIcon";
 import { fetchMarkets, stripCatPrefix, STATUS, yesPct } from "@/lib/markets";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryHeight, getPluginRPC } from "@/lib/rpc";
 import { normalizeBanner } from "@/lib/img";
 import ResolutionPlanner from "./ResolutionPlanner";
 
-const CATS: { key: string; label: string }[] = [
-  { key: "crypto", label: "🟠 Crypto" },
-  { key: "sports", label: "⚽ Sports" },
-  { key: "politics", label: "🌐 Politics" },
-  { key: "finance", label: "📈 Finance" },
-  { key: "other", label: "👁 Other" },
-];
+const CATS = CATS_TREE.map((c) => ({ key: c.key, label: c.label, icon: c.icon }));
 
 function validateField(def: ActionDef, v: Vals): string | null {
   for (const f of def.fields) {
@@ -612,7 +607,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
                     vals[f.id] === c.key ? "border-up bg-up text-black" : "border-line text-ink-2"
                   }`}
                 >
-                  {c.label}
+                  <span className="flex items-center gap-1.5"><CatIcon name={c.key} className="h-3.5 w-3.5" />{c.label}</span>
                 </button>
               ))}
             </div>
