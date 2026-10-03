@@ -85,17 +85,17 @@ func TestNOutcomeCreateRejectsAndLegacy(t *testing.T) {
 	}
 	bad := []struct {
 		name string
-		msg  MessageCreateMarket
+		msg  *MessageCreateMarket
 	}{
-		{"one option", MessageCreateMarket{Options: []string{"x"}}},
-		{"eleven options", MessageCreateMarket{Options: eleven}},
-		{"duplicate", MessageCreateMarket{Options: []string{"a", "a"}}},
-		{"empty label", MessageCreateMarket{Options: []string{"a", ""}}},
-		{"blank label", MessageCreateMarket{Options: []string{"a", "  "}}},
-		{"long label", MessageCreateMarket{Options: []string{"a", strings.Repeat("x", 65)}}},
-		{"payout mode 1", MessageCreateMarket{Options: []string{"a", "b"}, PayoutMode: 1}},
-		{"seed too small", MessageCreateMarket{Options: []string{"a", "b"}, B0: MIN_B0}},
-		{"legacy payout mode", MessageCreateMarket{PayoutMode: 1}},
+		{"one option", &MessageCreateMarket{Options: []string{"x"}}},
+		{"eleven options", &MessageCreateMarket{Options: eleven}},
+		{"duplicate", &MessageCreateMarket{Options: []string{"a", "a"}}},
+		{"empty label", &MessageCreateMarket{Options: []string{"a", ""}}},
+		{"blank label", &MessageCreateMarket{Options: []string{"a", "  "}}},
+		{"long label", &MessageCreateMarket{Options: []string{"a", strings.Repeat("x", 65)}}},
+		{"payout mode 1", &MessageCreateMarket{Options: []string{"a", "b"}, PayoutMode: 1}},
+		{"seed too small", &MessageCreateMarket{Options: []string{"a", "b"}, B0: MIN_B0}},
+		{"legacy payout mode", &MessageCreateMarket{PayoutMode: 1}},
 	}
 	for i, tc := range bad {
 		msg := tc.msg
@@ -103,7 +103,7 @@ func TestNOutcomeCreateRejectsAndLegacy(t *testing.T) {
 		if msg.B0 == 0 {
 			msg.B0 = nTestB0
 		}
-		if resp := c.DeliverMessageCreateMarket(&msg, 1000, "h"); resp.Error == nil {
+		if resp := c.DeliverMessageCreateMarket(msg, 1000, "h"); resp.Error == nil {
 			t.Errorf("%s: expected rejection", tc.name)
 		}
 	}

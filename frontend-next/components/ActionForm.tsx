@@ -20,6 +20,7 @@ import { b2b64 } from "@/lib/proto";
 import { CATS_TREE, TOP_LEAGUES } from "@/lib/cats";
 import CatIcon from "./icons/CatIcon";
 import { fetchMarkets, stripCatPrefix, STATUS, yesPct } from "@/lib/markets";
+import { usePositions } from "@/lib/positions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryHeight, getPluginRPC } from "@/lib/rpc";
 import { normalizeBanner } from "@/lib/img";
@@ -101,56 +102,72 @@ export default function ActionForm({ def }: { def: ActionDef }) {
   const { data: cancelList = [], isFetching: isFetchingCancel } = useQuery({ queryKey: ["markets-cancel"], queryFn: fetchMarkets, staleTime: 15000, refetchOnMount: "always" });
 
   // Claim Winnings: finalized markets where this wallet holds winning shares
-  const { data: positionsForClaim = [] as { marketId: string; sharesYes: bigint; sharesNo: bigint }[] } = useQuery({
-    queryKey: ["positions-claim", praxisAddress],
-    queryFn: async () => {
-      if (!praxisAddress) return [];
-      const r = await fetch(`https://prax.val-a.grad.dev.app.canopynetwork.org/plugin/v1/query/positions?address=${encodeURIComponent(praxisAddress)}`);
-      if (!r.ok) return [];
-      const raw = await r.json();
-      return (raw.positions || []).map((p: any) => ({
-        marketId: String(p.marketId || p.market_id || ""),
-        sharesYes: BigInt(p.sharesYes || p.shares_yes || 0),
-        sharesNo: BigInt(p.sharesNo || p.shares_no || 0),
-      }));
-    },
-    enabled: !!praxisAddress,
-    staleTime: 15000,
-  });
+  const { data: myPositions = [] } = usePositions();
+  const positionsForClaim = myPositions;
 
-  const { data: finalizedMarkets = [] as { marketId: string; question: string; rules: string; status: number; outcome: boolean | null; finalizedPoolAmount: bigint }[] } = useQuery({
+  type ClaimMarket = { marketId: string; question: string; rules: string; status: number; outcome: boolean | null; options: string[]; winningIndex: number | null; finalizedPoolAmount: bigint };
+  const { data: finalizedMarkets = [] as ClaimMarket[] } = useQuery({
     queryKey: ["markets-finalized"],
-    queryFn: async () => {
+    queryFn: async (): Promise<ClaimMarket[]> => {
       const r = await fetch(getPluginRPC() + "/v1/query/markets");
       if (!r.ok) return [];
       const raw = await r.json();
-      return raw.filter((m: any) => m.market?.status === 6).map((m: any) => ({
-        marketId: m.id,
-        question: m.market?.question || "",
-        rules: m.market?.rules || "",
-        status: m.market?.status || 0,
-        outcome: m.market?.outcome,
-        finalizedPoolAmount: BigInt(m.market?.finalized_pool_amount || 0),
-      }));
+      const claimable = raw.filter((m: any) => ([STATUS.FINALIZED, STATUS.VOIDED, STATUS.CANCELLED] as number[]).includes(Number(m.market?.status)));
+      return Promise.all(
+        claimable.map(async (m: any): Promise<ClaimMarket> => {
+          const options: string[] = Array.isArray(m.market?.options) ? m.market.options : [];
+          let winningIndex: number | null = null;
+          if (options.length > 0 && Number(m.market?.status) === STATUS.FINALIZED) {
+            try {
+              const o = await fetch(getPluginRPC() + `/v1/query/outcomes?market=${encodeURIComponent(m.id)}`);
+              if (o.ok) {
+                const j = await o.json();
+                winningIndex = Number(j?.outcome?.winning_index ?? j?.outcome?.winningIndex ?? 0);
+              }
+            } catch {
+              winningIndex = null;
+            }
+          }
+          return {
+            marketId: m.id,
+            question: m.market?.question || "",
+            rules: m.market?.rules || "",
+            status: Number(m.market?.status || 0),
+            outcome: m.market?.outcome ?? null,
+            options,
+            winningIndex,
+            finalizedPoolAmount: BigInt(m.market?.finalized_pool_amount || 0),
+          };
+        })
+      );
     },
     staleTime: 15000,
   });
 
   const claimable = useMemo(() => {
-    type ClaimItem = { marketId: string; sharesYes: bigint; sharesNo: bigint; market: { marketId: string; question: string; rules: string; status: number; outcome: boolean | null; finalizedPoolAmount: bigint }; held: string; shares: bigint; winning: string | null; payout: bigint };
-    return positionsForClaim
-      .map((pos: { marketId: string; sharesYes: bigint; sharesNo: bigint }) => {
-        const mkt = finalizedMarkets.find((fm: { marketId: string }) => fm.marketId === pos.marketId);
-        if (!mkt) return null;
-        const held = pos.sharesYes >= pos.sharesNo ? "YES" : "NO";
-        const shares = pos.sharesYes >= pos.sharesNo ? pos.sharesYes : pos.sharesNo;
-        const winning = mkt.outcome === true ? "YES" : mkt.outcome === false ? "NO" : null;
-        if (winning && held === winning && shares > 0n) {
-          return { ...pos, market: mkt, held, shares, winning, payout: shares } as ClaimItem;
-        }
-        return null;
-      })
-      .filter(Boolean) as Array<{ marketId: string; sharesYes: bigint; sharesNo: bigint; market: any; held: string; shares: bigint; winning: string; payout: bigint }>;
+    type ClaimItem = { marketId: string; market: ClaimMarket; held: string; shares: bigint; winning: string | null; payout: bigint };
+    const items: ClaimItem[] = [];
+    for (const pos of positionsForClaim) {
+      const mkt = finalizedMarkets.find((fm) => fm.marketId === pos.marketId);
+      if (!mkt || pos.claimed) continue;
+      const isN = mkt.options.length > 0;
+      if (mkt.status !== STATUS.FINALIZED) {
+        // voided / cancelled: every position refunds its cost
+        if (pos.costPaid > 0n) items.push({ marketId: pos.marketId, market: mkt, held: "REFUND", shares: pos.costPaid, winning: null, payout: pos.costPaid });
+        continue;
+      }
+      if (isN) {
+        const wi = mkt.winningIndex;
+        const sh = wi !== null ? pos.shares[wi] ?? 0n : 0n;
+        if (wi !== null && sh > 0n) items.push({ marketId: pos.marketId, market: mkt, held: mkt.options[wi] ?? `#${wi + 1}`, shares: sh, winning: mkt.options[wi] ?? `#${wi + 1}`, payout: sh });
+        continue;
+      }
+      const held = pos.sharesYes >= pos.sharesNo ? "YES" : "NO";
+      const shares = pos.sharesYes >= pos.sharesNo ? pos.sharesYes : pos.sharesNo;
+      const winning = mkt.outcome === true ? "YES" : mkt.outcome === false ? "NO" : null;
+      if (winning && held === winning && shares > 0n) items.push({ marketId: pos.marketId, market: mkt, held, shares, winning, payout: shares });
+    }
+    return items;
   }, [positionsForClaim, finalizedMarkets]);
   const { data: rawMarkets = [] } = useQuery({
     queryKey: ["markets-raw-cancel"],
@@ -369,10 +386,10 @@ export default function ActionForm({ def }: { def: ActionDef }) {
                         </div>
                         <div className="flex items-center gap-3 font-mono text-[12px] text-ink-3">
                           <span>
-                            held <b className={c.held === "YES" ? "text-up" : "text-down"}>{c.held}</b> {fmtPRX(c.shares)} shares
+                            {c.held === "REFUND" ? <>refund <b className="text-up">{fmtPRX(c.shares)}</b></> : <>held <b className={c.held === "NO" ? "text-down" : "text-up"}>{c.held}</b> {fmtPRX(c.shares)} shares</>}
                           </span>
                           <span>
-                            winner <b className={c.winning === "YES" ? "text-up" : "text-down"}>{c.winning}</b>
+                            {c.winning ? <>winner <b className={c.winning === "NO" ? "text-down" : "text-up"}>{c.winning}</b></> : <>market voided</>}
                           </span>
                         </div>
                       </div>

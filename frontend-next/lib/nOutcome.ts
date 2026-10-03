@@ -58,3 +58,21 @@ export function validateOptions(opts: string[]): string | null {
   }
   return null;
 }
+
+/** Mark-to-market value (micro-units) of per-option shares at current LMSR prices. */
+export function nPositionValue(shares: bigint[], q: bigint[], b: bigint): bigint {
+  const p = nPrices(q, b);
+  let v = 0;
+  for (let i = 0; i < shares.length && i < p.length; i++) v += Number(shares[i]) * p[i];
+  return BigInt(Math.round(v));
+}
+
+/** Index of the option with the most shares, or -1 when the position is empty. */
+export function topShareIndex(shares: bigint[]): number {
+  let best = -1;
+  let max = 0n;
+  shares.forEach((s, i) => {
+    if (s > max) { max = s; best = i; }
+  });
+  return best;
+}

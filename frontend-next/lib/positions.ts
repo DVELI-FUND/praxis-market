@@ -6,6 +6,7 @@ export interface Position {
   marketId: string;
   sharesYes: bigint;
   sharesNo: bigint;
+  shares: bigint[]; // N-outcome per-option shares ([] for legacy binary)
   costPaid: bigint;
   claimed: boolean;
 }
@@ -32,11 +33,13 @@ export async function fetchPositions(address: string): Promise<Position[]> {
           if (!p) return null;
           const sy = BigInt((p.shares_yes ?? p.sharesYes ?? 0) as string | number || 0);
           const sn = BigInt((p.shares_no ?? p.sharesNo ?? 0) as string | number || 0);
-          if (sy === 0n && sn === 0n) return null;
+          const ns = Array.isArray(p.shares) ? (p.shares as (string | number)[]).map((v) => BigInt(v || 0)) : [];
+          if (sy === 0n && sn === 0n && !ns.some((v) => v > 0n)) return null;
           return {
             marketId: mid,
             sharesYes: sy,
             sharesNo: sn,
+            shares: ns,
             costPaid: BigInt((p.cost_paid ?? p.costPaid ?? 0) as string | number || 0),
             claimed: Boolean(p.claimed),
           } as Position;
