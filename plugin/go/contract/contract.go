@@ -178,8 +178,6 @@ if err != nil {
 return &PluginCheckResponse{Error: err}
 }
 switch m := msg.(type) {
-case *MessageSend:
-return c.CheckMessageSend(m)
 case *MessageCreateMarket:
 return c.CheckMessageCreateMarket(m)
 case *MessageSubmitPrediction:
@@ -245,8 +243,6 @@ return &PluginDeliverResponse{Error: err}
 }
 fee := req.Tx.Fee
 switch m := msg.(type) {
-case *MessageSend:
-return c.DeliverMessageSend(m, fee)
 case *MessageCreateMarket:
 return c.DeliverMessageCreateMarket(m, fee, req.TxHash)
 case *MessageSubmitPrediction:
