@@ -27,6 +27,9 @@ return ErrCheckResp(ErrInvalidParam())
 if len(msg.ResolverAddress) != 20 {
 return ErrCheckResp(ErrInvalidAddress())
 }
+if msg.ProposedIndex >= MAX_OUTCOMES {
+return ErrCheckResp(ErrInvalidParam())
+}
 if msg.ProposalBond == 0 {
 return ErrCheckResp(ErrInvalidAmount())
 }
@@ -119,7 +122,7 @@ return &PluginDeliverResponse{Error: ErrResolverSuspended()}
 			if pe := Unmarshal(r.Entries[0].Value, resolPos); pe != nil {
 				return &PluginDeliverResponse{Error: pe}
 			}
-			if resolPos.SharesYes > 0 || resolPos.SharesNo > 0 {
+			if resolPos.SharesYes > 0 || resolPos.SharesNo > 0 || anyShares(resolPos.Shares) {
 				return &PluginDeliverResponse{Error: ErrResolverHasPosition()}
 			}
 		}
@@ -145,6 +148,9 @@ return &PluginDeliverResponse{Error: ErrMarketNotExpired()}
 }
 
 // ── Idempotency guard: ProposalRecord nil = first call ────────────────────
+if isNOutcome(market) && int(msg.ProposedIndex) >= len(market.Options) {
+return &PluginDeliverResponse{Error: ErrInvalidParam()}
+}
 if proposalRaw != nil {
 return &PluginDeliverResponse{Error: ErrAlreadyProposed()}
 }
@@ -173,9 +179,18 @@ Status:          PROPOSAL_OPEN,
 // NF-5 FIX: ResolverState for this market — written here for the first time.
 // This is what makes the auth check in ResolveMarket work.
 resolverState := &ResolverState{ResolverAddress: msg.ResolverAddress}
+if isNOutcome(market) {
+proposal.ProposedIndex = msg.ProposedIndex
+}
 
 // ── Marshal all ───────────────────────────────────────────────────────────
-txLogOp, pe := buildMarketTxLogOp(market, msg.MarketId, "propose_outcome", msg.ResolverAddress, now, msg.ProposedOutcome, 0, 0, txHash)
+var txLogOp *PluginSetOp
+var pe *PluginError
+if isNOutcome(market) {
+txLogOp, pe = buildMarketTxLogOpN(market, msg.MarketId, "propose_outcome", msg.ResolverAddress, now, msg.ProposedIndex, 0, 0, txHash)
+} else {
+txLogOp, pe = buildMarketTxLogOp(market, msg.MarketId, "propose_outcome", msg.ResolverAddress, now, msg.ProposedOutcome, 0, 0, txHash)
+}
 if pe != nil {
 return &PluginDeliverResponse{Error: pe}
 }

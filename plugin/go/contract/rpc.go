@@ -124,6 +124,7 @@ type holderEntry struct {
 Address   string `json:"address"`
 SharesYes uint64 `json:"sharesYes"`
 SharesNo  uint64 `json:"sharesNo"`
+Shares    []uint64 `json:"shares,omitempty"`
 CostPaid  uint64 `json:"costPaid"`
 Claimed   bool   `json:"claimed"`
 }
@@ -148,13 +149,22 @@ holders = append(holders, holderEntry{
 Address:   hex.EncodeToString(addr),
 SharesYes: pos.SharesYes,
 SharesNo:  pos.SharesNo,
+Shares:    pos.Shares,
 CostPaid:  pos.CostPaid,
 Claimed:   pos.Claimed,
 })
 }
 }
 sort.Slice(holders, func(i, j int) bool {
-return (holders[i].SharesYes + holders[i].SharesNo) > (holders[j].SharesYes + holders[j].SharesNo)
+ti := holders[i].SharesYes + holders[i].SharesNo
+for _, v := range holders[i].Shares {
+ti += v
+}
+tj := holders[j].SharesYes + holders[j].SharesNo
+for _, v := range holders[j].Shares {
+tj += v
+}
+return ti > tj
 })
 if len(holders) > 10 {
 holders = holders[:10]
@@ -224,10 +234,12 @@ var cost string
 switch e.TxType {
 case "submit_prediction":
 msg["outcome"] = e.Outcome
+msg["outcomeIndex"] = e.OutcomeIndex // meaningful only for N-outcome markets (market.options non-empty)
 msg["shares"] = strconv.FormatUint(e.Shares, 10)
 cost = strconv.FormatUint(e.Cost, 10)
 case "propose_outcome":
 msg["proposedOutcome"] = e.Outcome
+msg["proposedIndex"] = e.OutcomeIndex
 case "finalize_market":
 }
 txs = append(txs, txEntry{
@@ -839,6 +851,7 @@ hasProposal = true
 result["proposal"] = map[string]interface{}{
 "resolver_addr":    hex.EncodeToString(proposal.ResolverAddr),
 "proposed_outcome": proposal.ProposedOutcome,
+"proposed_index":   proposal.ProposedIndex,
 "proposal_bond":    proposal.ProposalBond,
 "proposal_block":   proposal.ProposalBlock,
 "status":           proposal.Status,
@@ -870,6 +883,7 @@ outcome := &OutcomeState{}
 if err := Unmarshal(v, outcome); err == nil {
 result["outcome"] = map[string]interface{}{
 "winning_outcome": outcome.WinningOutcome,
+"winning_index":   outcome.WinningIndex,
 "resolved_at":     outcome.ResolvedAt,
 }
 }
@@ -884,6 +898,7 @@ hasPosition = true
 result["your_position"] = map[string]interface{}{
 "shares_yes": pos.SharesYes,
 "shares_no":  pos.SharesNo,
+"shares":     pos.Shares,
 "cost_paid":  pos.CostPaid,
 "claimed":    pos.Claimed,
 }
@@ -923,6 +938,8 @@ case !windowOpen:
 reason = "dispute window closed or not yet open"
 case addr == nil:
 reason = "no address provided — cannot evaluate position"
+case hasPosition && len(mkt.Options) > 0:
+shouldDispute, reason = nDisputeAdvice(proposal, pos)
 case !hasPosition || (pos.SharesYes == 0 && pos.SharesNo == 0):
 reason = "address holds no position in this market"
 case proposal.ProposedOutcome && pos.SharesYes > 0 && pos.SharesNo == 0:

@@ -115,7 +115,7 @@ if position != nil {
 if position.Claimed {
 return &PluginDeliverResponse{Error: ErrAlreadyClaimed()}
 }
-if position.SharesYes > 0 || position.SharesNo > 0 {
+if position.SharesYes > 0 || position.SharesNo > 0 || anyShares(position.Shares) {
 refund += position.CostPaid
 }
 }
@@ -153,7 +153,7 @@ sets := []*PluginSetOp{
 var deletes []*PluginDeleteOp
 
 // Mark position as claimed to prevent double reclaim
-if position != nil && (position.SharesYes > 0 || position.SharesNo > 0) {
+if position != nil && (position.SharesYes > 0 || position.SharesNo > 0 || anyShares(position.Shares)) {
 position.Claimed = true
 rawPos, pe := SafeMarshal(position)
 if pe != nil { return &PluginDeliverResponse{Error: pe} }
