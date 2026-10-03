@@ -359,8 +359,13 @@ type MarketState struct {
 	Question            string                 `protobuf:"bytes,12,opt,name=question,proto3" json:"question,omitempty"`
 	Rules               string                 `protobuf:"bytes,13,opt,name=rules,proto3" json:"rules,omitempty"`
 	TxCount             uint64                 `protobuf:"varint,14,opt,name=tx_count,json=txCount,proto3" json:"tx_count,omitempty"` // monotonic per-market counter; doubles as market-txs log seq
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// N-outcome markets (2-10 options). A market is LEGACY binary iff len(options)==0;
+	// legacy markets keep using q_yes/q_no and every bool field, unchanged.
+	Options       []string `protobuf:"bytes,15,rep,name=options,proto3" json:"options,omitempty"`                          // outcome labels; index i <-> q[i]
+	Q             []uint64 `protobuf:"varint,16,rep,packed,name=q,proto3" json:"q,omitempty"`                              // shares outstanding per option (len == len(options))
+	PayoutMode    uint32   `protobuf:"varint,17,opt,name=payout_mode,json=payoutMode,proto3" json:"payout_mode,omitempty"` // 0 = STANDARD LMSR (1 unit per winning share); 1 reserved (pro-rata)
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *MarketState) Reset() {
@@ -491,6 +496,27 @@ func (x *MarketState) GetTxCount() uint64 {
 	return 0
 }
 
+func (x *MarketState) GetOptions() []string {
+	if x != nil {
+		return x.Options
+	}
+	return nil
+}
+
+func (x *MarketState) GetQ() []uint64 {
+	if x != nil {
+		return x.Q
+	}
+	return nil
+}
+
+func (x *MarketState) GetPayoutMode() uint32 {
+	if x != nil {
+		return x.PayoutMode
+	}
+	return 0
+}
+
 // MarketTxEntry is a single append-only log entry recorded for a market-affecting
 // transaction. Keyed by market_id + tx_count (see KeyForMarketTx in keys.go).
 // Populated by: create_market, submit_prediction, propose_outcome, file_dispute,
@@ -499,12 +525,13 @@ type MarketTxEntry struct {
 	state  protoimpl.MessageState `protogen:"open.v1"`
 	TxType string                 `protobuf:"bytes,1,opt,name=tx_type,json=txType,proto3" json:"tx_type,omitempty"` // "create_market" | "submit_prediction" | "propose_outcome" |
 	// "file_dispute" | "finalize_market" | "cancel_market"
-	Actor         []byte `protobuf:"bytes,2,opt,name=actor,proto3" json:"actor,omitempty"`                 // address that submitted the tx
-	Height        uint64 `protobuf:"varint,3,opt,name=height,proto3" json:"height,omitempty"`              // block height at delivery
-	Outcome       bool   `protobuf:"varint,4,opt,name=outcome,proto3" json:"outcome,omitempty"`            // YES/NO side; meaningful for submit_prediction/propose_outcome/finalize_market
-	Shares        uint64 `protobuf:"varint,5,opt,name=shares,proto3" json:"shares,omitempty"`              // shares transacted; submit_prediction only, else 0
-	Cost          uint64 `protobuf:"varint,6,opt,name=cost,proto3" json:"cost,omitempty"`                  // PRX trade cost; submit_prediction only, else 0 -- drives price chart
-	TxHash        string `protobuf:"bytes,7,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"` // hex tx hash from the host, threaded through PluginDeliverRequest.tx_hash
+	Actor         []byte `protobuf:"bytes,2,opt,name=actor,proto3" json:"actor,omitempty"`                                    // address that submitted the tx
+	Height        uint64 `protobuf:"varint,3,opt,name=height,proto3" json:"height,omitempty"`                                 // block height at delivery
+	Outcome       bool   `protobuf:"varint,4,opt,name=outcome,proto3" json:"outcome,omitempty"`                               // YES/NO side; meaningful for submit_prediction/propose_outcome/finalize_market
+	Shares        uint64 `protobuf:"varint,5,opt,name=shares,proto3" json:"shares,omitempty"`                                 // shares transacted; submit_prediction only, else 0
+	Cost          uint64 `protobuf:"varint,6,opt,name=cost,proto3" json:"cost,omitempty"`                                     // PRX trade cost; submit_prediction only, else 0 -- drives price chart
+	TxHash        string `protobuf:"bytes,7,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`                    // hex tx hash from the host, threaded through PluginDeliverRequest.tx_hash
+	OutcomeIndex  uint32 `protobuf:"varint,8,opt,name=outcome_index,json=outcomeIndex,proto3" json:"outcome_index,omitempty"` // N-outcome markets only; legacy markets keep using `outcome`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -588,12 +615,20 @@ func (x *MarketTxEntry) GetTxHash() string {
 	return ""
 }
 
+func (x *MarketTxEntry) GetOutcomeIndex() uint32 {
+	if x != nil {
+		return x.OutcomeIndex
+	}
+	return 0
+}
+
 type PositionState struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	SharesYes     uint64                 `protobuf:"varint,1,opt,name=shares_yes,json=sharesYes,proto3" json:"shares_yes,omitempty"`
 	SharesNo      uint64                 `protobuf:"varint,2,opt,name=shares_no,json=sharesNo,proto3" json:"shares_no,omitempty"`
 	CostPaid      uint64                 `protobuf:"varint,3,opt,name=cost_paid,json=costPaid,proto3" json:"cost_paid,omitempty"`
 	Claimed       bool                   `protobuf:"varint,4,opt,name=claimed,proto3" json:"claimed,omitempty"`
+	Shares        []uint64               `protobuf:"varint,5,rep,packed,name=shares,proto3" json:"shares,omitempty"` // N-outcome markets only: shares per option index
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -656,10 +691,18 @@ func (x *PositionState) GetClaimed() bool {
 	return false
 }
 
+func (x *PositionState) GetShares() []uint64 {
+	if x != nil {
+		return x.Shares
+	}
+	return nil
+}
+
 type OutcomeState struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	WinningOutcome bool                   `protobuf:"varint,1,opt,name=winning_outcome,json=winningOutcome,proto3" json:"winning_outcome,omitempty"`
 	ResolvedAt     uint64                 `protobuf:"varint,2,opt,name=resolved_at,json=resolvedAt,proto3" json:"resolved_at,omitempty"`
+	WinningIndex   uint32                 `protobuf:"varint,3,opt,name=winning_index,json=winningIndex,proto3" json:"winning_index,omitempty"` // N-outcome markets only
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -704,6 +747,13 @@ func (x *OutcomeState) GetWinningOutcome() bool {
 func (x *OutcomeState) GetResolvedAt() uint64 {
 	if x != nil {
 		return x.ResolvedAt
+	}
+	return 0
+}
+
+func (x *OutcomeState) GetWinningIndex() uint32 {
+	if x != nil {
+		return x.WinningIndex
 	}
 	return 0
 }
@@ -920,6 +970,7 @@ type ProposalRecord struct {
 	ProposalBond    uint64                 `protobuf:"varint,3,opt,name=proposal_bond,json=proposalBond,proto3" json:"proposal_bond,omitempty"`
 	ProposalBlock   uint64                 `protobuf:"varint,4,opt,name=proposal_block,json=proposalBlock,proto3" json:"proposal_block,omitempty"`
 	Status          uint32                 `protobuf:"varint,5,opt,name=status,proto3" json:"status,omitempty"`
+	ProposedIndex   uint32                 `protobuf:"varint,6,opt,name=proposed_index,json=proposedIndex,proto3" json:"proposed_index,omitempty"` // N-outcome markets only; legacy markets keep proposed_outcome
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -985,6 +1036,13 @@ func (x *ProposalRecord) GetProposalBlock() uint64 {
 func (x *ProposalRecord) GetStatus() uint32 {
 	if x != nil {
 		return x.Status
+	}
+	return 0
+}
+
+func (x *ProposalRecord) GetProposedIndex() uint32 {
+	if x != nil {
+		return x.ProposedIndex
 	}
 	return 0
 }
@@ -1308,6 +1366,8 @@ type MessageCreateMarket struct {
 	Nonce          uint64                 `protobuf:"varint,4,opt,name=nonce,proto3" json:"nonce,omitempty"`
 	Question       string                 `protobuf:"bytes,5,opt,name=question,proto3" json:"question,omitempty"`
 	Rules          string                 `protobuf:"bytes,6,opt,name=rules,proto3" json:"rules,omitempty"`
+	Options        []string               `protobuf:"bytes,7,rep,name=options,proto3" json:"options,omitempty"`                          // 2-10 labels => N-outcome market; empty => legacy binary market
+	PayoutMode     uint32                 `protobuf:"varint,8,opt,name=payout_mode,json=payoutMode,proto3" json:"payout_mode,omitempty"` // 0 = STANDARD (only mode accepted for now)
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -1384,6 +1444,20 @@ func (x *MessageCreateMarket) GetRules() string {
 	return ""
 }
 
+func (x *MessageCreateMarket) GetOptions() []string {
+	if x != nil {
+		return x.Options
+	}
+	return nil
+}
+
+func (x *MessageCreateMarket) GetPayoutMode() uint32 {
+	if x != nil {
+		return x.PayoutMode
+	}
+	return 0
+}
+
 type MessageSubmitPrediction struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	MarketId      []byte                 `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
@@ -1391,6 +1465,7 @@ type MessageSubmitPrediction struct {
 	Outcome       bool                   `protobuf:"varint,3,opt,name=outcome,proto3" json:"outcome,omitempty"`
 	Shares        uint64                 `protobuf:"varint,4,opt,name=shares,proto3" json:"shares,omitempty"`
 	MaxCost       uint64                 `protobuf:"varint,5,opt,name=max_cost,json=maxCost,proto3" json:"max_cost,omitempty"`
+	OutcomeIndex  uint32                 `protobuf:"varint,6,opt,name=outcome_index,json=outcomeIndex,proto3" json:"outcome_index,omitempty"` // N-outcome markets only; legacy markets keep using `outcome`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1456,6 +1531,13 @@ func (x *MessageSubmitPrediction) GetShares() uint64 {
 func (x *MessageSubmitPrediction) GetMaxCost() uint64 {
 	if x != nil {
 		return x.MaxCost
+	}
+	return 0
+}
+
+func (x *MessageSubmitPrediction) GetOutcomeIndex() uint32 {
+	if x != nil {
+		return x.OutcomeIndex
 	}
 	return 0
 }
@@ -1630,6 +1712,7 @@ type MessageProposeOutcome struct {
 	ResolverAddress []byte                 `protobuf:"bytes,2,opt,name=resolver_address,json=resolverAddress,proto3" json:"resolver_address,omitempty"`
 	ProposedOutcome bool                   `protobuf:"varint,3,opt,name=proposed_outcome,json=proposedOutcome,proto3" json:"proposed_outcome,omitempty"`
 	ProposalBond    uint64                 `protobuf:"varint,4,opt,name=proposal_bond,json=proposalBond,proto3" json:"proposal_bond,omitempty"`
+	ProposedIndex   uint32                 `protobuf:"varint,5,opt,name=proposed_index,json=proposedIndex,proto3" json:"proposed_index,omitempty"` // N-outcome markets only
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -1688,6 +1771,13 @@ func (x *MessageProposeOutcome) GetProposedOutcome() bool {
 func (x *MessageProposeOutcome) GetProposalBond() uint64 {
 	if x != nil {
 		return x.ProposalBond
+	}
+	return 0
+}
+
+func (x *MessageProposeOutcome) GetProposedIndex() uint32 {
+	if x != nil {
+		return x.ProposedIndex
 	}
 	return 0
 }
@@ -2920,7 +3010,7 @@ const file_tx_proto_rawDesc = "" +
 	"\x11create_market_fee\x18\x02 \x01(\x04R\x0fcreateMarketFee\x122\n" +
 	"\x15submit_prediction_fee\x18\x03 \x01(\x04R\x13submitPredictionFee\x12,\n" +
 	"\x12resolve_market_fee\x18\x04 \x01(\x04R\x10resolveMarketFee\x12,\n" +
-	"\x12claim_winnings_fee\x18\x05 \x01(\x04R\x10claimWinningsFee\"\xae\x03\n" +
+	"\x12claim_winnings_fee\x18\x05 \x01(\x04R\x10claimWinningsFee\"\xf7\x03\n" +
 	"\vMarketState\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\rR\x06status\x12\x1f\n" +
 	"\vexpiry_time\x18\x02 \x01(\x04R\n" +
@@ -2937,7 +3027,11 @@ const file_tx_proto_rawDesc = "" +
 	"\x15finalized_pool_amount\x18\v \x01(\x04R\x13finalizedPoolAmount\x12\x1a\n" +
 	"\bquestion\x18\f \x01(\tR\bquestion\x12\x14\n" +
 	"\x05rules\x18\r \x01(\tR\x05rules\x12\x19\n" +
-	"\btx_count\x18\x0e \x01(\x04R\atxCount\"\xb5\x01\n" +
+	"\btx_count\x18\x0e \x01(\x04R\atxCount\x12\x18\n" +
+	"\aoptions\x18\x0f \x03(\tR\aoptions\x12\f\n" +
+	"\x01q\x18\x10 \x03(\x04R\x01q\x12\x1f\n" +
+	"\vpayout_mode\x18\x11 \x01(\rR\n" +
+	"payoutMode\"\xda\x01\n" +
 	"\rMarketTxEntry\x12\x17\n" +
 	"\atx_type\x18\x01 \x01(\tR\x06txType\x12\x14\n" +
 	"\x05actor\x18\x02 \x01(\fR\x05actor\x12\x16\n" +
@@ -2945,17 +3039,20 @@ const file_tx_proto_rawDesc = "" +
 	"\aoutcome\x18\x04 \x01(\bR\aoutcome\x12\x16\n" +
 	"\x06shares\x18\x05 \x01(\x04R\x06shares\x12\x12\n" +
 	"\x04cost\x18\x06 \x01(\x04R\x04cost\x12\x17\n" +
-	"\atx_hash\x18\a \x01(\tR\x06txHash\"\x82\x01\n" +
+	"\atx_hash\x18\a \x01(\tR\x06txHash\x12#\n" +
+	"\routcome_index\x18\b \x01(\rR\foutcomeIndex\"\x9a\x01\n" +
 	"\rPositionState\x12\x1d\n" +
 	"\n" +
 	"shares_yes\x18\x01 \x01(\x04R\tsharesYes\x12\x1b\n" +
 	"\tshares_no\x18\x02 \x01(\x04R\bsharesNo\x12\x1b\n" +
 	"\tcost_paid\x18\x03 \x01(\x04R\bcostPaid\x12\x18\n" +
-	"\aclaimed\x18\x04 \x01(\bR\aclaimed\"X\n" +
+	"\aclaimed\x18\x04 \x01(\bR\aclaimed\x12\x16\n" +
+	"\x06shares\x18\x05 \x03(\x04R\x06shares\"}\n" +
 	"\fOutcomeState\x12'\n" +
 	"\x0fwinning_outcome\x18\x01 \x01(\bR\x0ewinningOutcome\x12\x1f\n" +
 	"\vresolved_at\x18\x02 \x01(\x04R\n" +
-	"resolvedAt\"[\n" +
+	"resolvedAt\x12#\n" +
+	"\rwinning_index\x18\x03 \x01(\rR\fwinningIndex\"[\n" +
 	"\x0fTreasuryReserve\x12%\n" +
 	"\x0elocked_reserve\x18\x01 \x01(\x04R\rlockedReserve\x12!\n" +
 	"\fcreator_bond\x18\x02 \x01(\x04R\vcreatorBond\":\n" +
@@ -2970,13 +3067,14 @@ const file_tx_proto_rawDesc = "" +
 	"\x12last_claimed_epoch\x18\x06 \x01(\x04R\x10lastClaimedEpoch\x12\x1b\n" +
 	"\tis_active\x18\a \x01(\bR\bisActive\x12)\n" +
 	"\x10unbonding_amount\x18\b \x01(\x04R\x0funbondingAmount\x128\n" +
-	"\x18unbonding_release_height\x18\t \x01(\x04R\x16unbondingReleaseHeight\"\xc4\x01\n" +
+	"\x18unbonding_release_height\x18\t \x01(\x04R\x16unbondingReleaseHeight\"\xeb\x01\n" +
 	"\x0eProposalRecord\x12#\n" +
 	"\rresolver_addr\x18\x01 \x01(\fR\fresolverAddr\x12)\n" +
 	"\x10proposed_outcome\x18\x02 \x01(\bR\x0fproposedOutcome\x12#\n" +
 	"\rproposal_bond\x18\x03 \x01(\x04R\fproposalBond\x12%\n" +
 	"\x0eproposal_block\x18\x04 \x01(\x04R\rproposalBlock\x12\x16\n" +
-	"\x06status\x18\x05 \x01(\rR\x06status\"\xe7\x01\n" +
+	"\x06status\x18\x05 \x01(\rR\x06status\x12%\n" +
+	"\x0eproposed_index\x18\x06 \x01(\rR\rproposedIndex\"\xe7\x01\n" +
 	"\rDisputeRecord\x12)\n" +
 	"\x10disputer_address\x18\x01 \x01(\fR\x0fdisputerAddress\x12!\n" +
 	"\fdispute_bond\x18\x02 \x01(\x04R\vdisputeBond\x12#\n" +
@@ -3006,7 +3104,7 @@ const file_tx_proto_rawDesc = "" +
 	"\n" +
 	"slashed_at\x18\x03 \x01(\x04R\tslashedAt\"5\n" +
 	"\x11PanelEntropyAccum\x12 \n" +
-	"\vaccumulator\x18\x01 \x01(\x04R\vaccumulator\"\xb7\x01\n" +
+	"\vaccumulator\x18\x01 \x01(\x04R\vaccumulator\"\xf2\x01\n" +
 	"\x13MessageCreateMarket\x12'\n" +
 	"\x0fcreator_address\x18\x01 \x01(\fR\x0ecreatorAddress\x12\x0e\n" +
 	"\x02b0\x18\x02 \x01(\x04R\x02b0\x12\x1f\n" +
@@ -3014,13 +3112,17 @@ const file_tx_proto_rawDesc = "" +
 	"expiryTime\x12\x14\n" +
 	"\x05nonce\x18\x04 \x01(\x04R\x05nonce\x12\x1a\n" +
 	"\bquestion\x18\x05 \x01(\tR\bquestion\x12\x14\n" +
-	"\x05rules\x18\x06 \x01(\tR\x05rules\"\xaa\x01\n" +
+	"\x05rules\x18\x06 \x01(\tR\x05rules\x12\x18\n" +
+	"\aoptions\x18\a \x03(\tR\aoptions\x12\x1f\n" +
+	"\vpayout_mode\x18\b \x01(\rR\n" +
+	"payoutMode\"\xcf\x01\n" +
 	"\x17MessageSubmitPrediction\x12\x1b\n" +
 	"\tmarket_id\x18\x01 \x01(\fR\bmarketId\x12%\n" +
 	"\x0ebettor_address\x18\x02 \x01(\fR\rbettorAddress\x12\x18\n" +
 	"\aoutcome\x18\x03 \x01(\bR\aoutcome\x12\x16\n" +
 	"\x06shares\x18\x04 \x01(\x04R\x06shares\x12\x19\n" +
-	"\bmax_cost\x18\x05 \x01(\x04R\amaxCost\"^\n" +
+	"\bmax_cost\x18\x05 \x01(\x04R\amaxCost\x12#\n" +
+	"\routcome_index\x18\x06 \x01(\rR\foutcomeIndex\"^\n" +
 	"\x14MessageClaimWinnings\x12\x1b\n" +
 	"\tmarket_id\x18\x01 \x01(\fR\bmarketId\x12)\n" +
 	"\x10claimant_address\x18\x02 \x01(\fR\x0fclaimantAddress\"\x87\x01\n" +
@@ -3030,12 +3132,13 @@ const file_tx_proto_rawDesc = "" +
 	"\x0fwinning_outcome\x18\x03 \x01(\bR\x0ewinningOutcome\"g\n" +
 	"\x17MessageRegisterResolver\x12)\n" +
 	"\x10resolver_address\x18\x01 \x01(\fR\x0fresolverAddress\x12!\n" +
-	"\fstake_amount\x18\x02 \x01(\x04R\vstakeAmount\"\xaf\x01\n" +
+	"\fstake_amount\x18\x02 \x01(\x04R\vstakeAmount\"\xd6\x01\n" +
 	"\x15MessageProposeOutcome\x12\x1b\n" +
 	"\tmarket_id\x18\x01 \x01(\fR\bmarketId\x12)\n" +
 	"\x10resolver_address\x18\x02 \x01(\fR\x0fresolverAddress\x12)\n" +
 	"\x10proposed_outcome\x18\x03 \x01(\bR\x0fproposedOutcome\x12#\n" +
-	"\rproposal_bond\x18\x04 \x01(\x04R\fproposalBond\"\x7f\n" +
+	"\rproposal_bond\x18\x04 \x01(\x04R\fproposalBond\x12%\n" +
+	"\x0eproposed_index\x18\x05 \x01(\rR\rproposedIndex\"\x7f\n" +
 	"\x12MessageFileDispute\x12\x1b\n" +
 	"\tmarket_id\x18\x01 \x01(\fR\bmarketId\x12)\n" +
 	"\x10disputer_address\x18\x02 \x01(\fR\x0fdisputerAddress\x12!\n" +

@@ -72,6 +72,11 @@ message MarketState {
   string question        = 12;
   string rules           = 13;
   uint64 tx_count        = 14; // monotonic per-market counter; doubles as market-txs log seq
+  // N-outcome markets (2-10 options). A market is LEGACY binary iff len(options)==0;
+  // legacy markets keep using q_yes/q_no and every bool field, unchanged.
+  repeated string options = 15; // outcome labels; index i <-> q[i]
+  repeated uint64 q       = 16; // shares outstanding per option (len == len(options))
+  uint32 payout_mode      = 17; // 0 = STANDARD LMSR (1 unit per winning share); 1 reserved (pro-rata)
 }
 
 // MarketTxEntry is a single append-only log entry recorded for a market-affecting
@@ -87,6 +92,7 @@ message MarketTxEntry {
   uint64 shares   = 5;  // shares transacted; submit_prediction only, else 0
   uint64 cost     = 6;  // PRX trade cost; submit_prediction only, else 0 -- drives price chart
   string tx_hash  = 7;  // hex tx hash from the host, threaded through PluginDeliverRequest.tx_hash
+  uint32 outcome_index = 8; // N-outcome markets only; legacy markets keep using `outcome`
 }
 
 message PositionState {
@@ -94,11 +100,13 @@ message PositionState {
   uint64 shares_no  = 2;
   uint64 cost_paid  = 3;
   bool   claimed    = 4;
+  repeated uint64 shares = 5; // N-outcome markets only: shares per option index
 }
 
 message OutcomeState {
   bool   winning_outcome = 1;
   uint64 resolved_at     = 2;
+  uint32 winning_index   = 3; // N-outcome markets only
 }
 
 message TreasuryReserve {
@@ -129,6 +137,7 @@ message ProposalRecord {
   uint64 proposal_bond    = 3;
   uint64 proposal_block   = 4;
   uint32 status           = 5;
+  uint32 proposed_index   = 6; // N-outcome markets only; legacy markets keep proposed_outcome
 }
 
 message DisputeRecord {
@@ -172,6 +181,8 @@ message MessageCreateMarket {
   uint64 nonce           = 4;
   string question        = 5;
   string rules           = 6;
+  repeated string options = 7; // 2-10 labels => N-outcome market; empty => legacy binary market
+  uint32 payout_mode      = 8; // 0 = STANDARD (only mode accepted for now)
 }
 
 message MessageSubmitPrediction {
@@ -180,6 +191,7 @@ message MessageSubmitPrediction {
   bool   outcome   = 3;
   uint64 shares    = 4;
   uint64 max_cost  = 5;
+  uint32 outcome_index = 6; // N-outcome markets only; legacy markets keep using `outcome`
 }
 
 message MessageClaimWinnings {
@@ -203,6 +215,7 @@ message MessageProposeOutcome {
   bytes  resolver_address = 2;
   bool   proposed_outcome = 3;
   uint64 proposal_bond    = 4;
+  uint32 proposed_index   = 5; // N-outcome markets only
 }
 
 message MessageFileDispute {
