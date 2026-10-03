@@ -1,127 +1,99 @@
 "use client";
 
-import { useState } from "react";
-import { validateOptions } from "@/lib/nOutcome";
+import { useMemo } from "react";
+import { MAX_OUTCOMES, MIN_OUTCOMES, validateOptions } from "@/lib/nOutcome";
 
 interface Props {
-  value: string; // pipe-separated options
+  value: string;
   onChange: (value: string) => void;
 }
 
 export default function NOutcomeOptionsInput({ value, onChange }: Props) {
-  const options = value ? value.split("|").filter(o => o.trim()) : [];
-  const [error, setError] = useState<string | null>(null);
+  // Keep empty segments while typing so input indexes never shift
+  const options = value === "" ? [] : value.split("|");
+  const active = options.length > 0;
+  // Derived, not stored: the error can never go stale
+  const error = useMemo(() => (active ? validateOptions(options) : null), [value]);
 
-  const handleOptionChange = (index: number, newValue: string) => {
-    const newOptions = [...options];
-    newOptions[index] = newValue;
-    const joined = newOptions.join("|");
-    
-    // Validate
-    const validationError = validateOptions(newOptions);
-    setError(validationError);
-    
-    onChange(joined);
-  };
+  const commit = (next: string[]) => onChange(next.join("|"));
+  const edit = (i: number, v: string) => { const n = options.slice(); n[i] = v; commit(n); };
+  const add = () => { if (options.length >= MAX_OUTCOMES) return; commit([...options, ""]); };
+  const remove = (i: number) => { if (options.length <= MIN_OUTCOMES) return; commit(options.filter((_, x) => x !== i)); };
+  const toggle = () => onChange(active ? "" : "Option 1|Option 2");
 
-  const addOption = () => {
-    if (options.length >= 10) return;
-    const newOptions = [...options, ""];
-    onChange(newOptions.join("|"));
-    setError(validateOptions(newOptions));
-  };
-
-  const removeOption = (index: number) => {
-    if (options.length <= 2) return;
-    const newOptions = options.filter((_, i) => i !== index);
-    onChange(newOptions.join("|"));
-    setError(validateOptions(newOptions));
-  };
-
-  const toggleMode = () => {
-    if (options.length > 0) {
-      // Clear options (switch to binary)
-      onChange("");
-      setError(null);
-    } else {
-      // Add 2 default options (switch to N-outcome)
-      onChange("Option A|Option B");
-      setError(null);
-    }
-  };
+  const filled = options.filter((o) => o.trim() !== "");
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="font-mono text-[11px] uppercase tracking-[2px] text-ink-2">
-          Market Type
-        </div>
+    <div className="rounded-card border border-line bg-bg-2 p-3">
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-mono text-[11px] uppercase tracking-[2px] text-ink-3">Market type</span>
         <button
           type="button"
-          onClick={toggleMode}
-          className={`rounded-full px-3 py-1 font-mono text-[11px] font-bold transition-colors ${
-            options.length > 0
-              ? "bg-up/20 text-up hover:bg-up/30"
-              : "bg-line text-ink-3 hover:bg-line-2"
+          onClick={toggle}
+          className={`rounded-pill px-2.5 py-1 font-mono text-[11px] font-bold transition-colors ${
+            active ? "bg-up/15 text-up" : "bg-line text-ink-3 hover:text-ink-2"
           }`}
         >
-          {options.length > 0 ? `N-Outcome (${options.length} options)` : "Binary (YES/NO)"}
+          {active ? `N-Outcome · ${options.length}/${MAX_OUTCOMES}` : "Binary · YES/NO"}
         </button>
       </div>
 
-      {options.length > 0 && (
-        <div className="space-y-2">
-          {options.map((opt, idx) => (
-            <div key={idx} className="flex gap-2">
-              <div className="flex-1">
+      {active && (
+        <>
+          <div className="mt-3 space-y-2">
+            {options.map((opt, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <span className="w-5 shrink-0 text-center font-mono text-[11px] text-ink-3">{idx + 1}</span>
                 <input
                   type="text"
                   value={opt}
-                  onChange={(e) => handleOptionChange(idx, e.target.value)}
-                  placeholder={`Option ${idx + 1}`}
-                  className="w-full rounded border border-line bg-bg px-3 py-2 font-mono text-[13px] text-ink outline-none focus:border-line-2"
+                  onChange={(e) => edit(idx, e.target.value)}
+                  placeholder={`Option ${idx + 1} label`}
                   maxLength={64}
+                  className="min-w-0 flex-1 rounded-card border border-line bg-bg px-3 py-2 font-mono text-[13px] text-ink outline-none transition-colors focus:border-up"
                 />
+                <button
+                  type="button"
+                  onClick={() => remove(idx)}
+                  disabled={options.length <= MIN_OUTCOMES}
+                  className="shrink-0 rounded-card border border-line bg-bg px-2.5 py-2 font-mono text-[13px] text-ink-3 transition-colors hover:border-down hover:text-down disabled:cursor-not-allowed disabled:opacity-30"
+                  title="Remove option"
+                >
+                  ×
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => removeOption(idx)}
-                disabled={options.length <= 2}
-                className="rounded border border-line bg-bg px-3 py-2 font-mono text-[13px] text-ink-3 hover:bg-line-2 disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                ×
-              </button>
-            </div>
-          ))}
+            ))}
+          </div>
 
           <button
             type="button"
-            onClick={addOption}
-            disabled={options.length >= 10}
-            className="w-full rounded border border-line bg-bg py-2 font-mono text-[12px] text-ink-2 hover:bg-line-2 disabled:opacity-30 disabled:cursor-not-allowed"
+            onClick={add}
+            disabled={options.length >= MAX_OUTCOMES}
+            className="mt-2 w-full rounded-card border border-dashed border-line bg-transparent py-2 font-mono text-[12px] text-ink-2 transition-colors hover:border-up hover:text-up disabled:cursor-not-allowed disabled:opacity-30"
           >
-            + Add Option
+            + Add option ({options.length}/{MAX_OUTCOMES})
           </button>
 
           {error && (
-            <div className="rounded border border-red-500 bg-red-500/10 px-3 py-2 font-mono text-[11px] text-red-500">
+            <div className="mt-2 rounded-card border border-down/40 bg-down-dim px-3 py-2 font-mono text-[11px] text-down">
               {error}
             </div>
           )}
 
-          <div className="rounded border border-line bg-bg p-3 font-mono text-[11px] text-ink-3">
-            <div className="mb-1 text-ink-2">Preview:</div>
-            <div className="flex flex-wrap gap-2">
-              {options.map((opt, idx) => (
-                <span
-                  key={idx}
-                  className="rounded bg-line px-2 py-1 text-ink-2"
-                >
-                  {opt || `Option ${idx + 1}`}
-                </span>
+          {filled.length > 0 && (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              <span className="font-mono text-[10px] uppercase tracking-[1.5px] text-ink-3">Preview:</span>
+              {filled.map((o, i) => (
+                <span key={i} className="rounded-pill border border-line bg-bg px-2 py-0.5 font-mono text-[11px] text-ink-2">{o}</span>
               ))}
             </div>
-          </div>
+          )}
+        </>
+      )}
+
+      {!active && (
+        <div className="mt-2 font-mono text-[11px] leading-relaxed text-ink-3">
+          Binary market — outcomes use the custom YES/NO labels above. Toggle to N-Outcome to list 2–10 custom outcomes: one shared pool, one live price per option.
         </div>
       )}
     </div>

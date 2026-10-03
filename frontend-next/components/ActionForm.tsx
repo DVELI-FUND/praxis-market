@@ -27,6 +27,14 @@ import ResolutionPlanner from "./ResolutionPlanner";
 
 const CATS = CATS_TREE.map((c) => ({ key: c.key, label: c.label, icon: c.icon }));
 
+const CREATE_SECTIONS: Record<string, string> = {
+  cat: "1 · Category & schedule",
+  question: "2 · Question & outcome labels",
+  options: "3 · Outcomes — binary or 2–10 options",
+  creator: "4 · Wallet · liquidity · expiry",
+  rules: "5 · Rules & banner",
+};
+
 function validateField(def: ActionDef, v: Vals): string | null {
   for (const f of def.fields) {
     const val = v[f.id];
@@ -580,7 +588,14 @@ export default function ActionForm({ def }: { def: ActionDef }) {
 
       {def.fields.map((f) => (
         <div key={f.id} className="mb-2.5">
-          <div className="mb-1 font-mono text-[11px] uppercase tracking-[2px] text-ink-2">{f.label}</div>
+          {def.key === "create" && CREATE_SECTIONS[f.id] && (
+            <div className="mb-2 mt-5 border-t border-line pt-3 font-mono text-[11px] font-bold uppercase tracking-[2px] text-ink-3 first:mt-0 first:border-t-0 first:pt-0">
+              {CREATE_SECTIONS[f.id]}
+            </div>
+          )}
+          {f.id !== "options" && (
+            <div className="mb-1 font-mono text-[11px] uppercase tracking-[2px] text-ink-2">{f.label}</div>
+          )}
           {f.id === "options" ? (
             <NOutcomeOptionsInput
               value={String(vals[f.id] ?? "")}

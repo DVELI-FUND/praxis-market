@@ -1,5 +1,6 @@
 import { TYPE_URLS } from "@/lib/tx";
 import { buildRulesWithSub, buildRulesWithMeta } from "@/lib/cats";
+import { validateOptions } from "@/lib/nOutcome";
 import {
   encSend, encCreate, encClaim, encReclaim, encRegister, encPropose, encDispute,
   encCommit, encReveal, encTally, encFinalize, encSlash, encForfeit,
@@ -193,7 +194,7 @@ export const ACTIONS: Record<string, ActionDef> = {
       { id: "b0", label: "B0 Liquidity (PRX)", type: "number", def: 60, scale: W },
       { id: "expiry", label: "Expiry", type: "datetime" },
       { id: "rules", label: "Rules / Resolution criteria", type: "text" },
-      { id: "options", label: "N-Outcome Options (optional)", type: "text", hint: "Pipe-separated labels e.g. Alice|Bob|Nobody (2-10 options); leave empty for binary YES/NO" },
+      { id: "options", label: "Outcome options", type: "text" },
       { id: "img", label: "Banner Image URL (optional)", type: "text", hint: "imgur album/page, i.imgur.com direct, or ipfs:// — auto-resolved" },
       FEE,
     ],
@@ -210,7 +211,15 @@ export const ACTIONS: Record<string, ActionDef> = {
       const payoutMode = options.length >= 2 ? 0 : undefined;
       return encCreate(s(v, "creator"), u(v, "b0"), BigInt(exp), nonce, String(v.question ?? ""), rules, options.length >= 2 ? options : undefined, payoutMode);
     },
-    validate: (v) => (!String(v.question ?? "").trim() ? "Question required" : null),
+    validate: (v) => {
+      if (!String(v.question ?? "").trim()) return "Question required";
+      const rawOpts = String(v.options ?? "").trim();
+      if (rawOpts) {
+        const err = validateOptions(rawOpts.split("|"));
+        if (err) return err;
+      }
+      return null;
+    },
   },
 };
 
