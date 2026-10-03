@@ -8,7 +8,7 @@ import { showConfirm } from "@/store/confirm";
 import { buildSigned, friendlyError, TYPE_URLS, waitForConfirmation } from "@/lib/tx";
 import { encPredict } from "@/lib/proto";
 import { submitTxRPC } from "@/lib/rpc";
-import { extractOutcomes, yesPct } from "@/lib/markets";
+import { extractOutcomes, yesPct, nPrices } from "@/lib/markets";
 import { fmtPRX } from "@/lib/format";
 import type { MarketDetail } from "@/lib/detail";
 
@@ -24,6 +24,8 @@ export default function PredictPanel({ market, outcome, onOutcome }: Props) {
   const toast = useToast((s) => s.show);
   const queryClient = useQueryClient();
   const outLbl = extractOutcomes(market.rules || "");
+  const isNOutcome = market.options.length > 0;
+  const [selectedOption, setSelectedOption] = useState(0);
 
   const [shares, setShares] = useState(1);
   const [slip, setSlip] = useState(2);
@@ -31,7 +33,8 @@ export default function PredictPanel({ market, outcome, onOutcome }: Props) {
   const [pending, setPending] = useState(false);
 
   const connected = status === "connected" || status === "drift";
-  const pct = yesPct(market);
+  const pct = isNOutcome ? 0 : yesPct(market);
+  const nPricesArr = isNOutcome ? nPrices(market.q, market.b0) : [];
 
   const bd = useMemo(() => {
     const tradeCost = shares;
@@ -39,11 +42,12 @@ export default function PredictPanel({ market, outcome, onOutcome }: Props) {
     const resolverFee = Math.ceil(shares * 0.01);
     const total = tradeCost + creatorFee + resolverFee;
     const maxCost = Math.ceil(total * (1 + slip / 100));
-    const toWin = shares * 100 / (outcome ? pct : 100 - pct);
+    const price = isNOutcome ? nPricesArr[selectedOption] * 100 : (outcome ? pct : 100 - pct);
+    const toWin = shares * 100 / price;
     return { tradeCost, creatorFee, resolverFee, maxCost, toWin };
-  }, [shares, slip, outcome, pct]);
+  }, [shares, slip, outcome, pct, isNOutcome, nPricesArr, selectedOption]);
 
-  const pool = market.qYes + market.qNo;
+  const pool = isNOutcome ? market.q.reduce((a, b) => a + b, 0n) : market.qYes + market.qNo;
   const cap = pool > 0n ? (pool * 2000n) / 10000n : 0n;
   const over = pool > 0n && BigInt(bd.maxCost) > cap;
 
@@ -52,9 +56,11 @@ export default function PredictPanel({ market, outcome, onOutcome }: Props) {
     if (!chain?.height) { toast("Node not connected", true); return; }
     if (shares < 1) { toast("Shares min 1 PRX", true); return; }
 
+    const selectedLabel = isNOutcome ? market.options[selectedOption] : (outcome ? outLbl.yes : outLbl.no);
+    
     const ok = await showConfirm("Submit Prediction", [
       ["Market ID", market.marketId.slice(0, 16) + "…", ""],
-      ["Outcome", outcome ? outLbl.yes : outLbl.no, outcome ? "g" : "r"],
+      ["Option", selectedLabel, "g"],
       ["Shares", shares.toLocaleString() + " PRX", ""],
       ["Max Cost", bd.maxCost.toLocaleString() + " PRX", ""],
     ]);
@@ -62,7 +68,11 @@ export default function PredictPanel({ market, outcome, onOutcome }: Props) {
 
     setPending(true);
     try {
-      const inner = encPredict(market.marketId, praxisAddress, outcome, BigInt(shares) * 1000000n, BigInt(bd.maxCost) * 1000000n);
+      // For N-outcome: pass outcomeIndex; for binary: pass outcome bool
+      const inner = isNOutcome
+        ? encPredict(market.marketId, praxisAddress, false, BigInt(shares) * 1000000n, BigInt(bd.maxCost) * 1000000n, selectedOption)
+        : encPredict(market.marketId, praxisAddress, outcome, BigInt(shares) * 1000000n, BigInt(bd.maxCost) * 1000000n);
+      
       const tx = await buildSigned(privKey, pubKey, "submit_prediction", TYPE_URLS.submit_prediction, inner, {
         fee, height: chain.height, netId: chain.networkId, chainId: chain.chainId,
       });
@@ -70,11 +80,10 @@ export default function PredictPanel({ market, outcome, onOutcome }: Props) {
       toast("Submitting transaction…");
       const res = await waitForConfirmation(praxisAddress, hash);
       if (res.ok) {
-        // Invalidate queries to refresh market state immediately
         queryClient.invalidateQueries({ queryKey: ["market-txs", market.marketId] });
         queryClient.invalidateQueries({ queryKey: ["market", market.marketId] });
         queryClient.invalidateQueries({ queryKey: ["position", market.marketId, praxisAddress] });
-        toast(`✓ Position confirmed: +${fmtPRX(shares)} shares ${outcome ? outLbl.yes : outLbl.no} @ ${pct}¢`);
+        toast(`✓ Position confirmed: +${fmtPRX(shares)} shares ${selectedLabel}`);
       } else {
         toast(res.message, true);
       }
@@ -97,17 +106,38 @@ export default function PredictPanel({ market, outcome, onOutcome }: Props) {
       </div>
 
       <div className="p-4">
-        {/* outcome segmented */}
-        <div className="mb-3 grid grid-cols-2 gap-2">
-          <button onClick={() => onOutcome(true)} className={`flex items-center justify-between rounded-card border px-3 py-2.5 transition-all ${outcome ? "border-up bg-up-dim shadow-glowUp" : "border-line opacity-50 hover:opacity-80"}`}>
-            <span className="max-w-[55%] truncate font-mono text-[12px] font-bold text-up">{outLbl.yes}</span>
-            <span className="font-display text-[16px] font-bold text-up tabular-nums">{pct}¢</span>
-          </button>
-          <button onClick={() => onOutcome(false)} className={`flex items-center justify-between rounded-card border px-3 py-2.5 transition-all ${!outcome ? "border-down bg-down-dim shadow-glowDown" : "border-line opacity-50 hover:opacity-80"}`}>
-            <span className="max-w-[55%] truncate font-mono text-[12px] font-bold text-down">{outLbl.no}</span>
-            <span className="font-display text-[16px] font-bold text-down tabular-nums">{100 - pct}¢</span>
-          </button>
-        </div>
+        {isNOutcome ? (
+          // N-outcome: show all options as radio buttons
+          <div className="mb-3 space-y-2">
+            {market.options.map((opt, idx) => {
+              const price = Math.round(nPricesArr[idx] * 100);
+              return (
+                <button
+                  key={idx}
+                  onClick={() => setSelectedOption(idx)}
+                  className={`flex w-full items-center justify-between rounded-card border px-3 py-2.5 transition-all ${
+                    selectedOption === idx ? "border-up bg-up-dim shadow-glowUp" : "border-line opacity-50 hover:opacity-80"
+                  }`}
+                >
+                  <span className="max-w-[55%] truncate font-mono text-[12px] font-bold text-up">{opt}</span>
+                  <span className="font-display text-[16px] font-bold text-up tabular-nums">{price}¢</span>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          // Binary market: YES/NO toggle
+          <div className="mb-3 grid grid-cols-2 gap-2">
+            <button onClick={() => onOutcome(true)} className={`flex items-center justify-between rounded-card border px-3 py-2.5 transition-all ${outcome ? "border-up bg-up-dim shadow-glowUp" : "border-line opacity-50 hover:opacity-80"}`}>
+              <span className="max-w-[55%] truncate font-mono text-[12px] font-bold text-up">{outLbl.yes}</span>
+              <span className="font-display text-[16px] font-bold text-up tabular-nums">{pct}¢</span>
+            </button>
+            <button onClick={() => onOutcome(false)} className={`flex items-center justify-between rounded-card border px-3 py-2.5 transition-all ${!outcome ? "border-down bg-down-dim shadow-glowDown" : "border-line opacity-50 hover:opacity-80"}`}>
+              <span className="max-w-[55%] truncate font-mono text-[12px] font-bold text-down">{outLbl.no}</span>
+              <span className="font-display text-[16px] font-bold text-down tabular-nums">{100 - pct}¢</span>
+            </button>
+          </div>
+        )}
 
         <div className="mb-3">
           <div className="mb-1 font-mono text-[11px] uppercase tracking-[2px] text-ink-2">Shares (PRX)</div>
@@ -156,7 +186,7 @@ export default function PredictPanel({ market, outcome, onOutcome }: Props) {
         )}
 
         <button onClick={() => void submit()} disabled={pending || over || !connected} className="w-full rounded-card bg-up py-3 font-sans text-[15px] font-extrabold text-black shadow-glowUp transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40">
-          {pending ? "▪▪▪ broadcasting…" : `⚡ Buy ${outcome ? outLbl.yes : outLbl.no} · ${bd.maxCost} PRX max`}
+          {pending ? "▪▪▪ broadcasting…" : `⚡ Buy ${isNOutcome ? market.options[selectedOption] : (outcome ? outLbl.yes : outLbl.no)} · ${bd.maxCost} PRX max`}
         </button>
         {!connected && <div className="mt-2 text-center font-mono text-[11px] text-ink-3">connect wallet to trade</div>}
       </div>

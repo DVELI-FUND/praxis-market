@@ -193,6 +193,7 @@ export const ACTIONS: Record<string, ActionDef> = {
       { id: "b0", label: "B0 Liquidity (PRX)", type: "number", def: 60, scale: W },
       { id: "expiry", label: "Expiry", type: "datetime" },
       { id: "rules", label: "Rules / Resolution criteria", type: "text" },
+      { id: "options", label: "N-Outcome Options (optional)", type: "text", hint: "Pipe-separated labels e.g. Alice|Bob|Nobody (2-10 options); leave empty for binary YES/NO" },
       { id: "img", label: "Banner Image URL (optional)", type: "text", hint: "imgur album/page, i.imgur.com direct, or ipfs:// — auto-resolved" },
       FEE,
     ],
@@ -204,7 +205,10 @@ export const ACTIONS: Record<string, ActionDef> = {
       );
       const exp = datetimeToBlock(String(v.expiry || ""), ctx.height);
       const nonce = BigInt(Date.now()) * 1000n;
-      return encCreate(s(v, "creator"), u(v, "b0"), BigInt(exp), nonce, String(v.question ?? ""), rules);
+      const optionsRaw = String(v.options ?? "").trim();
+      const options = optionsRaw ? optionsRaw.split("|").map(o => o.trim()).filter(o => o.length > 0) : [];
+      const payoutMode = options.length >= 2 ? 0 : undefined;
+      return encCreate(s(v, "creator"), u(v, "b0"), BigInt(exp), nonce, String(v.question ?? ""), rules, options.length >= 2 ? options : undefined, payoutMode);
     },
     validate: (v) => (!String(v.question ?? "").trim() ? "Question required" : null),
   },

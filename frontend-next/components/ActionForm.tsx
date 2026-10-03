@@ -1,4 +1,5 @@
 "use client";
+import NOutcomeOptionsInput from "./NOutcomeOptionsInput";
 import { useEffect, useState , useMemo} from "react";
 import type { ActionDef, Vals } from "@/lib/actions";
 import { datetimeToBlock } from "@/lib/actions";
@@ -580,7 +581,12 @@ export default function ActionForm({ def }: { def: ActionDef }) {
       {def.fields.map((f) => (
         <div key={f.id} className="mb-2.5">
           <div className="mb-1 font-mono text-[11px] uppercase tracking-[2px] text-ink-2">{f.label}</div>
-          {f.type === "outcome" ? (
+          {f.id === "options" ? (
+            <NOutcomeOptionsInput
+              value={String(vals[f.id] ?? "")}
+              onChange={(val) => set(f.id, val)}
+            />
+          ) : f.type === "outcome" ? (
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => set(f.id, true)}

@@ -241,7 +241,13 @@ resolverFeePool.Amount   = 0
 }
 }
 
-txLogOp, pe := buildMarketTxLogOp(market, msg.MarketId, "finalize_market", msg.CallerAddr, now, proposal.ProposedOutcome, 0, 0, txHash)
+var txLogOp *PluginSetOp
+var pe *PluginError
+if isNOutcome(market) {
+txLogOp, pe = buildMarketTxLogOpN(market, msg.MarketId, "finalize_market", msg.CallerAddr, now, proposal.ProposedIndex, 0, 0, txHash)
+} else {
+txLogOp, pe = buildMarketTxLogOp(market, msg.MarketId, "finalize_market", msg.CallerAddr, now, proposal.ProposedOutcome, 0, 0, txHash)
+}
 if pe != nil { return &PluginDeliverResponse{Error: pe} }
 
 rawM, pe := SafeMarshal(market)
@@ -288,6 +294,9 @@ if pe != nil { return &PluginDeliverResponse{Error: pe} }
 // Write OutcomeState so claim_winnings can find the winning outcome.
 if proposal != nil {
 outcome := &OutcomeState{WinningOutcome: proposal.ProposedOutcome, ResolvedAt: now}
+if isNOutcome(market) {
+outcome = &OutcomeState{WinningIndex: proposal.ProposedIndex, ResolvedAt: now}
+}
 rawO, pe := SafeMarshal(outcome)
 if pe != nil { return &PluginDeliverResponse{Error: pe} }
 sets = append(sets, &PluginSetOp{Key: KeyForOutcome(msg.MarketId), Value: rawO})

@@ -63,7 +63,10 @@ func (c *Contract) DeliverMessageForfeitPosition(msg *MessageForfeitPosition, fe
 			}
 		}
 	}
-	if position == nil || (position.SharesYes == 0 && position.SharesNo == 0) {
+	if position != nil && anyShares(position.Shares) {
+return &PluginDeliverResponse{Error: ErrInvalidParam()}
+}
+if position == nil || (position.SharesYes == 0 && position.SharesNo == 0) {
 		return &PluginDeliverResponse{Error: ErrNoPosition()}
 	}
 	if account == nil {
