@@ -87,7 +87,7 @@ return &PluginDeliverResponse{Error: ErrMarketNotFound()}
 if cancelledMarket != nil {
 market = cancelledMarket
 }
-if position.SharesYes == 0 && position.SharesNo == 0 && position.CostPaid == 0 {
+if positionIsEmpty(position) {
 return &PluginDeliverResponse{Error: ErrNoPosition()}
 }
 if position.Claimed {
@@ -129,6 +129,13 @@ return &PluginDeliverResponse{Error: ErrInternal()}
 }
 finalizedAt = outcome.ResolvedAt
 
+if isNOutcome(market) {
+np, npe := payoutNOutcome(market, position, outcome)
+if npe != nil {
+return &PluginDeliverResponse{Error: npe}
+}
+payout = np
+} else {
 var winnerShares, totalWinShares uint64
 if outcome.WinningOutcome {
 winnerShares   = position.SharesYes
@@ -149,6 +156,7 @@ if market.FinalizedPoolAmount > 0 {
 poolForPayout = market.FinalizedPoolAmount
 }
 payout = ComputePayout(poolForPayout, winnerShares, totalWinShares)
+}
 }
 
 case STATUS_CANCELLED:

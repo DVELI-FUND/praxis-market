@@ -19,9 +19,6 @@ return ErrCheckResp(ErrInvalidNonce())
 if len(msg.Question) == 0 {
 return ErrCheckResp(ErrInvalidQuestion())
 }
-if pe := validateCreateExtras(msg); pe != nil {
-return ErrCheckResp(pe)
-}
 return &PluginCheckResponse{
 AuthorizedSigners: [][]byte{msg.CreatorAddress},
 }
@@ -34,10 +31,6 @@ return &PluginDeliverResponse{Error: ErrHeightNotSet()}
 }
 if msg.ExpiryTime > MAX_EXPIRY_TIME {
 return &PluginDeliverResponse{Error: ErrExpiryTooLarge()}
-}
-
-if pe := validateCreateExtras(msg); pe != nil {
-return &PluginDeliverResponse{Error: pe}
 }
 
 marketId := DeriveMarketId(msg.CreatorAddress, msg.Nonce)
@@ -156,18 +149,6 @@ Rules:         msg.Rules,
 }
 
 pool := &Pool{Id: c.Config.ChainId, Amount: lmsrSeed}
-if len(msg.Options) > 0 {
-// N-outcome: standard LMSR. q starts at 0, pool seed covers b*ln(N), 1 unit per winning share.
-nb, nerr := SeedBForN(lmsrSeed, len(msg.Options))
-if nerr != nil {
-return &PluginDeliverResponse{Error: ErrInvalidB0()}
-}
-market.Options = msg.Options
-market.Q = make([]uint64, len(msg.Options))
-market.PayoutMode = PAYOUT_MODE_STANDARD
-market.BEff = nb
-market.QYes, market.QNo = 0, 0
-}
 treasury := &TreasuryReserve{LockedReserve: FINALIZATION_BOUNTY, CreatorBond: CREATOR_BOND}
 
 txLogOp, pe := buildMarketTxLogOp(market, marketId, "create_market", msg.CreatorAddress, now, false, 0, 0, txHash)

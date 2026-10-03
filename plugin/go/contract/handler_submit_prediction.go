@@ -10,6 +10,9 @@ return ErrCheckResp(ErrInvalidParam())
 if msg.Shares < PRECISION_SCALE {
 return ErrCheckResp(ErrSharesBelowMinimum())
 }
+if msg.OutcomeIndex >= MAX_OUTCOMES {
+return ErrCheckResp(ErrInvalidParam())
+}
 if msg.MaxCost == 0 {
 return ErrCheckResp(ErrInvalidAmount())
 }
@@ -130,7 +133,13 @@ if now < market.OpenTime {
 return &PluginDeliverResponse{Error: ErrMarketNotOpen()}
 }
 
-tradeCost, pe := ComputeTradeCost(market.QYes, market.QNo, market.BEff, msg.Shares, msg.Outcome)
+var tradeCost uint64
+var pe *PluginError
+if isNOutcome(market) {
+tradeCost, pe = tradeCostNOutcome(market, msg)
+} else {
+tradeCost, pe = ComputeTradeCost(market.QYes, market.QNo, market.BEff, msg.Shares, msg.Outcome)
+}
 if pe != nil {
 return &PluginDeliverResponse{Error: pe}
 }
@@ -146,6 +155,11 @@ return &PluginDeliverResponse{Error: ErrCostExceedsMaxCost()}
 // COI-3: per-address position cap — capped on shares, not CostPaid.
 // totalSideShares is post-trade so the cap scales with actual exposure.
 var totalSideShares uint64
+if isNOutcome(market) {
+if pe := checkPositionCapN(market, position, msg); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
+} else
 if msg.Outcome {
 totalSideShares = market.QYes + msg.Shares
 if exceedsPositionCap(position.SharesYes, msg.Shares, totalSideShares) {
@@ -162,7 +176,7 @@ if bettor.Amount < finalCost {
 return &PluginDeliverResponse{Error: ErrInsufficientFunds()}
 }
 
-isNewPosition := position.SharesYes == 0 && position.SharesNo == 0 && position.CostPaid == 0
+isNewPosition := positionIsEmpty(position)
 
 bettor.Amount      -= finalCost
 mPool.Amount       += tradeCost
@@ -172,7 +186,9 @@ gTreasury.Amount += fee - feeSplit
 creatorFee.Amount  += creatorFeeAmt
 resolverFee.Amount += resolverFeeAmt
 
-if msg.Outcome {
+if isNOutcome(market) {
+applyTradeN(market, position, int(msg.OutcomeIndex), msg.Shares)
+} else if msg.Outcome {
 market.QYes += msg.Shares
 position.SharesYes += msg.Shares
 } else {
@@ -187,7 +203,12 @@ market.TotalPositions++
 
 market.ElevatedRisk = IsElevatedRisk(mPool.Amount)
 
-txLogOp, pe := buildMarketTxLogOp(market, msg.MarketId, "submit_prediction", msg.BettorAddress, now, msg.Outcome, msg.Shares, tradeCost, txHash)
+var txLogOp *PluginSetOp
+if isNOutcome(market) {
+txLogOp, pe = buildMarketTxLogOpN(market, msg.MarketId, "submit_prediction", msg.BettorAddress, now, msg.OutcomeIndex, msg.Shares, tradeCost, txHash)
+} else {
+txLogOp, pe = buildMarketTxLogOp(market, msg.MarketId, "submit_prediction", msg.BettorAddress, now, msg.Outcome, msg.Shares, tradeCost, txHash)
+}
 if pe != nil { return &PluginDeliverResponse{Error: pe} }
 
 rawMarket, pe := SafeMarshal(market)
