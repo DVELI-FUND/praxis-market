@@ -164,8 +164,11 @@ noVotes += w
 disputerWins := yesVotes > noVotes
 dispute.VoteStatus = VOTE_TALLIED
 
+// Disputer wins: the proposed outcome is overturned. There is no re-proposal path
+// (ProposalRecord is the idempotency sentinel), so the market is VOIDED and every
+// bettor refunds their cost via claim_winnings (STATUS_VOIDED path).
 if disputerWins {
-market.Status = STATUS_PROPOSED
+market.Status = STATUS_VOIDED
 }
 
 rawD, pe := SafeMarshal(dispute)
@@ -176,6 +179,88 @@ if pe != nil { return &PluginDeliverResponse{Error: pe} }
 sets := []*PluginSetOp{
 {Key: KeyForDispute(msg.MarketId), Value: rawD},
 {Key: KeyForMarket(msg.MarketId),  Value: rawM},
+}
+
+// Voided: return the disputer's bond and the creator's escrow (bond + finalization
+// reserve, mirroring cancel_market), and free the creator's open-market slot.
+if disputerWins {
+dispAccQId := nextQueryId()
+credAccQId := nextQueryId()
+reserveQId := nextQueryId()
+openCntQId := nextQueryId()
+vresp, verr := c.plugin.StateRead(c, &PluginStateReadRequest{
+Keys: []*PluginKeyRead{
+{QueryId: dispAccQId, Key: KeyForAccount(dispute.DisputerAddress)},
+{QueryId: credAccQId, Key: KeyForAccount(market.Creator)},
+{QueryId: reserveQId, Key: KeyForTreasuryReserve(msg.MarketId)},
+{QueryId: openCntQId, Key: KeyForCreatorOpenCount(market.Creator)},
+},
+})
+if verr != nil {
+return &PluginDeliverResponse{Error: verr}
+}
+if vresp.Error != nil {
+return &PluginDeliverResponse{Error: vresp.Error}
+}
+disputerAcc := &Account{}
+creatorAcc := &Account{}
+reserve := &TreasuryReserve{}
+openCount := &Pool{}
+for _, r := range vresp.Results {
+if len(r.Entries) == 0 || len(r.Entries[0].Value) == 0 {
+continue
+}
+var target interface{}
+switch r.QueryId {
+case dispAccQId:
+target = disputerAcc
+case credAccQId:
+target = creatorAcc
+case reserveQId:
+target = reserve
+case openCntQId:
+target = openCount
+default:
+continue
+}
+if pe := Unmarshal(r.Entries[0].Value, target); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
+}
+sameParty := bytesEqual(dispute.DisputerAddress, market.Creator)
+if sameParty {
+creatorAcc = disputerAcc
+}
+escrow := reserve.CreatorBond + reserve.LockedReserve
+if escrow < reserve.CreatorBond || disputerAcc.Amount > ^uint64(0)-dispute.DisputeBond {
+return &PluginDeliverResponse{Error: ErrInvalidAmount()}
+}
+disputerAcc.Amount += dispute.DisputeBond
+if creatorAcc.Amount > ^uint64(0)-escrow {
+return &PluginDeliverResponse{Error: ErrInvalidAmount()}
+}
+creatorAcc.Amount += escrow
+reserve.CreatorBond = 0
+reserve.LockedReserve = 0
+if openCount.Amount > 0 {
+openCount.Amount--
+}
+rawDispAcc, pe := SafeMarshal(disputerAcc)
+if pe != nil { return &PluginDeliverResponse{Error: pe} }
+rawReserve, pe := SafeMarshal(reserve)
+if pe != nil { return &PluginDeliverResponse{Error: pe} }
+rawOpen, pe := SafeMarshal(openCount)
+if pe != nil { return &PluginDeliverResponse{Error: pe} }
+sets = append(sets,
+&PluginSetOp{Key: KeyForAccount(dispute.DisputerAddress), Value: rawDispAcc},
+&PluginSetOp{Key: KeyForTreasuryReserve(msg.MarketId), Value: rawReserve},
+&PluginSetOp{Key: KeyForCreatorOpenCount(market.Creator), Value: rawOpen},
+)
+if !sameParty {
+rawCredAcc, pe := SafeMarshal(creatorAcc)
+if pe != nil { return &PluginDeliverResponse{Error: pe} }
+sets = append(sets, &PluginSetOp{Key: KeyForAccount(market.Creator), Value: rawCredAcc})
+}
 }
 
 // PRIS v1.0-r3: if proposer wins dispute, RRS +20 and increment GlobalStats

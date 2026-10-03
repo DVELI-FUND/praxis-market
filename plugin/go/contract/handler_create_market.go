@@ -90,6 +90,9 @@ if pe := Unmarshal(r.Entries[0].Value, feePool); pe != nil {
 return &PluginDeliverResponse{Error: pe}
 }
 		case gTreasuryQId:
+			if pe := Unmarshal(r.Entries[0].Value, gTreasury); pe != nil {
+				return &PluginDeliverResponse{Error: pe}
+			}
 		case ocQId:
 			if len(r.Entries) > 0 && len(r.Entries[0].Value) > 0 {
 				_ = Unmarshal(r.Entries[0].Value, openCount)
@@ -98,9 +101,6 @@ return &PluginDeliverResponse{Error: pe}
 			if pe := Unmarshal(r.Entries[0].Value, midx); pe != nil {
 				return &PluginDeliverResponse{Error: pe}
 			}
-		if pe := Unmarshal(r.Entries[0].Value, gTreasury); pe != nil {
-		return &PluginDeliverResponse{Error: pe}
-		}
 	}
 }
 

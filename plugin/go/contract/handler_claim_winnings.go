@@ -95,6 +95,7 @@ return &PluginDeliverResponse{Error: ErrAlreadyClaimed()}
 }
 
 var payout uint64
+var finalizedAt uint64
 cancelTreasury := &TreasuryReserve{}
 switch market.Status {
 case STATUS_FINALIZED:
@@ -126,6 +127,7 @@ return &PluginDeliverResponse{Error: pe}
 if outcome == nil {
 return &PluginDeliverResponse{Error: ErrInternal()}
 }
+finalizedAt = outcome.ResolvedAt
 
 var winnerShares, totalWinShares uint64
 if outcome.WinningOutcome {
@@ -216,10 +218,18 @@ resolutionDelay = TEST_RESOLUTION_DELAY
 gracePeriod     = TEST_GRACE_PERIOD
 claimGrace      = TEST_CLAIM_GRACE_PERIOD
 }
-graceEnd    := market.ExpiryTime + resolutionDelay + gracePeriod + claimGrace
-shouldSweep := (market.Status == STATUS_FINALIZED &&
-(market.TotalPositions > 0 && market.ClaimedCount == market.TotalPositions || now > graceEnd)) ||
-(market.Status == STATUS_CANCELLED && now > graceEnd)
+_ = resolutionDelay
+_ = gracePeriod
+// The claim window is measured from finalization (OutcomeState.ResolvedAt), not from
+// expiry: finalization only happens after the dispute window, so an expiry-based
+// deadline has always already passed and the first claim swept everyone else's payout.
+// Cancelled/voided markets have no resolution height, so they sweep only once every
+// position has been claimed.
+allClaimed := market.TotalPositions > 0 && market.ClaimedCount == market.TotalPositions
+shouldSweep := allClaimed && (market.Status == STATUS_FINALIZED || market.Status == STATUS_CANCELLED || market.Status == STATUS_VOIDED)
+if market.Status == STATUS_FINALIZED && finalizedAt > 0 && now > finalizedAt+claimGrace {
+shouldSweep = true
+}
 
 sets := []*PluginSetOp{
 {Key: posKey,    Value: rawPos},
