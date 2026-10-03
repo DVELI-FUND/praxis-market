@@ -8,6 +8,7 @@ import { queryAccount } from "@/lib/rpc";
 import { b64ToHex, fmtPRX } from "@/lib/format";
 import { useMarkets } from "@/hooks/useMarkets";
 import { stripCatPrefix, yesPct, extractCat, STATUS } from "@/lib/markets";
+import { nPositionValue, topShareIndex } from "@/lib/nOutcome";
 import { ACTIONS } from "@/lib/actions";
 import ActionForm from "@/components/ActionForm";
 import LogoMark from "@/components/LogoMark";
@@ -59,6 +60,9 @@ const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
     return positions.map((pos) => {
       const market = markets.find((m) => m.marketId === pos.marketId);
       if (!market) return { ...pos, market: null, value: 0n, cat: "other" };
+      if (market.options.length > 0) {
+        return { ...pos, market, value: nPositionValue(pos.shares, market.q, market.b0), cat: extractCat(market.rules) };
+      }
       const pct = yesPct(market);
       const value = (pos.sharesYes * BigInt(pct)) / 100n + (pos.sharesNo * BigInt(100 - pct)) / 100n;
       return { ...pos, market, value, cat: extractCat(market.rules) };
@@ -257,8 +261,9 @@ const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
                 const costPaid = BigInt(Math.round(Number(pos.costPaid || 0)));
                 const pnl = pos.value - costPaid;
                 const pnlPct = costPaid > 0n ? Number((pnl * 10000n) / costPaid) / 100 : 0;
-                const held = pos.sharesYes >= pos.sharesNo ? "YES" : "NO";
-                const shares = pos.sharesYes >= pos.sharesNo ? pos.sharesYes : pos.sharesNo;
+                const topIdx = pos.market.options.length > 0 ? topShareIndex(pos.shares) : -1;
+                const held = topIdx >= 0 ? pos.market.options[topIdx] ?? `#${topIdx + 1}` : pos.sharesYes >= pos.sharesNo ? "YES" : "NO";
+                const shares = topIdx >= 0 ? pos.shares[topIdx] : pos.sharesYes >= pos.sharesNo ? pos.sharesYes : pos.sharesNo;
                 const status = pos.market.status === STATUS.LIVE ? "LIVE" : "ENDED";
 
                 return (
@@ -288,7 +293,7 @@ const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
                         </div>
                         <div className="flex items-center gap-4 font-mono text-[12px] text-ink-3">
                           <span>
-                            <b className={held === "YES" ? "text-up" : "text-down"}>{held}</b> {fmtPRX(shares)} shares
+                            <b className={held === "NO" ? "text-down" : "text-up"}>{held}</b> {fmtPRX(shares)} shares
                           </span>
                           <span>Value <b className="text-ink tabular-nums">{fmtNum(pos.value)}</b></span>
                         </div>

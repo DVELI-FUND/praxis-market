@@ -8,6 +8,7 @@ import LogoMark from "@/components/LogoMark";
 import WalletPill from "@/components/WalletPill";
 import { b64ToHex, fmtPRX } from "@/lib/format";
 import { yesPct, stripCatPrefix } from "@/lib/markets";
+import { nPositionValue, topShareIndex } from "@/lib/nOutcome";
 
 interface Position {
   marketId: string;
@@ -76,6 +77,9 @@ const { data: positions = [] } = usePositions();const { data: balance = 0n } = u
   const enriched = positions.map((pos) => {
     const market = markets.find((m) => m.marketId === pos.marketId);
     if (!market) return { ...pos, market: null, value: 0n };
+    if (market.options.length > 0) {
+      return { ...pos, market, value: nPositionValue(pos.shares, market.q, market.b0) };
+    }
     const pct = yesPct(market);
     const yesValue = (pos.sharesYes * BigInt(pct)) / 100n;
     const noValue = (pos.sharesNo * BigInt(100 - pct)) / 100n;
@@ -134,6 +138,9 @@ const { data: positions = [] } = usePositions();const { data: balance = 0n } = u
               );
             }
             const pct = yesPct(pos.market);
+            const isN = pos.market.options.length > 0;
+            const topIdx = isN ? topShareIndex(pos.shares) : -1;
+            const topLabel = isN && topIdx >= 0 ? pos.market.options[topIdx] ?? `#${topIdx + 1}` : "";
             const question = stripCatPrefix(pos.market.question || pos.market.rules || "");
             return (
               <a
@@ -146,12 +153,21 @@ const { data: positions = [] } = usePositions();const { data: balance = 0n } = u
                 </div>
                 <div className="flex items-center justify-between font-mono text-[12px]">
                   <div className="flex gap-3">
-                    <span className="text-ink-3">
-                      YES <b className="text-up">{fmtPRX(pos.sharesYes)}</b>
-                    </span>
-                    <span className="text-ink-3">
-                      NO <b className="text-down">{fmtPRX(pos.sharesNo)}</b>
-                    </span>
+                    {isN ? (
+                      <span className="text-ink-3">
+                        {topLabel} <b className="text-up">{topIdx >= 0 ? fmtPRX(pos.shares[topIdx]) : "0"}</b>
+                        {pos.shares.filter((v) => v > 0n).length > 1 ? ` +${pos.shares.filter((v) => v > 0n).length - 1} more` : ""}
+                      </span>
+                    ) : (
+                      <>
+                        <span className="text-ink-3">
+                          YES <b className="text-up">{fmtPRX(pos.sharesYes)}</b>
+                        </span>
+                        <span className="text-ink-3">
+                          NO <b className="text-down">{fmtPRX(pos.sharesNo)}</b>
+                        </span>
+                      </>
+                    )}
                   </div>
                   <div className="text-right">
                     <div className="text-[11px] text-ink-3">Value</div>
@@ -160,7 +176,7 @@ const { data: positions = [] } = usePositions();const { data: balance = 0n } = u
                 </div>
                 <div className="mt-1 flex items-center justify-between font-mono text-[11px] text-ink-3">
                   <span>{pos.market.status}</span>
-                  <span className="tabular-nums">YES {pct}%</span>
+                  <span className="tabular-nums">{isN ? `${pos.market.options.length} options` : `YES ${pct}%`}</span>
                 </div>
               </a>
             );
