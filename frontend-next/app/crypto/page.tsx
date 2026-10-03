@@ -1,6 +1,9 @@
 "use client";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { isMasterAuthority } from "@/lib/genesis";
+import { useWallet } from "@/store/wallet";
 import { fetchMarkets, extractCat, isCancelled } from "@/lib/markets";
 import { CATS_TREE, parseSub } from "@/lib/cats";
 import CatIcon from "@/components/icons/CatIcon";
@@ -8,6 +11,8 @@ import MarketCard from "@/components/MarketCard";
 
 export default function CryptoPage() {
   const [sub, setSub] = useState("");
+  const { praxisAddress } = useWallet();
+  const isMaster = isMasterAuthority(praxisAddress);
   const { data: ms = [] } = useQuery({ queryKey: ["markets-crypto"], queryFn: fetchMarkets, staleTime: 15000 });
 
   const all = useMemo(() => ms.filter((m) => extractCat(m.rules) === "crypto" && !isCancelled(m)), [ms]);
@@ -59,8 +64,15 @@ export default function CryptoPage() {
             ))}
           </div>
           {filtered.length === 0 && (
-            <div className="rounded-card border border-line bg-surface p-8 text-center font-mono text-[15px] text-ink-3">
-              No crypto markets yet
+            <div className="rounded-card border border-line bg-surface p-8 text-center">
+              <div className="mb-3 font-mono text-[14px] text-ink-3">
+                No crypto markets yet
+              </div>
+              {isMaster && (
+                <Link href="/action/create" className="inline-flex items-center gap-2 rounded-card bg-up px-4 py-2 font-mono text-[13px] font-bold text-black transition-all hover:bg-up/90">
+                  <span>+</span> Create Crypto Market
+                </Link>
+              )}
             </div>
           )}
         </div>
