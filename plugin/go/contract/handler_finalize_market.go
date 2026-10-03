@@ -214,10 +214,8 @@ proposerAcc.Amount     += bondReturn
 // Return creator bond on successful finalization.
 if treasury.CreatorBond > 0 {
 creatorAcc.Amount += treasury.CreatorBond
-// Strip bond from pool before snapshotting — bettor payouts exclude it.
-if marketPool.Amount >= treasury.CreatorBond {
-marketPool.Amount -= treasury.CreatorBond
-}
+// The bond is escrowed in TreasuryReserve, never inside the market pool,
+// so the pool snapshot below must not be reduced by it.
 treasury.CreatorBond = 0
 }
 
