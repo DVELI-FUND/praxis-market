@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchMarket, fetchDisputeContext, fetchPosition } from "@/lib/detail";
 import { useHeight } from "@/hooks/useHeight";
 import { fmtPRX } from "@/lib/format";
+import { nPrices } from "@/lib/nOutcome";
 
 const ELEVATED = 25000000000n; // 25,000 PRX in uPRX
 
@@ -33,7 +34,9 @@ export default function ResolutionPlanner({ mid, mode, wallet, bondValue = 0, on
   });
 
   const m = marketQ.data;
-  const pool = m ? m.qYes + m.qNo : 0n;
+  const isNOutcome = m && m.options && m.options.length > 0;
+  const nPricesArr = isNOutcome && m && m.q && m.b0 ? nPrices(m.q, m.b0) : [];
+  const pool = m ? (isNOutcome ? m.q.reduce((a, b) => a + b, 0n) : m.qYes + m.qNo) : 0n;
   const poolNum = Number(pool / 1000000n);
   const minBond = Math.max(poolNum * 0.01, 60);
   const elevated = pool >= ELEVATED;

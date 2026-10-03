@@ -119,8 +119,12 @@ export function encReclaim(mid: string, claimant: string): Uint8Array {
 export function encRegister(addr: string, stake: bigint | number): Uint8Array {
   return cat(bf(1, h2b(addr)), vf(2, stake));
 }
-export function encPropose(mid: string, resolver: string, outcome: boolean, bond: bigint | number): Uint8Array {
-  return cat(bf(1, h2b(mid)), bf(2, h2b(resolver)), boolF(3, outcome), vf(4, bond));
+export function encPropose(mid: string, resolver: string, outcome: boolean, bond: bigint | number, proposedIndex?: number): Uint8Array {
+  const parts = [bf(1, h2b(mid)), bf(2, h2b(resolver)), boolF(3, outcome), vf(4, bond)];
+  if (proposedIndex !== undefined && proposedIndex >= 0) {
+    parts.push(vf(5, proposedIndex));
+  }
+  return cat(...parts);
 }
 export function encDispute(mid: string, addr: string, bond: bigint | number): Uint8Array {
   return cat(bf(1, h2b(mid)), bf(2, h2b(addr)), vf(3, bond));

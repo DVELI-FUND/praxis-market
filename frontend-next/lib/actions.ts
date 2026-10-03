@@ -115,8 +115,13 @@ export const ACTIONS: Record<string, ActionDef> = {
   },
   propose: {
     key: "propose", msgType: "propose_outcome", planner: "propose",  title: "Propose Outcome", eye: "Resolver", sub: "Submit your resolution after market expiry", gate: "resolver",
-    fields: [ MID, { id: "addr", label: "Resolver Address", type: "wallet" }, { id: "out", label: "Proposed Outcome", type: "outcome" }, { id: "bond", label: "Proposal Bond (PRX)", type: "number", def: 60, scale: W }, FEE ],
-    build: (v) => encPropose(s(v, "mid"), s(v, "addr"), b(v, "out"), u(v, "bond")),
+    fields: [ MID, { id: "addr", label: "Resolver Address", type: "wallet" }, { id: "out", label: "Proposed Outcome (binary)", type: "outcome" },
+      { id: "outcome_index", label: "Option Index (N-outcome only)", type: "number", hint: "0-based index for N-outcome markets; leave empty for binary" }, { id: "bond", label: "Proposal Bond (PRX)", type: "number", def: 60, scale: W }, FEE ],
+    build: (v) => {
+      const idxRaw = String(v.outcome_index ?? "").trim();
+      const idx = idxRaw !== "" ? parseInt(idxRaw, 10) : undefined;
+      return encPropose(s(v, "mid"), s(v, "addr"), b(v, "out"), u(v, "bond"), idx);
+    },
   },
   dispute: {
     key: "dispute", msgType: "file_dispute", planner: "dispute",  title: "File Dispute", eye: "Resolver", sub: "Challenge a proposed outcome during the dispute window", gate: "resolver",
@@ -190,11 +195,11 @@ export const ACTIONS: Record<string, ActionDef> = {
       { id: "question", label: "Question", type: "text" },
       { id: "out_yes", label: "Custom YES label (optional)", type: "text" },
       { id: "out_no", label: "Custom NO label (optional)", type: "text" },
+      { id: "options", label: "Outcome options", type: "text" },
       { id: "creator", label: "Creator Address", type: "wallet" },
       { id: "b0", label: "B0 Liquidity (PRX)", type: "number", def: 60, scale: W },
       { id: "expiry", label: "Expiry", type: "datetime" },
       { id: "rules", label: "Rules / Resolution criteria", type: "text" },
-      { id: "options", label: "Outcome options", type: "text" },
       { id: "img", label: "Banner Image URL (optional)", type: "text", hint: "imgur album/page, i.imgur.com direct, or ipfs:// — auto-resolved" },
       FEE,
     ],
