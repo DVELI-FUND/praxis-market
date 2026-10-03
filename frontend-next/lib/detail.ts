@@ -12,12 +12,15 @@ export interface MarketDetail {
   status: number;
   qYes: bigint;
   qNo: bigint;
+  options: string[];
+  q: bigint[];
 }
 
 export interface Holder {
   address: string;
   sharesYes: bigint;
   sharesNo: bigint;
+  shares: bigint[]; // N-outcome per-option shares ([] for legacy)
   costPaid: bigint;
   claimed: boolean;
 }
@@ -79,6 +82,8 @@ export interface MarketActivity {
   shares?: bigint;
   proposedOutcome?: boolean;
   b0?: bigint;
+  outcomeIndex?: number; // N-outcome markets only
+  proposedIndex?: number;
 }
 
 async function pluginFetch<T>(path: string): Promise<T> {
@@ -100,7 +105,7 @@ async function pluginFetch<T>(path: string): Promise<T> {
 }
 
 export async function fetchMarket(mid: string): Promise<MarketDetail> {
-  const raw = await pluginFetch<{ id: string; market: { q_yes: string; q_no: string; expiry_time: string; status: number; question: string; rules: string; creator: string; b_eff: string } }>(`/v1/query/markets?id=${encodeURIComponent(mid)}`);
+  const raw = await pluginFetch<{ id: string; market: { q_yes: string; q_no: string; expiry_time: string; status: number; question: string; rules: string; creator: string; b_eff: string; options?: string[]; q?: (string | number)[] } }>(`/v1/query/markets?id=${encodeURIComponent(mid)}`);
   const mk = raw.market;
   return {
     marketId: raw.id,
@@ -112,15 +117,18 @@ export async function fetchMarket(mid: string): Promise<MarketDetail> {
     status: mk.status ?? 0,
     qYes: BigInt(mk.q_yes || 0),
     qNo: BigInt(mk.q_no || 0),
+    options: Array.isArray(mk.options) ? mk.options : [],
+    q: (mk.q || []).map((v) => BigInt(v || 0)),
   };
 }
 
 export async function fetchHolders(mid: string): Promise<Holder[]> {
-  const raw = await pluginFetch<{ address: string; sharesYes: number; sharesNo: number; costPaid: number; claimed: boolean }[]>(`/v1/query/positions?market=${encodeURIComponent(mid)}`);
+  const raw = await pluginFetch<{ address: string; sharesYes: number; sharesNo: number; shares?: number[]; costPaid: number; claimed: boolean }[]>(`/v1/query/positions?market=${encodeURIComponent(mid)}`);
   return raw.map((h) => ({
     address: h.address,
     sharesYes: BigInt(h.sharesYes || 0),
     sharesNo: BigInt(h.sharesNo || 0),
+    shares: (h.shares || []).map((v) => BigInt(v || 0)),
     costPaid: BigInt(h.costPaid || 0),
     claimed: h.claimed,
   }));
@@ -149,6 +157,8 @@ export async function fetchMarketActivity(mid: string, holders: Holder[]): Promi
       shares: BigInt(tx.transaction?.msg?.shares || 0),
       proposedOutcome: tx.transaction?.msg?.proposedOutcome === true || tx.transaction?.msg?.proposedOutcome === "true",
       b0: BigInt(0),
+      outcomeIndex: Number(tx.transaction?.msg?.outcomeIndex ?? 0),
+      proposedIndex: Number(tx.transaction?.msg?.proposedIndex ?? 0),
       cost: BigInt(tx.cost || 0),
     }));
   } catch {
@@ -159,19 +169,21 @@ export async function fetchMarketActivity(mid: string, holders: Holder[]): Promi
 export async function fetchPosition(
   mid: string,
   addr: string
-): Promise<{ yes: bigint; no: bigint }> {
+): Promise<{ yes: bigint; no: bigint; shares: bigint[] }> {
   const raw = await pluginFetch<{
     position?: {
       shares_yes?: number | string;
       sharesYes?: number | string;
       shares_no?: number | string;
       sharesNo?: number | string;
+      shares?: (number | string)[];
     } | null;
   }>(`/v1/query/position?market=${encodeURIComponent(mid)}&address=${encodeURIComponent(addr)}`);
   const p = raw.position;
-  if (!p) return { yes: 0n, no: 0n };
+  if (!p) return { yes: 0n, no: 0n, shares: [] };
   return {
     yes: BigInt(p.shares_yes ?? p.sharesYes ?? 0),
     no: BigInt(p.shares_no ?? p.sharesNo ?? 0),
+    shares: (p.shares || []).map((v) => BigInt(v || 0)),
   };
 }

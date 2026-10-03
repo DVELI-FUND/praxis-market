@@ -1,6 +1,7 @@
 import { b64ToHex } from "@/lib/format";
 import { getPluginRPC, queryHeight } from "@/lib/rpc";
 import { isHiddenMarket } from "@/lib/hiddenMarkets";
+import { nPrices } from "@/lib/nOutcome";
 
 export const CLOSED_WINDOW = 20000; // blocks — from Frontend/markets.js
 
@@ -26,6 +27,8 @@ export interface Market {
   status: number;
   qYes: bigint;
   qNo: bigint;
+  options: string[]; // N-outcome labels; [] = legacy binary market
+  q: bigint[]; // shares outstanding per option (N-outcome only)
   openTime: number;
   txCount: number;
 }
@@ -35,6 +38,8 @@ interface RawMarketEntry {
   market?: {
     q_yes?: string | number;
     q_no?: string | number;
+    options?: string[];
+    q?: (string | number)[];
     expiry_time?: string | number;
     status?: number | null;
     question?: string;
@@ -72,6 +77,8 @@ export async function fetchMarkets(): Promise<Market[]> {
     const mk = entry.market || {};
     const qYes = BigInt(mk.q_yes || 0);
     const qNo = BigInt(mk.q_no || 0);
+    const options = Array.isArray(mk.options) ? mk.options : [];
+    const q = (mk.q || []).map((v) => BigInt(v || 0));
     const expiry = BigInt(mk.expiry_time || 0);
     let status = mk.status !== undefined && mk.status !== null ? Number(mk.status) : 0;
     if (status === 0 && expiry && currentHeight > Number(expiry)) status = STATUS.AWAITING;
@@ -85,6 +92,8 @@ export async function fetchMarkets(): Promise<Market[]> {
       status,
       qYes,
       qNo,
+      options,
+      q,
       openTime: Number(mk.open_time || 0),
       txCount: Number(mk.tx_count || 0),
     };
@@ -154,7 +163,7 @@ export function filterByTab(markets: Market[], tab: TabKey): Market[] {
 export function sortMarkets(markets: Market[], sort: SortKey): Market[] {
   const arr = [...markets];
   if (sort === "vol") {
-    arr.sort((a, b) => Number(b.qYes + b.qNo - (a.qYes + a.qNo)));
+    arr.sort((a, b) => Number(totalShares(b) - totalShares(a)));
   } else if (sort === "expiry" || sort === "closing") {
     arr.sort((a, b) => Number(a.expiry - b.expiry));
   } else if (sort === "yes") {
@@ -171,7 +180,17 @@ export function sortMarkets(markets: Market[], sort: SortKey): Market[] {
   return arr;
 }
 
-export function yesPct(m: { qYes: bigint; qNo: bigint }): number {
+export function isNMarket(m: { options?: string[] }): boolean {
+  return !!m.options && m.options.length > 0;
+}
+
+export function totalShares(m: { qYes: bigint; qNo: bigint; q?: bigint[] }): bigint {
+  return m.q && m.q.length ? m.q.reduce((s, v) => s + v, 0n) : m.qYes + m.qNo;
+}
+
+// Legacy: YES percentage. N-outcome: percentage of option 0 (sort helper only; UIs show every option).
+export function yesPct(m: { qYes: bigint; qNo: bigint; options?: string[]; q?: bigint[]; b0?: bigint }): number {
+  if (m.options && m.options.length > 0 && m.q && m.b0) return Math.round(nPrices(m.q, m.b0)[0] * 100);
   const total = m.qYes + m.qNo;
   return total > 0n ? Number((m.qYes * 100n) / total) : 50;
 }
@@ -180,3 +199,5 @@ export function yesPct(m: { qYes: bigint; qNo: bigint }): number {
 export function isCancelled(m: Market): boolean {
   return m.status === STATUS.CANCELLED || m.status === STATUS.VOIDED;
 }
+
+export { nPrices } from "@/lib/nOutcome";

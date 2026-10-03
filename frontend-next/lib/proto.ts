@@ -49,14 +49,66 @@ export function encAny(typeUrl: string, inner: Uint8Array): Uint8Array {
   return cat(sf(1, typeUrl), bf(2, inner));
 }
 
+// Encode repeated string field (each element is a separate length-delimited field)
+export function ssf(f: number, strings: string[]): Uint8Array {
+  if (!strings || !strings.length) return new Uint8Array(0);
+  const parts: Uint8Array[] = [];
+  for (const s of strings) {
+    if (!s || !s.length) continue;
+    const e = new TextEncoder().encode(s);
+    parts.push(cat(tag(f, 2), encV(e.length), e));
+  }
+  return cat(...parts);
+}
+
 export function encSend(from: string, to: string, amt: bigint | number): Uint8Array {
   return cat(bf(1, h2b(from)), bf(2, h2b(to)), vf(3, amt));
 }
-export function encCreate(creator: string, b0: bigint | number, expiry: bigint | number, nonce: bigint | number, question: string, rules: string): Uint8Array {
-  return cat(bf(1, h2b(creator)), vf(2, b0), vf(3, expiry), vf(4, nonce), sf(5, question), sf(6, rules || ""));
+export function encCreate(
+  creator: string,
+  b0: bigint | number,
+  expiry: bigint | number,
+  nonce: bigint | number,
+  question: string,
+  rules: string,
+  options?: string[],
+  payoutMode?: number
+): Uint8Array {
+  const parts = [
+    bf(1, h2b(creator)),
+    vf(2, b0),
+    vf(3, expiry),
+    vf(4, nonce),
+    sf(5, question),
+    sf(6, rules || ""),
+  ];
+  if (options && options.length >= 2) {
+    parts.push(ssf(7, options));
+  }
+  if (payoutMode !== undefined && payoutMode !== 0) {
+    parts.push(vf(8, payoutMode));
+  }
+  return cat(...parts);
 }
-export function encPredict(mid: string, bettor: string, outcome: boolean, shares: bigint | number, maxcost: bigint | number): Uint8Array {
-  return cat(bf(1, h2b(mid)), bf(2, h2b(bettor)), boolF(3, outcome), vf(4, shares), vf(5, maxcost));
+export function encPredict(
+  mid: string,
+  bettor: string,
+  outcome: boolean,
+  shares: bigint | number,
+  maxcost: bigint | number,
+  outcomeIndex?: number
+): Uint8Array {
+  const parts = [
+    bf(1, h2b(mid)),
+    bf(2, h2b(bettor)),
+    boolF(3, outcome),
+    vf(4, shares),
+    vf(5, maxcost),
+  ];
+  if (outcomeIndex !== undefined && outcomeIndex >= 0) {
+    parts.push(vf(6, outcomeIndex));
+  }
+  return cat(...parts);
 }
 export function encClaim(mid: string, claimant: string): Uint8Array {
   return cat(bf(1, h2b(mid)), bf(2, h2b(claimant)));
@@ -171,4 +223,3 @@ export function encClaimGenesisInvestor(): Uint8Array {
 export function encClaimGenesisFoundation(): Uint8Array {
   return new Uint8Array(0);
 }
-
