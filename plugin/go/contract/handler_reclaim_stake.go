@@ -120,24 +120,38 @@ refund += position.CostPaid
 }
 }
 
-// Creator gets TreasuryReserve (FINALIZATION_BOUNTY) back — no resolver showed up
-if bytesEqual(msg.ClaimantAddress, market.Creator) && treasury.LockedReserve > 0 {
-refund += treasury.LockedReserve
+// Creator escrow. LockedReserve (and CreatorBond) live in TreasuryReserve, NOT in the
+// market pool, so they must be paid from that escrow and never deducted from the pool
+// (the old code drained the pool by the reserve and destroyed the escrow).
+isCreator := bytesEqual(msg.ClaimantAddress, market.Creator)
+posRefund := refund // pool-funded part: this claimant's own position cost
+var escrow, seed uint64
+if isCreator {
+escrow = treasury.LockedReserve
+if market.TotalPositions == 0 {
+// Nobody ever bet: no victims, so the creator recovers bond + LMSR seed
+// (same outcome as cancel_market on an empty market).
+escrow += treasury.CreatorBond
+seed = marketPool.Amount
 }
+}
+refund = posRefund + escrow + seed
 
 if refund == 0 {
 return &PluginDeliverResponse{Error: ErrNoStakeToReclaim()}
 }
-if refund > marketPool.Amount {
+if posRefund+seed > marketPool.Amount {
 return &PluginDeliverResponse{Error: ErrInsufficientPoolFunds()}
 }
 
 // Mutate in memory
 claimantAcc.Amount += refund
-marketPool.Amount  -= refund
-isCreator := bytesEqual(msg.ClaimantAddress, market.Creator)
+marketPool.Amount  -= posRefund + seed
 if isCreator {
 treasury.LockedReserve = 0
+if market.TotalPositions == 0 {
+treasury.CreatorBond = 0
+}
 }
 
 // Marshal all

@@ -43,6 +43,7 @@ resolverFeeQId := nextQueryId()
 gTreasuryQId  := nextQueryId()
 	ocQId         := nextQueryId()
 feeQId        := nextQueryId()
+	poolQId       := nextQueryId()
 
 marketKey      := KeyForMarket(msg.MarketId)
 treasKey       := KeyForTreasuryReserve(msg.MarketId)
@@ -52,6 +53,7 @@ resolverFeeKey := KeyForResolverFeePool(msg.MarketId)
 gTreasuryKey   := KeyForTreasuryPool()
 	ocKey         := KeyForCreatorOpenCount(msg.CreatorAddress)
 feePoolKey     := KeyForFeePool(c.Config.ChainId)
+	poolKey        := KeyForMarketPool(msg.MarketId)
 
 resp, err := c.plugin.StateRead(c, &PluginStateReadRequest{
 Keys: []*PluginKeyRead{
@@ -63,6 +65,7 @@ Keys: []*PluginKeyRead{
 {QueryId: gTreasuryQId,   Key: gTreasuryKey},
 			{QueryId: ocQId,  Key: ocKey},
 {QueryId: feeQId,         Key: feePoolKey},
+			{QueryId: poolQId,        Key: poolKey},
 },
 })
 if err != nil {
@@ -80,6 +83,7 @@ resolverFee := &Pool{}
 gTreasury   := &Pool{}
 	openCount   := Pool{}
 feePool     := &Pool{}
+	marketPool  := &Pool{}
 
 for _, r := range resp.Results {
 if len(r.Entries) == 0 || len(r.Entries[0].Value) == 0 {
@@ -119,6 +123,10 @@ case feeQId:
 if pe := Unmarshal(r.Entries[0].Value, feePool); pe != nil {
 return &PluginDeliverResponse{Error: pe}
 }
+case poolQId:
+if pe := Unmarshal(r.Entries[0].Value, marketPool); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
 }
 }
 
@@ -128,9 +136,8 @@ return &PluginDeliverResponse{Error: ErrMarketNotFound()}
 if market.Status != STATUS_OPEN {
 return &PluginDeliverResponse{Error: ErrMarketNotOpen()}
 }
-if now >= market.ExpiryTime {
-return &PluginDeliverResponse{Error: ErrMarketExpired()}
-}
+// No expiry check: an empty OPEN market may be cancelled by its creator after expiry,
+// otherwise bond + seed are stuck forever (nobody can claim with zero positions).
 if !bytesEqual(msg.CreatorAddress, market.Creator) {
 return &PluginDeliverResponse{Error: ErrUnauthorized()}
 }
@@ -141,13 +148,21 @@ return &PluginDeliverResponse{Error: ErrMarketHasPositions()}
 
 // ── Compute refund ────────────────────────────────────────────────────
 // Creator gets back: CreatorBond + LockedReserve (finalization bounty)
-refund := treas.CreatorBond + treas.LockedReserve
+// Zero positions => the LMSR seed in the pool belongs to the creator.
+refund := treas.CreatorBond + treas.LockedReserve + marketPool.Amount
 
 // ── Mutate ────────────────────────────────────────────────────────────
 market.Status       = STATUS_CANCELLED
 treas.CreatorBond   = 0
 treas.LockedReserve = 0
+marketPool.Amount   = 0
 creatorAcc.Amount  += refund
+// Fee: every other handler (send, create, claim) debits the fee from the signer.
+// Cancel credited the fee split to the treasury/fee pools without debiting anyone.
+if creatorAcc.Amount < fee {
+return &PluginDeliverResponse{Error: ErrInsufficientFunds()}
+}
+creatorAcc.Amount -= fee
 
 // Sweep creator fee pool + resolver fee pool to global treasury
 gTreasury.Amount   += creatorFee.Amount + resolverFee.Amount
@@ -184,6 +199,8 @@ rawOC, pe := SafeMarshal(&openCount)
 if pe != nil { return &PluginDeliverResponse{Error: pe} }
 rawFee, pe := SafeMarshal(feePool)
 if pe != nil { return &PluginDeliverResponse{Error: pe} }
+rawPool, pe := SafeMarshal(marketPool)
+if pe != nil { return &PluginDeliverResponse{Error: pe} }
 
 // ── 7-key atomic write ────────────────────────────────────────────────
 wr, werr := c.plugin.StateWrite(c, &PluginStateWriteRequest{
@@ -196,6 +213,7 @@ Sets: []*PluginSetOp{
 {Key: ocKey,         Value: rawOC},
 		{Key: gTreasuryKey,   Value: rawGTreasury},
 {Key: feePoolKey,     Value: rawFee},
+{Key: poolKey,        Value: rawPool},
 txLogOp,
 },
 })
