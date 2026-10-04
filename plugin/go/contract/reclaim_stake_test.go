@@ -4,6 +4,7 @@ import "testing"
 
 // Empty market abandoned past the reclaim window: creator recovers everything.
 func TestReclaimEmptyMarketRefundsCreator(t *testing.T) {
+prevFix := AUDIT_FIX_HEIGHT; AUDIT_FIX_HEIGHT = 0; t.Cleanup(func() { AUDIT_FIX_HEIGHT = prevFix })
 c, fc := newTestChain(t)
 creator := addr(0xA1)
 const start = 100_000_000_000
@@ -28,6 +29,7 @@ t.Fatalf("pool left %d", p)
 
 // Market with bettors: creator's reserve must come from escrow, NOT from the pool.
 func TestReclaimDoesNotDrainPoolForReserve(t *testing.T) {
+prevFix := AUDIT_FIX_HEIGHT; AUDIT_FIX_HEIGHT = 0; t.Cleanup(func() { AUDIT_FIX_HEIGHT = prevFix })
 c, fc := newTestChain(t)
 mid, creator := addr(0x07), addr(0xA1)
 const pool = 6_000_000_000

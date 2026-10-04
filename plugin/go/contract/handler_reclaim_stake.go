@@ -120,36 +120,44 @@ refund += position.CostPaid
 }
 }
 
-// Creator escrow. LockedReserve (and CreatorBond) live in TreasuryReserve, NOT in the
-// market pool, so they must be paid from that escrow and never deducted from the pool
-// (the old code drained the pool by the reserve and destroyed the escrow).
+gated := auditFixActive(now)
 isCreator := bytesEqual(msg.ClaimantAddress, market.Creator)
 posRefund := refund // pool-funded part: this claimant's own position cost
-var escrow, seed uint64
+var seed uint64
+if gated {
+// LockedReserve / CreatorBond live in TreasuryReserve, never in the market pool.
+var escrow uint64
 if isCreator {
 escrow = treasury.LockedReserve
 if market.TotalPositions == 0 {
-// Nobody ever bet: no victims, so the creator recovers bond + LMSR seed
-// (same outcome as cancel_market on an empty market).
+// Nobody ever bet: creator recovers bond + LMSR seed (same as cancel_market).
 escrow += treasury.CreatorBond
 seed = marketPool.Amount
 }
 }
 refund = posRefund + escrow + seed
+} else if isCreator && treasury.LockedReserve > 0 {
+// Legacy behaviour, kept byte-for-byte for replay: reserve paid out of the pool.
+refund += treasury.LockedReserve
+}
 
 if refund == 0 {
 return &PluginDeliverResponse{Error: ErrNoStakeToReclaim()}
 }
-if posRefund+seed > marketPool.Amount {
+poolDebit := refund
+if gated {
+poolDebit = posRefund + seed
+}
+if poolDebit > marketPool.Amount {
 return &PluginDeliverResponse{Error: ErrInsufficientPoolFunds()}
 }
 
 // Mutate in memory
 claimantAcc.Amount += refund
-marketPool.Amount  -= posRefund + seed
+marketPool.Amount -= poolDebit
 if isCreator {
 treasury.LockedReserve = 0
-if market.TotalPositions == 0 {
+if gated && market.TotalPositions == 0 {
 treasury.CreatorBond = 0
 }
 }

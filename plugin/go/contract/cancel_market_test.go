@@ -3,6 +3,7 @@ package contract
 import "testing"
 
 func TestCancelEmptyMarketRefundsEverything(t *testing.T) {
+prevFix := AUDIT_FIX_HEIGHT; AUDIT_FIX_HEIGHT = 0; t.Cleanup(func() { AUDIT_FIX_HEIGHT = prevFix })
 for _, h := range []uint64{100, 9000} {
 c, fc := newTestChain(t)
 creator := addr(0xA1)

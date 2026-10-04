@@ -136,8 +136,12 @@ return &PluginDeliverResponse{Error: ErrMarketNotFound()}
 if market.Status != STATUS_OPEN {
 return &PluginDeliverResponse{Error: ErrMarketNotOpen()}
 }
-// No expiry check: an empty OPEN market may be cancelled by its creator after expiry,
-// otherwise bond + seed are stuck forever (nobody can claim with zero positions).
+gated := auditFixActive(now)
+// Legacy (below AUDIT_FIX_HEIGHT): cancel after expiry is rejected.
+// Gated: an empty OPEN market may be cancelled after expiry, otherwise bond + seed are stuck.
+if !gated && now >= market.ExpiryTime {
+return &PluginDeliverResponse{Error: ErrMarketExpired()}
+}
 if !bytesEqual(msg.CreatorAddress, market.Creator) {
 return &PluginDeliverResponse{Error: ErrUnauthorized()}
 }
@@ -148,75 +152,100 @@ return &PluginDeliverResponse{Error: ErrMarketHasPositions()}
 
 // ── Compute refund ────────────────────────────────────────────────────
 // Creator gets back: CreatorBond + LockedReserve (finalization bounty)
+refund := treas.CreatorBond + treas.LockedReserve
+if gated {
 // Zero positions => the LMSR seed in the pool belongs to the creator.
-refund := treas.CreatorBond + treas.LockedReserve + marketPool.Amount
+refund += marketPool.Amount
+}
 
 // ── Mutate ────────────────────────────────────────────────────────────
-market.Status       = STATUS_CANCELLED
-treas.CreatorBond   = 0
+market.Status = STATUS_CANCELLED
+treas.CreatorBond = 0
 treas.LockedReserve = 0
-marketPool.Amount   = 0
-creatorAcc.Amount  += refund
-// Fee: every other handler (send, create, claim) debits the fee from the signer.
-// Cancel credited the fee split to the treasury/fee pools without debiting anyone.
+creatorAcc.Amount += refund
+if gated {
+marketPool.Amount = 0
+// Fee is debited from the signer (legacy path credited the fee pools without debiting).
 if creatorAcc.Amount < fee {
 return &PluginDeliverResponse{Error: ErrInsufficientFunds()}
 }
 creatorAcc.Amount -= fee
+}
 
 // Sweep creator fee pool + resolver fee pool to global treasury
-gTreasury.Amount   += creatorFee.Amount + resolverFee.Amount
-creatorFee.Amount   = 0
-resolverFee.Amount  = 0
+gTreasury.Amount += creatorFee.Amount + resolverFee.Amount
+creatorFee.Amount = 0
+resolverFee.Amount = 0
 
-// TX fee split 50/50
+// TX fee split
 feeSplit := ComputeBps(fee, TX_TREASURY_SPLIT_BPS)
-feePool.Amount   += feeSplit
+feePool.Amount += feeSplit
 gTreasury.Amount += fee - feeSplit
 
 // Decrement open market counter
-	if openCount.Amount > 0 {
-		openCount.Amount--
-	}
+if openCount.Amount > 0 {
+openCount.Amount--
+}
 
-	// ── Marshal ───────────────────────────────────────────────────────────
+// ── Marshal ───────────────────────────────────────────────────────────
 txLogOp, pe := buildMarketTxLogOp(market, msg.MarketId, "cancel_market", msg.CreatorAddress, now, false, 0, 0, txHash)
-if pe != nil { return &PluginDeliverResponse{Error: pe} }
-
+if pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
 rawMarket, pe := SafeMarshal(market)
-if pe != nil { return &PluginDeliverResponse{Error: pe} }
+if pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
 rawTreas, pe := SafeMarshal(treas)
-if pe != nil { return &PluginDeliverResponse{Error: pe} }
+if pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
 rawCreatorAcc, pe := SafeMarshal(creatorAcc)
-if pe != nil { return &PluginDeliverResponse{Error: pe} }
+if pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
 rawCreatorFee, pe := SafeMarshal(creatorFee)
-if pe != nil { return &PluginDeliverResponse{Error: pe} }
+if pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
 rawResolverFee, pe := SafeMarshal(resolverFee)
-if pe != nil { return &PluginDeliverResponse{Error: pe} }
+if pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
 rawOC, pe := SafeMarshal(&openCount)
-	if pe != nil { return &PluginDeliverResponse{Error: pe} }
-	rawGTreasury, pe := SafeMarshal(gTreasury)
-if pe != nil { return &PluginDeliverResponse{Error: pe} }
+if pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
+rawGTreasury, pe := SafeMarshal(gTreasury)
+if pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
 rawFee, pe := SafeMarshal(feePool)
-if pe != nil { return &PluginDeliverResponse{Error: pe} }
-rawPool, pe := SafeMarshal(marketPool)
-if pe != nil { return &PluginDeliverResponse{Error: pe} }
+if pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
 
-// ── 7-key atomic write ────────────────────────────────────────────────
-wr, werr := c.plugin.StateWrite(c, &PluginStateWriteRequest{
-Sets: []*PluginSetOp{
-{Key: marketKey,      Value: rawMarket},
-{Key: treasKey,       Value: rawTreas},
-{Key: creatorAccKey,  Value: rawCreatorAcc},
-{Key: creatorFeeKey,  Value: rawCreatorFee},
+// Legacy blocks wrote 8 keys; the pool key is written only when gated so old
+// history replays to the identical state.
+sets := []*PluginSetOp{
+{Key: marketKey, Value: rawMarket},
+{Key: treasKey, Value: rawTreas},
+{Key: creatorAccKey, Value: rawCreatorAcc},
+{Key: creatorFeeKey, Value: rawCreatorFee},
 {Key: resolverFeeKey, Value: rawResolverFee},
-{Key: ocKey,         Value: rawOC},
-		{Key: gTreasuryKey,   Value: rawGTreasury},
-{Key: feePoolKey,     Value: rawFee},
-{Key: poolKey,        Value: rawPool},
-txLogOp,
-},
-})
+{Key: ocKey, Value: rawOC},
+{Key: gTreasuryKey, Value: rawGTreasury},
+{Key: feePoolKey, Value: rawFee},
+}
+if gated {
+rawPool, pe := SafeMarshal(marketPool)
+if pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
+sets = append(sets, &PluginSetOp{Key: poolKey, Value: rawPool})
+}
+sets = append(sets, txLogOp)
+wr, werr := c.plugin.StateWrite(c, &PluginStateWriteRequest{Sets: sets})
 if pe := errCheckWrite(wr, werr); pe != nil {
 return &PluginDeliverResponse{Error: pe}
 }
