@@ -59,3 +59,15 @@ export function fmtCountdown(expiry: number, height: number): string {
   if (h > 0) return `${h}h ${m}m`;
   return `${m}m`;
 }
+
+// Full-precision PRX formatter (shows all decimals, no compact notation)
+export function fmtPRXFull(n: bigint | number | string | null | undefined): string {
+  if (n === null || n === undefined || n === "") return "—";
+  const x = Number(n) / 1_000_000;
+  if (x === 0) return "0";
+  const fixed = x.toFixed(6);
+  const [intPart, decPart] = fixed.split(".");
+  const withCommas = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  const cleanDec = decPart.replace(/0+$/, "");
+  return cleanDec ? `${withCommas}.${cleanDec}` : withCommas;
+}

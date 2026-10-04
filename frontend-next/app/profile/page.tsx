@@ -5,7 +5,8 @@ import { useWallet } from "@/store/wallet";
 import { usePositions } from "@/lib/positions";
 import { useQuery } from "@tanstack/react-query";
 import { queryAccount } from "@/lib/rpc";
-import { b64ToHex, fmtPRX } from "@/lib/format";
+import { b64ToHex, fmtPRX, fmtPRXFull } from "@/lib/format";
+import { useWalletActivity } from "@/lib/walletActivity";
 import { useMarkets } from "@/hooks/useMarkets";
 import { stripCatPrefix, yesPct, extractCat, STATUS } from "@/lib/markets";
 import { nPositionValue, topShareIndex } from "@/lib/nOutcome";
@@ -43,7 +44,7 @@ export default function ProfilePage() {
   const { data: markets = [] } = useMarkets();
   const [panel, setPanel] = useState<"" | "send" | "receive">("");
   const [copied, setCopied] = useState(false);
-  const [tab, setTab] = useState<"positions" | "stats">("positions");
+  const [tab, setTab] = useState<"positions" | "stats" | "activity">("positions");
 
   const { data: balance = 0n } = useQuery({
     queryKey: ["balance", praxisAddress],
@@ -56,7 +57,8 @@ export default function ProfilePage() {
     refetchInterval: 15000,
   });
 
-const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
+const { data: positions = [] } = usePositions();
+  const { activity, isLoading: activityLoading } = useWalletActivity();const enriched = useMemo(() => {
     return positions.map((pos) => {
       const market = markets.find((m) => m.marketId === pos.marketId);
       if (!market) return { ...pos, market: null, value: 0n, cat: "other" };
@@ -108,7 +110,43 @@ const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
           </div>
         </div>
         <div className="mt-4">
-          <KeystorePanel />
+      
+        {tab === "activity" && (
+          <div className="space-y-2">
+            {activityLoading ? (
+              <div className="rounded-card border border-line bg-surface-grad p-10 text-center shadow-card">
+                <div className="animate-pulseDot text-ink-3">Loading activity...</div>
+              </div>
+            ) : activity.length === 0 ? (
+              <div className="rounded-card border border-line bg-surface-grad p-10 text-center shadow-card">
+                <div className="font-mono text-[12px] text-ink-3">No on-chain activity yet</div>
+              </div>
+            ) : (
+              activity.map((item, idx) => (
+                <a
+                  key={idx}
+                  href={`/market/${item.marketId}`}
+                  className="block rounded-card border border-line bg-surface-grad p-3 shadow-card transition-all hover:border-line-2"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="mb-1 font-mono text-[11px] uppercase tracking-[1.5px] text-ink-3">{item.type}</div>
+                      <div className="font-sans text-[14px] font-semibold text-ink line-clamp-1">{item.question}</div>
+                      <div className="mt-1 font-mono text-[11px] text-ink-3">Block #{item.height.toLocaleString()}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className={`font-display text-[16px] font-extrabold tabular-nums ${item.amount >= 0n ? "text-up" : "text-down"}`}>
+                        {item.amount >= 0n ? "+" : ""}{fmtPRXFull(item.amount)}
+                      </div>
+                      <div className="font-mono text-[11px] text-ink-3">PRX</div>
+                    </div>
+                  </div>
+                </a>
+              ))
+            )}
+          </div>
+        )}
+    <KeystorePanel />
         </div>
       </main>
     );
@@ -138,11 +176,11 @@ const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
           <div className="rounded-card bg-surface-grad p-6">
             <div className="mb-1 font-mono text-[11px] uppercase tracking-[2px] text-ink-3">Net Worth</div>
             <div className="font-display text-[34px] font-extrabold text-up tabular-nums">
-              {fmtPRX(netWorth)} <span className="text-[16px] text-ink-3">PRX</span>
+              {fmtPRXFull(netWorth)} <span className="text-[16px] text-ink-3">PRX</span>
             </div>
             <div className="mt-2 flex flex-wrap gap-4 font-mono text-[12px] text-ink-2">
-              <span>Available <b className="text-cyanx tabular-nums">{fmtPRX(balance)}</b></span>
-              <span>In positions <b className="text-up tabular-nums">{fmtPRX(positionsValue)}</b></span>
+              <span>Available <b className="text-cyanx tabular-nums">{fmtPRXFull(balance)}</b></span>
+              <span>In positions <b className="text-up tabular-nums">{fmtPRXFull(positionsValue)}</b></span>
             </div>
           </div>
         </div>
@@ -159,7 +197,7 @@ const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
               <div className="font-mono text-[11px] text-ink-3">Praxis Token · available</div>
             </div>
             <div className="text-right">
-              <div className="font-display text-[16px] font-extrabold text-ink tabular-nums">{fmtPRX(balance)}</div>
+              <div className="font-display text-[16px] font-extrabold text-ink tabular-nums">{fmtPRXFull(balance)}</div>
               <div className="font-mono text-[11px] text-ink-3">PRX</div>
             </div>
           </div>
@@ -246,6 +284,14 @@ const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
             }`}
           >
             Stats
+          </button>
+          <button
+            onClick={() => setTab("activity")}
+            className={`rounded-pill px-4 py-2 font-mono text-[13px] font-bold transition-colors ${
+              tab === "activity" ? "bg-up text-black" : "bg-surface-grad text-ink-2 hover:text-ink"
+            }`}
+          >
+            Activity ({activity.length})
           </button>
         </div>
 
@@ -367,6 +413,42 @@ const { data: positions = [] } = usePositions();const enriched = useMemo(() => {
           </div>
         )}
       </div>
+
+        {tab === "activity" && (
+          <div className="space-y-2">
+            {activityLoading ? (
+              <div className="rounded-card border border-line bg-surface-grad p-10 text-center shadow-card">
+                <div className="animate-pulseDot text-ink-3">Loading activity...</div>
+              </div>
+            ) : activity.length === 0 ? (
+              <div className="rounded-card border border-line bg-surface-grad p-10 text-center shadow-card">
+                <div className="font-mono text-[12px] text-ink-3">No on-chain activity yet</div>
+              </div>
+            ) : (
+              activity.map((item, idx) => (
+                <a
+                  key={idx}
+                  href={`/market/${item.marketId}`}
+                  className="block rounded-card border border-line bg-surface-grad p-3 shadow-card transition-all hover:border-line-2"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="mb-1 font-mono text-[11px] uppercase tracking-[1.5px] text-ink-3">{item.type}</div>
+                      <div className="font-sans text-[14px] font-semibold text-ink line-clamp-1">{item.question}</div>
+                      <div className="mt-1 font-mono text-[11px] text-ink-3">Block #{item.height.toLocaleString()}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className={`font-display text-[16px] font-extrabold tabular-nums ${item.amount >= 0n ? "text-up" : "text-down"}`}>
+                        {item.amount >= 0n ? "+" : ""}{fmtPRXFull(item.amount)}
+                      </div>
+                      <div className="font-mono text-[11px] text-ink-3">PRX</div>
+                    </div>
+                  </div>
+                </a>
+              ))
+            )}
+          </div>
+        )}
     <KeystorePanel />
       </main>
   );
