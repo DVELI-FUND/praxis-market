@@ -43,8 +43,9 @@ export default function BannerImg({ rules, className, fallback }: { rules: strin
     return () => { alive = false; };
   }, [stage, raw]);
 
-  if (!raw) return <>{fallback}</>;
-  if (!src) return stage >= 3 ? <>{fallback}</> : null;
+  const fb = fallback != null ? <div className={className + " overflow-hidden"}>{fallback}</div> : null;
+  if (!raw) return fb;
+  if (!src) return stage >= 3 ? fb : null;
   return (
     <img
       src={src}

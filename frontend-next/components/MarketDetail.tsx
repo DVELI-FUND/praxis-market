@@ -173,12 +173,13 @@ export default function MarketDetail({ mid }: Props) {
                 {market.options.map((opt, idx) => {
                   const price = Math.round(nPricesArr[idx] * 100);
                   return (
-                    <div key={idx} className="flex items-center justify-between gap-2 px-4 py-3 md:grid md:grid-cols-[1fr_auto_auto] md:items-center md:gap-3">
+                    <div key={idx} className="flex items-center justify-between gap-2 px-4 py-3 md:grid md:grid-cols-[1fr_auto_auto_auto] md:items-center md:gap-3">
                       <div className="flex items-center gap-2">
                         <span className="h-2 w-2 rounded-full bg-up" />
                         <span className="font-display text-[15px] font-bold text-ink truncate">{opt}</span>
                       </div>
                       <div className="font-display text-[16px] font-extrabold text-up tabular-nums md:w-[80px] md:text-right">{price}¢</div>
+                      <div className="hidden md:block md:w-[80px]" />
                       <div className="w-[100px] text-right">
                         <button onClick={() => { setSelectedOption(idx); scrollToTicket(); }} className="rounded-card bg-up px-3 py-1.5 font-sans text-[12px] font-extrabold text-black transition-all hover:brightness-110">Buy</button>
                       </div>
