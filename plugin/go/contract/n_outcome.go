@@ -37,14 +37,26 @@ func validateCreateExtras(msg *MessageCreateMarket) *PluginError {
 		return ErrInvalidParam()
 	}
 	seen := make(map[string]struct{}, n)
+	// AUDIT: stricter label rules (invisible/format characters, edge whitespace, ASCII
+	// case-insensitive duplicates) change which create_market txs are valid, so they are
+	// height-gated like the entropy repair (see entropy.go). Before AUDIT_FIX_HEIGHT the
+	// original byte-exact rules apply unchanged.
+	hardened := auditFixActive(GetGlobalHeight())
 	for _, o := range msg.Options {
 		if strings.TrimSpace(o) == "" || len(o) > MAX_OPTION_LABEL_BYTES {
 			return ErrInvalidParam()
 		}
-		if _, dup := seen[o]; dup {
+		key := o
+		if hardened {
+			if !optionLabelClean(o) {
+				return ErrInvalidParam()
+			}
+			key = asciiLower(o)
+		}
+		if _, dup := seen[key]; dup {
 			return ErrInvalidParam()
 		}
-		seen[o] = struct{}{}
+		seen[key] = struct{}{}
 	}
 	if len(msg.Question) > MAX_NOUTCOME_QUESTION_BYTES {
 		return ErrInvalidQuestion()
@@ -56,6 +68,39 @@ func validateCreateExtras(msg *MessageCreateMarket) *PluginError {
 		return ErrInvalidB0()
 	}
 	return nil
+}
+
+// optionLabelClean rejects labels that can render blank or be spoofed: leading/trailing
+// whitespace and control/format characters (zero-width, bidi overrides, BOM, soft hyphen,
+// line/paragraph separators). Explicit rune ranges, not unicode tables, so every validator
+// agrees regardless of Go/Unicode version.
+func optionLabelClean(o string) bool {
+	if o != strings.TrimSpace(o) {
+		return false
+	}
+	for _, r := range o {
+		switch {
+		case r < 0x20, r >= 0x7F && r <= 0x9F:
+		case r == 0x00AD, r >= 0x200B && r <= 0x200F:
+		case r >= 0x2028 && r <= 0x202E, r >= 0x2060 && r <= 0x2064:
+		case r >= 0x2066 && r <= 0x206F, r == 0xFEFF, r >= 0xFFF9 && r <= 0xFFFB:
+		default:
+			continue
+		}
+		return false
+	}
+	return true
+}
+
+// asciiLower folds only A-Z so duplicate detection is deterministic across Go versions.
+func asciiLower(s string) string {
+	b := []byte(s)
+	for i, c := range b {
+		if c >= 'A' && c <= 'Z' {
+			b[i] = c + 32
+		}
+	}
+	return string(b)
 }
 
 func positionIsEmpty(p *PositionState) bool {

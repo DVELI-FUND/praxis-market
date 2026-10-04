@@ -39,7 +39,7 @@ Keys: []*PluginKeyRead{
 {QueryId: marketQId,   Key: marketKey},
 {QueryId: proposalQId, Key: proposalKey},
 {QueryId: dispAccQId,  Key: dispAccKey},
-{QueryId: entropyQId,  Key: PANEL_ENTROPY_KEY},
+{QueryId: entropyQId,  Key: entropyKeyFor(now)},
 {QueryId: feeQId,      Key: feePoolKey},
 {QueryId: treasyQId,   Key: treasyPoolKey},
 },
@@ -218,6 +218,11 @@ panelSize = ELEVATED_RISK_PANEL_SIZE
 panelSize = MIN_PANEL_SIZE
 }
 
+// Repaired entropy path: after activation the accumulator must exist (BeginBlock writes
+// it every block); refuse rather than silently fall back to a height-only seed.
+if auditFixActive(now) && entropyVal == 0 {
+return &PluginDeliverResponse{Error: ErrInternal()}
+}
 seed := entropyVal ^ (now * FIBONACCI_HASH_CONSTANT)
 panel := derivePanel(candidates, int(panelSize), seed)
 if len(panel) == 0 {

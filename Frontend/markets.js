@@ -78,11 +78,16 @@ window.loadMarkets = async function () {
         status,
         qYes,
         qNo,
+        // AUDIT: N-outcome (2-10 option) markets carry `options`; this legacy UI only knows
+        // YES/NO, so it would show them as 50/50 and its YES/NO bet form never sets
+        // outcomeIndex (it defaults to option 0 on-chain). They are hidden here and must be
+        // traded in frontend-next.
+        isMulti: Array.isArray(mk.options) && mk.options.length > 0,
       };
     });
 
-    window._allMarkets = markets;
-    window._allMarkets = markets;
+    window._hiddenMultiOutcome = markets.filter(m => m.isMulti).length;
+    window._allMarkets = markets.filter(m => !m.isMulti);
     checkRoles();
     renderCurrentTab();
     return true;

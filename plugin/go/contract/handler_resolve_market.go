@@ -109,7 +109,7 @@ Keys: []*PluginKeyRead{
 {QueryId: coiPosQId, Key: KeyForPosition(msg.MarketId, msg.ResolverAddress)},
 },
 })
-if coiPosErr != nil {
+if coiPosErr != nil || coiPosResp == nil || coiPosResp.Error != nil {
 return &PluginDeliverResponse{Error: ErrStateReadFailed()}
 }
 for _, r := range coiPosResp.Results {
@@ -118,7 +118,7 @@ resolPos := &PositionState{}
 if pe := Unmarshal(r.Entries[0].Value, resolPos); pe != nil {
 return &PluginDeliverResponse{Error: ErrUnmarshalFailed()}
 }
-if resolPos.SharesYes > 0 || resolPos.SharesNo > 0 {
+if resolPos.SharesYes > 0 || resolPos.SharesNo > 0 || anyShares(resolPos.Shares) {
 return &PluginDeliverResponse{Error: ErrResolverHasPosition()}
 }
 }

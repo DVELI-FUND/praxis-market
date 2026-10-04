@@ -36,6 +36,10 @@ type Plugin struct {
 // socketPath is the name of the plugin socket exposed by the base SDK
 const socketPath = "plugin.sock"
 
+// maxPluginFrameBytes bounds a single length-prefixed FSM<->plugin frame (256 MiB is far
+// above any real genesis/state-range payload but well below the 4 GiB a prefix can claim).
+const maxPluginFrameBytes uint32 = 256 << 20
+
 // StartPlugin() creates and starts a plguin
 func StartPlugin(c Config) *Plugin {
 	var conn net.Conn
@@ -179,7 +183,12 @@ func (p *Plugin) handleFSMResponse(msg *FSMToPlugin) *PluginError {
 	// get the requester channel
 	ch, ok := p.pending[msg.Id]
 	if !ok {
-		return ErrInvalidPluginRespId()
+		// AUDIT: a reply can legitimately arrive after waitForResponse timed out and
+		// removed the pending entry (slow FSM, large RPC range scan). Returning an error
+		// here reaches log.Fatal in ListenForInbound and takes the whole plugin down,
+		// so a late reply is logged and dropped instead.
+		log.Printf("dropping FSM response for unknown/expired request id %d", msg.Id)
+		return nil
 	}
 	// remove the message from the pending list and FSM context
 	delete(p.pending, msg.Id)
@@ -217,6 +226,14 @@ func (p *Plugin) sendToPluginAsync(c *Contract, request isPluginToFSM_Payload) (
 	p.requestContract[requestId] = c
 	p.l.Unlock()
 	err = p.sendProtoMsg(&PluginToFSM{Id: requestId, Payload: request})
+	if err != nil {
+		// AUDIT: do not leak the pending channel / contract context when the send fails
+		// (sendDetachedAsync already does this).
+		p.l.Lock()
+		delete(p.pending, requestId)
+		delete(p.requestContract, requestId)
+		p.l.Unlock()
+	}
 	// exit
 	return
 }
@@ -330,6 +347,10 @@ func (p *Plugin) receiveLengthPrefixed() ([]byte, *PluginError) {
 	}
 	// determine the length of the message
 	messageLength := binary.BigEndian.Uint32(lengthBuffer)
+	// AUDIT: refuse absurd frame sizes instead of allocating up to 4 GiB on a corrupt prefix
+	if messageLength > maxPluginFrameBytes {
+		return nil, ErrFailedPluginRead(io.ErrShortBuffer)
+	}
 	// read the actual message bytes
 	msg := make([]byte, messageLength)
 	if _, err := io.ReadFull(p.conn, msg); err != nil {

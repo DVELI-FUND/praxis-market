@@ -186,8 +186,8 @@ if pe != nil { return &PluginDeliverResponse{Error: pe} }
 rawGTreasury, pe := SafeMarshal(gTreasury)
 if pe != nil { return &PluginDeliverResponse{Error: pe} }
 rawMidx, pe := SafeMarshal(midx)
-	rawOC, pe := SafeMarshal(openCount)
-	if pe != nil { return &PluginDeliverResponse{Error: pe} }
+if pe != nil { return &PluginDeliverResponse{Error: pe} } // AUDIT: was overwritten by the next := before being checked
+rawOC, pe := SafeMarshal(openCount)
 if pe != nil { return &PluginDeliverResponse{Error: pe} }
 
 sets := []*PluginSetOp{

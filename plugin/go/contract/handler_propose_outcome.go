@@ -116,6 +116,13 @@ return &PluginDeliverResponse{Error: ErrResolverSuspended()}
 	if posErr != nil {
 		return &PluginDeliverResponse{Error: posErr}
 	}
+	// AUDIT: resp.Error was never checked, so a failed read skipped the COI-1 ban.
+	if posResp == nil || posResp.Error != nil {
+		if posResp != nil {
+			return &PluginDeliverResponse{Error: posResp.Error}
+		}
+		return &PluginDeliverResponse{Error: ErrInternal()}
+	}
 	for _, r := range posResp.Results {
 		if r.QueryId == resolPosQId && len(r.Entries) > 0 && len(r.Entries[0].Value) > 0 {
 			resolPos := &PositionState{}

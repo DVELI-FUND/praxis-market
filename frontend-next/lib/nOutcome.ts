@@ -43,6 +43,9 @@ export function nTradeCost(q: bigint[], b: bigint, idx: number, shares: bigint):
   return nCost(q2, b) - nCost(q, b);
 }
 
+// eslint-disable-next-line no-control-regex
+const INVISIBLE_LABEL_CHARS = /[\u0000-\u001F\u007F-\u009F\u00AD\u200B-\u200F\u2028-\u202E\u2060-\u2064\u2066-\u206F\uFEFF\uFFF9-\uFFFB]/;
+
 /** Mirrors the on-chain create_market option rules; returns an error message or null. */
 export function validateOptions(opts: string[]): string | null {
   if (opts.length < MIN_OUTCOMES || opts.length > MAX_OUTCOMES) {
@@ -53,8 +56,13 @@ export function validateOptions(opts: string[]): string | null {
   for (const o of opts) {
     if (o.trim() === "") return "Option labels cannot be empty";
     if (enc.encode(o).length > MAX_OPTION_LABEL_BYTES) return `Option labels are limited to ${MAX_OPTION_LABEL_BYTES} bytes`;
-    if (seen.has(o)) return "Option labels must be unique";
-    seen.add(o);
+    // Mirrors the chain's hardened label rules (same explicit ranges as optionLabelClean in
+    // n_outcome.go): no control / zero-width / bidi-override characters, no edge whitespace.
+    if (o !== o.trim() || INVISIBLE_LABEL_CHARS.test(o)) return "Option labels cannot contain invisible or control characters";
+    // ASCII-only case folding, same as the chain, so "Yes" and "yes" collide.
+    const key = o.replace(/[A-Z]/g, (c) => c.toLowerCase());
+    if (seen.has(key)) return "Option labels must be unique (case-insensitive)";
+    seen.add(key);
   }
   return null;
 }

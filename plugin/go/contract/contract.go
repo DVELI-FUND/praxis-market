@@ -129,6 +129,15 @@ SetGlobalHeight(req.Height)
 		return &PluginBeginResponse{Error: pe}
 	}
 
+// Repaired entropy path (height-gated, see entropy.go). Before AUDIT_FIX_HEIGHT the
+// legacy code below runs unchanged so historical blocks replay identically.
+if auditFixActive(req.Height) {
+if pe := c.advancePanelEntropyV2(req.Height); pe != nil {
+return &PluginBeginResponse{Error: pe}
+}
+return &PluginBeginResponse{}
+}
+
 entropyQId := nextQueryId()
 entropyResp, readErr := c.plugin.StateRead(c, &PluginStateReadRequest{
 Keys: []*PluginKeyRead{
@@ -142,6 +151,8 @@ Keys: []*PluginKeyRead{
 // time a file_dispute call to influence panel selection.
 // SHA256(prev || height_bytes) is a one-way function: knowing the output
 // does not allow computing a height that produces a desired panel seed.
+// AUDIT NOTE: that claim does not hold. The chain starts from zero and mixes in only the
+// block height, so every value is computable in advance by anyone. See entropy.go.
 var prev [8]byte
 if readErr == nil && entropyResp != nil {
 for _, r := range entropyResp.Results {

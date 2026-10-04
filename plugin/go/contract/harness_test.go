@@ -10,8 +10,9 @@ import (
 
 // fakeChain is an in-memory stand-in for the Canopy FSM state store.
 type fakeChain struct {
-	mu sync.Mutex
-	kv map[string][]byte
+	mu     sync.Mutex
+	kv     map[string][]byte
+	writes int // number of StateWrite calls (atomicity assertions)
 }
 
 func (f *fakeChain) get(k []byte) []byte {
@@ -55,6 +56,7 @@ func (f *fakeChain) handle(req *PluginToFSM) *FSMToPlugin {
 		}
 		return &FSMToPlugin{Id: req.Id, Payload: &FSMToPlugin_StateRead{StateRead: resp}}
 	case *PluginToFSM_StateWrite:
+		f.writes++
 		for _, d := range p.StateWrite.Deletes {
 			delete(f.kv, string(d.Key))
 		}

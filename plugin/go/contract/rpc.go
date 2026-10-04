@@ -9,6 +9,7 @@ import (
 "net/http"
 "sort"
 "strconv"
+"time"
 )
 
 // marketTxActorField maps each logged market-tx type to the JSON field name its
@@ -1342,7 +1343,20 @@ return
 })
 
 log.Printf("plugin RPC server listening on %s (routes: /v1/query/markets, /v1/query/positions, /v1/query/market-txs, /v1/query/resolvers, /v1/query/proposals, /v1/query/disputes, /v1/query/votes, /v1/query/outcomes, /v1/query/slashes, /v1/query/position, /v1/query/account, /v1/query/unbonding, /v1/query/dispute-context, /v1/query/reward-context, /v1/query/genesis-allocation)", addr)
-if err := http.ListenAndServe(addr, mux); err != nil {
+// AUDIT: plain http.ListenAndServe has no timeouts, so a slow or stalled client can hold
+// connections (and their in-flight FSM range scans) open indefinitely. Bind address is
+// config-driven (RPCAddress): set it to 127.0.0.1:50010 behind a reverse proxy if the
+// RPC should not be reachable directly.
+srv := &http.Server{
+Addr:              addr,
+Handler:           mux,
+ReadHeaderTimeout: 10 * time.Second,
+ReadTimeout:       20 * time.Second,
+WriteTimeout:      60 * time.Second,
+IdleTimeout:       60 * time.Second,
+MaxHeaderBytes:    1 << 16,
+}
+if err := srv.ListenAndServe(); err != nil {
 log.Printf("plugin RPC server error: %v", err)
 }
 }

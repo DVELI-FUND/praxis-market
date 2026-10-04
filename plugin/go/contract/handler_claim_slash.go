@@ -137,11 +137,15 @@ return &PluginDeliverResponse{Error: pe}
 }
 case resolverRecQId:
 if len(r.Entries) > 0 && len(r.Entries[0].Value) > 0 {
-_ = Unmarshal(r.Entries[0].Value, resolverRec)
+if pe := Unmarshal(r.Entries[0].Value, resolverRec); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
 }
 case resFeeQId:
 if len(r.Entries) > 0 && len(r.Entries[0].Value) > 0 {
-_ = Unmarshal(r.Entries[0].Value, resFeePool)
+if pe := Unmarshal(r.Entries[0].Value, resFeePool); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
 }
 }
 }
@@ -164,36 +168,48 @@ resolverRec.RrsScore -= 50
 } else {
 resolverRec.RrsScore = PRIS_RRS_FLOOR
 }
-// Sweep resolver fee pool to treasury pool
+// Sweep resolver fee pool to treasury pool.
+// AUDIT: this used to be a second, separate StateWrite whose result was discarded and
+// whose read/marshal errors were skipped silently. It is now folded into the single
+// atomic write below and every error is returned.
+var sweepOps []*PluginSetOp
 if resFeePool.Amount > 0 {
-// Read global treasury pool
 tPoolQId := nextQueryId()
 tPoolResp, tPoolErr := c.plugin.StateRead(c, &PluginStateReadRequest{
 Keys: []*PluginKeyRead{
 {QueryId: tPoolQId, Key: KeyForTreasuryPool()},
 },
 })
-if tPoolErr == nil && tPoolResp.Error == nil {
+if tPoolErr != nil {
+return &PluginDeliverResponse{Error: tPoolErr}
+}
+if tPoolResp.Error != nil {
+return &PluginDeliverResponse{Error: tPoolResp.Error}
+}
 tPool := &Pool{}
 for _, r := range tPoolResp.Results {
-if r.QueryId == tPoolQId && len(r.Entries) > 0 {
-_ = Unmarshal(r.Entries[0].Value, tPool)
+if r.QueryId == tPoolQId && len(r.Entries) > 0 && len(r.Entries[0].Value) > 0 {
+if pe := Unmarshal(r.Entries[0].Value, tPool); pe != nil {
+return &PluginDeliverResponse{Error: pe}
 }
+}
+}
+if tPool.Amount > ^uint64(0)-resFeePool.Amount {
+return &PluginDeliverResponse{Error: ErrInvalidAmount()}
 }
 tPool.Amount     += resFeePool.Amount
 resFeePool.Amount = 0
 rawTPool, pe2 := SafeMarshal(tPool)
-if pe2 == nil {
+if pe2 != nil {
+return &PluginDeliverResponse{Error: pe2}
+}
 rawResFee2, pe3 := SafeMarshal(resFeePool)
-if pe3 == nil {
-_, _ = c.plugin.StateWrite(c, &PluginStateWriteRequest{
-Sets: []*PluginSetOp{
-{Key: KeyForTreasuryPool(),              Value: rawTPool},
+if pe3 != nil {
+return &PluginDeliverResponse{Error: pe3}
+}
+sweepOps = []*PluginSetOp{
+{Key: KeyForTreasuryPool(),                Value: rawTPool},
 {Key: KeyForResolverFeePool(msg.MarketId), Value: rawResFee2},
-},
-})
-}
-}
 }
 }
 
@@ -204,14 +220,18 @@ if pe != nil { return &PluginDeliverResponse{Error: pe} }
 rawT, pe := SafeMarshal(treasury)
 if pe != nil { return &PluginDeliverResponse{Error: pe} }
 
-wr, werr := c.plugin.StateWrite(c, &PluginStateWriteRequest{
-Sets: []*PluginSetOp{
+rawResolverRec, pe := SafeMarshal(resolverRec)
+if pe != nil { return &PluginDeliverResponse{Error: pe} }
+
+sets := []*PluginSetOp{
 {Key: KeyForSlashRecord(dispute.DisputerAddress), Value: rawSlash},
 {Key: KeyForAccount(msg.ClaimantAddress),         Value: rawAcc},
 {Key: KeyForTreasuryReserve(msg.MarketId),        Value: rawT},
-{Key: KeyForResolverRecord(proposal.ResolverAddr), Value: func() []byte { b, _ := SafeMarshal(resolverRec); return b }()},
-},
-})
+{Key: KeyForResolverRecord(proposal.ResolverAddr), Value: rawResolverRec},
+}
+sets = append(sets, sweepOps...)
+
+wr, werr := c.plugin.StateWrite(c, &PluginStateWriteRequest{Sets: sets})
 if pe := errCheckWrite(wr, werr); pe != nil {
 return &PluginDeliverResponse{Error: pe}
 }

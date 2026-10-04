@@ -38,6 +38,17 @@ func lmsrCost(qYes, qNo, bEff uint64) uint64 {
 if bEff == 0 {
 return 0
 }
+result := lmsrCostFloat(qYes, qNo, bEff)
+if result < 0 {
+return 0
+}
+return uint64(result)
+}
+
+// lmsrCostFloat is the exact pre-truncation float64 value of lmsrCost (behaviour-preserving
+// extraction so a golden test can compare raw bits across architectures: math.Log1p is
+// pure Go and the arm64 compiler fuses its multiply-adds, amd64 does not).
+func lmsrCostFloat(qYes, qNo, bEff uint64) float64 {
 b := float64(bEff)
 y := float64(qYes)
 n := float64(qNo)
@@ -53,12 +64,8 @@ lse = ay + math.Log1p(math.Exp(an-ay))
 } else {
 lse = an + math.Log1p(math.Exp(ay-an))
 }
-// Result is b_eff * lse, converted back from float to uint64.
-result := b * lse
-if result < 0 {
-return 0
-}
-return uint64(result)
+// Result is b_eff * lse (truncated to uint64 by lmsrCost).
+return b * lse
 }
 
 // ComputeTradeCost returns the cost in micro-PRX for purchasing `shares` of
