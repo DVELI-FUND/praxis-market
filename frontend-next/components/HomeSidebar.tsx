@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useMarkets } from "@/hooks/useMarkets";
 import { useHeight } from "@/hooks/useHeight";
 import { fmtCountdown, fmtPRX } from "@/lib/format";
-import { stripCatPrefix, yesPct, STATUS } from "@/lib/markets";
+import { stripCatPrefix, yesPct, STATUS , marketVol } from "@/lib/markets";
 import { useMemo } from "react";
 
 export default function HomeSidebar() {
@@ -19,8 +19,8 @@ export default function HomeSidebar() {
 
   const highVolume = useMemo(() => {
     return [...markets]
-      .filter((m) => (m.status === STATUS.LIVE || m.status === STATUS.PROPOSED) && m.qYes + m.qNo > 0n)
-      .sort((a, b) => Number((b.qYes + b.qNo) - (a.qYes + a.qNo)))
+      .filter((m) => (m.status === STATUS.LIVE || m.status === STATUS.PROPOSED) && marketVol(m) > 0n)
+      .sort((a, b) => Number((marketVol(b)) - (marketVol(a))))
       .slice(0, 3);
   }, [markets]);
 
@@ -43,7 +43,7 @@ export default function HomeSidebar() {
           <div className="space-y-2">
             {items.map((m) => {
               const pct = yesPct(m);
-              const vol = m.qYes + m.qNo;
+              const vol = marketVol(m);
               return (
                 <Link
                   key={m.marketId}

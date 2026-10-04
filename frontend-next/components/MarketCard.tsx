@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { marketVol } from "@/lib/markets";
 import type { Market } from "@/lib/markets";
 import { CAT_SYMBOLS, extractCat, extractOutcomes, stripCatPrefix, yesPct, nPrices } from "@/lib/markets";
 import BannerImg from "./BannerImg";
@@ -24,7 +25,7 @@ export default function MarketCard({ market, featured = false, bookmarked, onTog
   // Binary market: use yesPct
   const pct = isNOutcome ? 0 : yesPct(market);
   const noPct = 100 - pct;
-  const total = isNOutcome ? market.q.reduce((a, b) => a + b, 0n) : market.qYes + market.qNo;
+  const total = isNOutcome ? market.q.reduce((a, b) => a + b, 0n) : marketVol(market);
   const vol = total > 0n ? fmtPRX(total) : "—";
 
   // N-outcome: calculate prices for all options

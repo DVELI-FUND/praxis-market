@@ -4,7 +4,7 @@ import { useEffect, useState , useMemo, useRef} from "react";
 import Link from "next/link";
 import { useMarketDetail } from "@/hooks/useMarketDetail";
 import { useHeight } from "@/hooks/useHeight";
-import { extractCat, extractOutcomes, stripCatPrefix, yesPct, STATUS, nPrices } from "@/lib/markets";
+import { extractCat, extractOutcomes, stripCatPrefix, yesPct, STATUS, nPrices , marketVol } from "@/lib/markets";
 import { fmtPRX, fmtCountdown } from "@/lib/format";
 import StatusPill from "./StatusPill";
 import ShareButton from "./ShareButton";
@@ -92,7 +92,7 @@ export default function MarketDetail({ mid }: Props) {
   const nPricesArr = isNOutcome && market.q && market.b0 ? nPrices(market.q, market.b0) : [];
 
   const noPct = 100 - pct;
-  const total = market.qYes + market.qNo;
+  const total = marketVol(market);
   const vol = total > 0n ? fmtPRX(total) : "—";
   const catKey = extractCat(market.rules);
   const outLbl = extractOutcomes(market.rules || "");

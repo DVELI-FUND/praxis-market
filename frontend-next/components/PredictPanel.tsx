@@ -8,7 +8,7 @@ import { showConfirm } from "@/store/confirm";
 import { buildSigned, friendlyError, TYPE_URLS, waitForConfirmation } from "@/lib/tx";
 import { encPredict } from "@/lib/proto";
 import { submitTxRPC } from "@/lib/rpc";
-import { extractOutcomes, yesPct, nPrices } from "@/lib/markets";
+import { extractOutcomes, yesPct, nPrices , marketVol } from "@/lib/markets";
 import { fmtPRX } from "@/lib/format";
 import type { MarketDetail } from "@/lib/detail";
 
@@ -51,7 +51,7 @@ export default function PredictPanel({ market, outcome, onOutcome, selectedOptio
     return { tradeCost, creatorFee, resolverFee, maxCost, toWin };
   }, [shares, slip, outcome, pct, isNOutcome, nPricesArr, selectedOption]);
 
-  const pool = isNOutcome ? market.q.reduce((a, b) => a + b, 0n) : market.qYes + market.qNo;
+  const pool = isNOutcome ? market.q.reduce((a, b) => a + b, 0n) : marketVol(market);
   const cap = pool > 0n ? (pool * 2000n) / 10000n : 0n;
   const over = pool > 0n && BigInt(bd.maxCost) > cap;
 

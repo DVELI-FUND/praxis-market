@@ -1,4 +1,5 @@
 "use client";
+import { marketVol } from "@/lib/markets";
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchMarket, fetchDisputeContext, fetchPosition } from "@/lib/detail";
@@ -36,7 +37,7 @@ export default function ResolutionPlanner({ mid, mode, wallet, bondValue = 0, on
   const m = marketQ.data;
   const isNOutcome = m && m.options && m.options.length > 0;
   const nPricesArr = isNOutcome && m && m.q && m.b0 ? nPrices(m.q, m.b0) : [];
-  const pool = m ? (isNOutcome ? m.q.reduce((a, b) => a + b, 0n) : m.qYes + m.qNo) : 0n;
+  const pool = m ? (isNOutcome ? m.q.reduce((a, b) => a + b, 0n) : marketVol(m)) : 0n;
   const poolNum = Number(pool / 1000000n);
   const minBond = Math.max(poolNum * 0.01, 60);
   const elevated = pool >= ELEVATED;

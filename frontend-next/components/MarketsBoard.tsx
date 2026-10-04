@@ -12,7 +12,7 @@ import {
   sortMarkets,
   type SortKey,
   type TabKey,
-} from "@/lib/markets";
+  marketVol } from "@/lib/markets";
 import { fmtPRX } from "@/lib/format";
 import MarketCard from "./MarketCard";
 
@@ -71,7 +71,7 @@ export default function MarketsBoard() {
       : EMPTY_LABELS[tab];
 
   const liveCount = useMemo(() => markets.filter((m) => m.status === STATUS.LIVE).length, [markets]);
-  const totalVolume = useMemo(() => markets.reduce<bigint>((s, m) => s + m.qYes + m.qNo, 0n), [markets]);
+  const totalVolume = useMemo(() => markets.reduce<bigint>((s, m) => s + marketVol(m), 0n), [markets]);
 
   return (
     <section>

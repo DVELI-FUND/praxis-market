@@ -1,12 +1,12 @@
 "use client";
 import Link from "next/link";
 import { useMarkets } from "@/hooks/useMarkets";
-import { extractOutcomes, stripCatPrefix, yesPct } from "@/lib/markets";
+import { extractOutcomes, stripCatPrefix, yesPct , marketVol } from "@/lib/markets";
 import { fmtPRX } from "@/lib/format";
 
 export default function LiveTicker() {
   const { data: markets = [] } = useMarkets();
-  const live = markets.filter((m) => m.qYes + m.qNo >= 100_000000n); // >= 100 PRX, skip test junk
+  const live = markets.filter((m) => marketVol(m) >= 100_000000n); // >= 100 PRX, skip test junk
   if (live.length === 0) return null;
   const items = [...live, ...live]; // duplicate for seamless loop
 
@@ -24,7 +24,7 @@ export default function LiveTicker() {
               <span className="h-1 w-1 rounded-full bg-up animate-pulseDot" />
               <span className="max-w-[220px] truncate text-ink-2">{stripCatPrefix(m.question || m.rules || "")}</span>
               <span className="text-up tabular-nums">{extractOutcomes(m.rules).yes} {pct}¢</span>
-              <span className="text-ink-3 tabular-nums">Vol {fmtPRX(m.qYes + m.qNo)}</span>
+              <span className="text-ink-3 tabular-nums">Vol {fmtPRX(marketVol(m))}</span>
             </Link>
           );
         })}

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useMarkets } from "@/hooks/useMarkets";
 import { useHeight } from "@/hooks/useHeight";
-import { extractCat, extractImg, extractOutcomes, stripCatPrefix, STATUS, yesPct } from "@/lib/markets";
+import { extractCat, extractImg, extractOutcomes, stripCatPrefix, STATUS, yesPct , marketVol } from "@/lib/markets";
 import { fmtPRX, fmtCountdown } from "@/lib/format";
 import StatusPill from "./StatusPill";
 
@@ -17,7 +17,7 @@ export default function FeaturedCarousel() {
     // top 3 by volume from live/proposed markets
     return [...markets]
       .filter((m) => m.status === STATUS.LIVE || m.status === STATUS.PROPOSED)
-      .sort((a, b) => Number((b.qYes + b.qNo) - (a.qYes + a.qNo)))
+      .sort((a, b) => Number((marketVol(b)) - (marketVol(a))))
       .slice(0, 3);
   }, [markets]);
 
@@ -30,7 +30,7 @@ export default function FeaturedCarousel() {
   if (featured.length === 0) return null;
   const m = featured[idx];
   const pct = yesPct(m);
-  const total = m.qYes + m.qNo;
+  const total = marketVol(m);
   const vol = total > 0n ? fmtPRX(total) : "—";
   const imgUrl = extractImg(m.rules);
   const catKey = extractCat(m.rules);

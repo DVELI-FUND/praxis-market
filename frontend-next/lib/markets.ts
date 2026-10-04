@@ -201,3 +201,12 @@ export function isCancelled(m: Market): boolean {
 }
 
 export { nPrices } from "@/lib/nOutcome";
+
+
+// Total market volume/liquidity: binary = qYes+qNo; N-outcome = sum(q vector).
+export function marketVol(m: any): bigint {
+  if (m && Array.isArray(m.options) && m.options.length > 0 && Array.isArray(m.q)) {
+    return (m.q as any[]).reduce((acc: bigint, x: any) => acc + BigInt(x ?? 0), 0n);
+  }
+  return BigInt(m?.qYes ?? 0) + BigInt(m?.qNo ?? 0);
+}
