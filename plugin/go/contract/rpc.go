@@ -261,41 +261,28 @@ json.NewEncoder(w).Encode(txs)
 })
 
 // GET /v1/query/resolvers  -> list all registered resolvers
+// Reads the ResolverRecord keyspace directly (not the ResolverIndex), so resolvers registered
+// before the index existed — or any index drift — still show up.
 mux.HandleFunc("/v1/query/resolvers", func(w http.ResponseWriter, r *http.Request) {
-idxResp, qErr := p.QueryState(0, &PluginStateReadRequest{
-Keys: []*PluginKeyRead{
-{QueryId: 1, Key: KeyForResolverIndex()},
+resp, qErr := p.QueryState(0, &PluginStateReadRequest{
+Ranges: []*PluginRangeRead{
+{QueryId: 1, Prefix: JoinLenPrefix(resolverRecordPrefix), Limit: 0},
 },
 })
 if qErr != nil {
 http.Error(w, qErr.Msg, http.StatusInternalServerError)
 return
 }
-if idxResp.Error != nil {
-http.Error(w, idxResp.Error.Msg, http.StatusInternalServerError)
+if resp.Error != nil {
+http.Error(w, resp.Error.Msg, http.StatusInternalServerError)
 return
 }
-var resolvers []*ResolverRecord
-if len(idxResp.Results) > 0 && len(idxResp.Results[0].Entries) > 0 {
-idx := &ResolverIndex{}
-if perr := Unmarshal(idxResp.Results[0].Entries[0].Value, idx); perr == nil {
-var reads []*PluginKeyRead
-for i, addr := range idx.Addresses {
-reads = append(reads, &PluginKeyRead{QueryId: uint64(i + 1), Key: KeyForResolverRecord(addr)})
-}
-if len(reads) > 0 {
-recResp, qErr2 := p.QueryState(0, &PluginStateReadRequest{Keys: reads})
-if qErr2 == nil && recResp.Error == nil {
-for _, res := range recResp.Results {
-if len(res.Entries) == 0 {
-continue
-}
+resolvers := []*ResolverRecord{} // never encode JSON null
+for _, res := range resp.Results {
+for _, e := range res.Entries {
 rec := &ResolverRecord{}
-if perr := Unmarshal(res.Entries[0].Value, rec); perr == nil {
+if perr := Unmarshal(e.Value, rec); perr == nil {
 resolvers = append(resolvers, rec)
-}
-}
-}
 }
 }
 }

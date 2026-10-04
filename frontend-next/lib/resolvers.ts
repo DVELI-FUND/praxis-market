@@ -24,7 +24,8 @@ export interface Resolver {
 export async function fetchResolvers(): Promise<Resolver[]> {
   const r = await fetch(getPluginRPC() + "/v1/query/resolvers");
   if (!r.ok) return [];
-  const raw = (await r.json()) as Record<string, unknown>[];
+  const rawJson = await r.json();
+  const raw = (Array.isArray(rawJson) ? rawJson : []) as Record<string, unknown>[];
   return raw
     .map((x) => ({
       address: b64ToHex(String(x.resolver_address || x.address || "")),
