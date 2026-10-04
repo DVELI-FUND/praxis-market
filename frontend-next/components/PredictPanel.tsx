@@ -16,16 +16,20 @@ interface Props {
   market: MarketDetail;
   outcome: boolean;
   onOutcome: (v: boolean) => void;
+  selectedOption?: number;
+  onSelectOption?: (idx: number) => void;
 }
 
-export default function PredictPanel({ market, outcome, onOutcome }: Props) {
+export default function PredictPanel({ market, outcome, onOutcome, selectedOption: propSelectedOption, onSelectOption: propOnSelectOption }: Props) {
   const { status, praxisAddress, privKey, pubKey } = useWallet();
   const { data: chain } = useHeight();
   const toast = useToast((s) => s.show);
   const queryClient = useQueryClient();
   const outLbl = extractOutcomes(market.rules || "");
   const isNOutcome = market.options.length > 0;
-  const [selectedOption, setSelectedOption] = useState(0);
+  const [internalSelectedOption, setInternalSelectedOption] = useState(0);
+  const selectedOption = propSelectedOption !== undefined ? propSelectedOption : internalSelectedOption;
+  const setSelectedOption = propOnSelectOption !== undefined ? propOnSelectOption : setInternalSelectedOption;
 
   const [shares, setShares] = useState(1);
   const [slip, setSlip] = useState(2);

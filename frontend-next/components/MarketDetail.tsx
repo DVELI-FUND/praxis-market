@@ -4,7 +4,7 @@ import { useEffect, useState , useMemo, useRef} from "react";
 import Link from "next/link";
 import { useMarketDetail } from "@/hooks/useMarketDetail";
 import { useHeight } from "@/hooks/useHeight";
-import { extractCat, extractOutcomes, stripCatPrefix, yesPct, STATUS } from "@/lib/markets";
+import { extractCat, extractOutcomes, stripCatPrefix, yesPct, STATUS, nPrices } from "@/lib/markets";
 import { fmtPRX, fmtCountdown } from "@/lib/format";
 import StatusPill from "./StatusPill";
 import ShareButton from "./ShareButton";
@@ -23,6 +23,7 @@ export default function MarketDetail({ mid }: Props) {
   const { market, holders, disputeContext, isLoading, isError } = useMarketDetail(mid);
   const [rulesOpen, setRulesOpen] = useState(false);
   const [outcome, setOutcome] = useState(true);
+  const [selectedOption, setSelectedOption] = useState(0);
   const ticketRef = useRef<HTMLDivElement>(null);
   const scrollToTicket = () => ticketRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   const [bookmarked, setBookmarked] = useState(false);
@@ -64,6 +65,8 @@ export default function MarketDetail({ mid }: Props) {
       if (t.height <= minH && yes + no > 0n) pct24 = Number((yes * 10000n) / (yes + no)) / 100;
     }
     const pct = yesPct(market);
+  const isNOutcome = market.options && market.options.length > 0;
+  const nPricesArr = isNOutcome && market.q && market.b0 ? nPrices(market.q, market.b0) : [];
     return Math.round((pct - pct24) * 10) / 10;
   }, [txs, market, chain2?.height]);
   const fmtChg = (v: number) => (v > 0 ? `▲ ${v.toFixed(1)}%` : v < 0 ? `▼ ${Math.abs(v).toFixed(1)}%` : "— 0.0%");
@@ -85,6 +88,8 @@ export default function MarketDetail({ mid }: Props) {
   }
 
   const pct = yesPct(market);
+  const isNOutcome = market.options && market.options.length > 0;
+  const nPricesArr = isNOutcome && market.q && market.b0 ? nPrices(market.q, market.b0) : [];
 
   const noPct = 100 - pct;
   const total = market.qYes + market.qNo;
@@ -93,13 +98,21 @@ export default function MarketDetail({ mid }: Props) {
   const outLbl = extractOutcomes(market.rules || "");
   const question = stripCatPrefix(market.question || market.rules || "(no question)");
   const rules = market.rules || "";
-  const rulesText = rules.replace(/^\[.*?\]\s*/, "").trim();
+  const rulesText = rules.replace(/\[(?:CAT|IMG|SUB|LG|KO):[^\]]*\]/g, "").trim();
 
   return (
     <div className="animate-fadeUp">
       <Link href="/" className="mb-4 inline-flex items-center gap-1 font-mono text-[12px] text-ink-2 transition-colors hover:text-up">← Back</Link>
 
-      <BannerImg rules={market.rules} className="mb-4 h-40 w-full rounded-card border border-line object-cover" />
+      <BannerImg 
+              rules={market.rules} 
+              className="mb-4 h-40 w-full rounded-card border border-line object-cover" 
+              fallback={
+                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-up/20 to-bluex/20">
+                  <LogoMark className="h-12 w-12 text-ink-2" />
+                </div>
+              }
+            />
       <div className="md:grid md:grid-cols-[1fr_340px] md:items-start md:gap-5">
         <div>
           {/* icon + title header */}
@@ -119,6 +132,7 @@ export default function MarketDetail({ mid }: Props) {
               <div className="mb-2 flex items-center gap-2">
                 <StatusPill status={market.status} />
                 <span className="rounded-pill border border-line bg-bg px-2 py-0.5 font-mono text-[11px] uppercase tracking-[1.5px] text-ink-2">{catKey}</span>
+                {isNOutcome && <span className="rounded-pill border border-up/40 bg-up/10 px-2 py-0.5 font-mono text-[11px] font-bold uppercase tracking-[1.5px] text-up">N-OUTCOME</span>}
                 <ShareButton mid={mid} question={question} />
                 <button onClick={toggleBm} className={`rounded-pill border border-line bg-bg px-2 py-0.5 font-mono text-[13px] transition-colors ${bookmarked ? "text-amberx" : "text-ink-3 hover:text-amberx"}`}>{bookmarked ? "★" : "☆"}</button>
               </div>
@@ -154,28 +168,50 @@ export default function MarketDetail({ mid }: Props) {
               <span className="w-[80px] text-right">Change</span>
               <span className="w-[120px] text-right">Action</span>
             </div>
-            <div className="flex items-center justify-between gap-2 px-4 py-4 md:grid md:grid-cols-[1fr_auto_auto_auto] md:items-center md:gap-3">
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-up" />
-                <span className="font-display text-[16px] font-bold text-ink">{outLbl.yes}</span>
+            {isNOutcome ? (
+              <div className="divide-y divide-line">
+                {market.options.map((opt, idx) => {
+                  const price = Math.round(nPricesArr[idx] * 100);
+                  return (
+                    <div key={idx} className="flex items-center justify-between gap-2 px-4 py-3 md:grid md:grid-cols-[1fr_auto_auto] md:items-center md:gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-up" />
+                        <span className="font-display text-[15px] font-bold text-ink truncate">{opt}</span>
+                      </div>
+                      <div className="font-display text-[16px] font-extrabold text-up tabular-nums md:w-[80px] md:text-right">{price}¢</div>
+                      <div className="w-[100px] text-right">
+                        <button onClick={() => { setSelectedOption(idx); scrollToTicket(); }} className="rounded-card bg-up px-3 py-1.5 font-sans text-[12px] font-extrabold text-black transition-all hover:brightness-110">Buy</button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <div className="font-display text-[18px] font-extrabold text-up tabular-nums md:w-[80px] md:text-right">{pct}%</div>
-              <div className={`hidden font-mono text-[13px] tabular-nums ${chg > 0 ? "text-up" : chg < 0 ? "text-down" : "text-ink-3"} md:block md:w-[80px] md:text-right`}>{fmtChg(chg)}</div>
-              <div className="w-[120px] text-right">
-                <button onClick={() => setOutcome(true)} className="rounded-card bg-up px-4 py-1.5 font-sans text-[13px] font-extrabold text-black transition-all hover:brightness-110">Buy {outLbl.yes}</button>
-              </div>
-            </div>
-            <div className="flex items-center justify-between gap-2 border-t border-line px-4 py-4 md:grid md:grid-cols-[1fr_auto_auto_auto] md:items-center md:gap-3">
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-down" />
-                <span className="font-display text-[16px] font-bold text-ink">{outLbl.no}</span>
-              </div>
-              <div className="font-display text-[18px] font-extrabold text-down tabular-nums md:w-[80px] md:text-right">{noPct}%</div>
-              <div className={`hidden font-mono text-[13px] tabular-nums ${chg < 0 ? "text-up" : chg > 0 ? "text-down" : "text-ink-3"} md:block md:w-[80px] md:text-right`}>{fmtChg(-chg)}</div>
-              <div className="w-[120px] text-right">
-                <button onClick={() => setOutcome(false)} className="rounded-card bg-down px-4 py-1.5 font-sans text-[13px] font-extrabold text-black transition-all hover:brightness-110">Buy {outLbl.no}</button>
-              </div>
-            </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between gap-2 px-4 py-4 md:grid md:grid-cols-[1fr_auto_auto_auto] md:items-center md:gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-up" />
+                    <span className="font-display text-[16px] font-bold text-ink">{outLbl.yes}</span>
+                  </div>
+                  <div className="font-display text-[18px] font-extrabold text-up tabular-nums md:w-[80px] md:text-right">{pct}%</div>
+                  <div className={`hidden font-mono text-[13px] tabular-nums ${chg > 0 ? "text-up" : chg < 0 ? "text-down" : "text-ink-3"} md:block md:w-[80px] md:text-right`}>{fmtChg(chg)}</div>
+                  <div className="w-[120px] text-right">
+                    <button onClick={() => setOutcome(true)} className="rounded-card bg-up px-4 py-1.5 font-sans text-[13px] font-extrabold text-black transition-all hover:brightness-110">Buy {outLbl.yes}</button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between gap-2 border-t border-line px-4 py-4 md:grid md:grid-cols-[1fr_auto_auto_auto] md:items-center md:gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-down" />
+                    <span className="font-display text-[16px] font-bold text-ink">{outLbl.no}</span>
+                  </div>
+                  <div className="font-display text-[18px] font-extrabold text-down tabular-nums md:w-[80px] md:text-right">{noPct}%</div>
+                  <div className={`hidden font-mono text-[13px] tabular-nums ${chg < 0 ? "text-up" : chg > 0 ? "text-down" : "text-ink-3"} md:block md:w-[80px] md:text-right`}>{fmtChg(-chg)}</div>
+                  <div className="w-[120px] text-right">
+                    <button onClick={() => setOutcome(false)} className="rounded-card bg-down px-4 py-1.5 font-sans text-[13px] font-extrabold text-black transition-all hover:brightness-110">Buy {outLbl.no}</button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           {/* status banners */}
@@ -196,9 +232,11 @@ export default function MarketDetail({ mid }: Props) {
           {holders && <PositionCard market={market} holders={holders} />}
 
           {/* price chart */}
-          <div className="mb-4">
-            <PriceChart mid={mid} initialYes={market.qYes} initialNo={market.qNo} />
-          </div>
+          {!isNOutcome && (
+            <div className="mb-4">
+              <PriceChart mid={mid} initialYes={market.qYes} initialNo={market.qNo} />
+            </div>
+          )}
 
           {/* tabs */}
           <DetailTabs mid={mid} market={market} holders={holders ?? []} disputeContext={disputeContext} />
@@ -232,11 +270,11 @@ export default function MarketDetail({ mid }: Props) {
             </div>
           )}
 
-          <FaqSection pct={pct} ends={fmtCountdown(Number(market.expiry), chain?.height ?? 0)} />
+          <FaqSection pct={pct} ends={fmtCountdown(Number(market.expiry), chain?.height ?? 0)} isNOutcome={isNOutcome} />
         </div>
 
         <div className="mt-4 md:mt-0">
-          <div ref={ticketRef} className="scroll-mt-4"><PredictPanel market={market} outcome={outcome} onOutcome={setOutcome} /></div>
+          <div ref={ticketRef} className="scroll-mt-4"><PredictPanel market={market} outcome={outcome} onOutcome={setOutcome} selectedOption={selectedOption} onSelectOption={setSelectedOption} /></div>
           <MobileTradeBar market={market} outcome={outcome} onOutcome={setOutcome} onScrollToTicket={scrollToTicket} />
         </div>
       </div>
@@ -248,9 +286,14 @@ interface Props {
   mid: string;
 }
 
-function FaqSection({ pct, ends }: { pct: number; ends: string }) {
+function FaqSection({ pct, ends, isNOutcome }: { pct: number; ends: string; isNOutcome: boolean }) {
   const [open, setOpen] = useState<number | null>(0);
-  const faqs = [
+  const faqs = isNOutcome ? [
+    { q: "What are the current odds?", a: "Each option's price represents its probability. The prices sum to 100% and move as traders buy shares in each option." },
+    { q: "How does payout work?", a: "The winning option pays 1 PRX per share. All other options pay 0. Your profit is the payout minus what you paid for the shares." },
+    { q: "When does this market resolve?", a: `Trading ends in ${ends}. After expiry, a resolver proposes the winning option and it finalizes unless disputed.` },
+    { q: "How is resolution decided?", a: "Bonded resolvers stake PRX to propose the winning option. Anyone can dispute by staking; a correct challenge is rewarded, a rejected one is forfeited." },
+  ] : [
     { q: "What are the current odds?", a: `YES is priced at ${pct}% and NO at ${100 - pct}%. Prices move as traders buy each side.` },
     { q: `What does a YES price of ${pct}¢ mean?`, a: "It means the market currently assigns a " + pct + "% probability to the outcome resolving YES. Buying YES at this price pays 100¢ per share if correct." },
     { q: "When does this market resolve?", a: `Trading ends in ${ends}. After expiry, a resolver proposes the outcome and it finalizes unless disputed.` },
