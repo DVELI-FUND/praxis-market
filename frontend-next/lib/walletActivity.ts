@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { useWallet } from "@/store/wallet";
-import { useMarkets } from "@/hooks/useMarkets";
 import { getPluginRPC } from "@/lib/rpc";
 import { b64ToHex } from "@/lib/format";
 
@@ -12,9 +11,8 @@ export interface ActivityItem {
   question: string;
   type: string;
   label: string;
-  shares: bigint;
-  cost: bigint;
-  amount: bigint | null; // signed uPRX delta when derivable from the log
+  amount: bigint | null;
+  est: boolean; // true = computed estimate, not on-chain recorded
   dir: "in" | "out" | "neutral";
 }
 
@@ -24,24 +22,20 @@ const LABELS: Record<string, string> = {
   claim_winnings: "Claimed winnings",
   cancel_market: "Market cancelled",
   propose_outcome: "Outcome proposed",
+  finalize_market: "Market finalized",
   file_dispute: "Dispute filed",
   forfeit_position: "Position forfeited",
-  reclaim_stake: "Stake reclaimed",
-  claim_unbonded_stake: "Unbonded stake claimed",
 };
 
-const OUT = ["submit_prediction", "forfeit_position"];
-const IN = ["claim_winnings", "reclaim_stake", "claim_unbonded_stake"];
+const BOND = 5_000_000_000n; // 5,000 PRX creator bond (refundable on cancel)
+const FEE = 10_000n;         // 0.01 PRX tx fee
 
-async function fetchTxs(mid: string): Promise<any[]> {
+async function fetchJSON(url: string): Promise<any> {
   try {
-    const res = await fetch(getPluginRPC() + `/v1/query/market-txs?market=${mid}&limit=200`);
-    if (!res.ok) return [];
-    const raw = await res.json();
-    return Array.isArray(raw) ? raw : [];
-  } catch {
-    return [];
-  }
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
 }
 
 function normAddr(v: unknown): string {
@@ -52,41 +46,59 @@ function normAddr(v: unknown): string {
 
 export function useWalletActivity() {
   const { praxisAddress } = useWallet();
-  const { data: markets = [] } = useMarkets();
 
   const q = useQuery({
-    queryKey: ["wallet-activity", praxisAddress, markets.length],
+    queryKey: ["wallet-activity-v2", praxisAddress],
     queryFn: async (): Promise<ActivityItem[]> => {
       const addr = (praxisAddress || "").toLowerCase();
       if (!addr) return [];
-      const list = markets.slice(0, 100);
-      const per = await Promise.all(list.map((m) => fetchTxs(m.marketId)));
+      // Direct RPC: includes CANCELLED markets (useMarkets filters them out)
+      const rawMarkets = await fetchJSON(getPluginRPC() + "/v1/query/markets");
+      const list: any[] = Array.isArray(rawMarkets) ? rawMarkets : [];
+      const per = await Promise.all(
+        list.slice(0, 150).map((m) => fetchJSON(getPluginRPC() + `/v1/query/market-txs?market=${m.id || m.marketId}&limit=200`))
+      );
       const items: ActivityItem[] = [];
       per.forEach((txs, i) => {
-        const m = list[i];
+        const mk = list[i];
+        const mid = mk.id || mk.marketId;
+        const inner = mk.market || mk;
+        if (!Array.isArray(txs)) return;
         for (const t of txs) {
           const actor = normAddr(t.sender || t.actor || t.address);
           if (actor !== addr) continue;
           const type: string = t.messageType || t.txType || t.type || "unknown";
-          const shares = BigInt(t.shares ?? t.Shares ?? 0);
           const cost = BigInt(t.cost ?? t.Cost ?? 0);
+          const shares = BigInt(t.shares ?? t.Shares ?? 0);
           let amount: bigint | null = null;
+          let est = false;
           let dir: "in" | "out" | "neutral" = "neutral";
-          if (type.includes("create_market")) { dir = "out"; amount = -5_000_000_000n; } // creator bond locked (5,000 PRX)
-          else if (type.includes("cancel_market")) { dir = "in"; amount = cost > 0n ? cost : null; } // refund (logged post-gate)
-          else if (OUT.some((k) => type.includes(k))) { dir = "out"; amount = cost > 0n ? -cost : shares > 0n ? -shares : null; }
-          else if (IN.some((k) => type.includes(k))) { dir = "in"; amount = cost > 0n ? cost : shares > 0n ? shares : null; }
+          if (type.includes("create_market")) {
+            // on-chain truth arrives post-gate; until then estimate bond+seed+fee
+            const seed = BigInt(inner.b0 ?? inner.b_zero ?? inner.seed ?? 0);
+            amount = cost > 0n ? -cost : -(BOND + seed + FEE);
+            est = cost === 0n;
+            dir = "out";
+          } else if (type.includes("cancel_market")) {
+            amount = cost > 0n ? cost : null; // pre-gate refunds were never logged
+            dir = "in";
+          } else if (type.includes("submit_prediction")) {
+            amount = cost > 0n ? -cost : shares > 0n ? -shares : null;
+            dir = "out";
+          } else if (type.includes("claim_winnings") || type.includes("reclaim")) {
+            amount = cost > 0n ? cost : null;
+            dir = "in";
+          }
           items.push({
             key: `${t.txHash || t.tx_hash || ""}-${type}-${t.height}`,
             txHash: t.txHash || t.tx_hash || "",
             height: Number(t.height || 0),
-            marketId: m.marketId,
-            question: m.question || m.rules || "",
+            marketId: mid,
+            question: inner.question || inner.rules || "",
             type,
             label: LABELS[type] || type,
-            shares,
-            cost,
             amount,
+            est,
             dir,
           });
         }
@@ -94,7 +106,7 @@ export function useWalletActivity() {
       items.sort((a, b) => b.height - a.height);
       return items;
     },
-    enabled: !!praxisAddress && markets.length > 0,
+    enabled: !!praxisAddress,
     staleTime: 30000,
     refetchInterval: 30000,
   });
