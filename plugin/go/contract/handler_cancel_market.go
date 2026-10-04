@@ -166,10 +166,7 @@ creatorAcc.Amount += refund
 if gated {
 marketPool.Amount = 0
 // Fee is debited from the signer (legacy path credited the fee pools without debiting).
-if creatorAcc.Amount < fee {
-return &PluginDeliverResponse{Error: ErrInsufficientFunds()}
 }
-creatorAcc.Amount -= fee
 }
 
 // Sweep creator fee pool + resolver fee pool to global treasury
