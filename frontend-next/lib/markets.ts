@@ -203,15 +203,18 @@ export function isCancelled(m: Market): boolean {
 export { nPrices } from "@/lib/nOutcome";
 
 
+
+
 // Total market volume/liquidity:
 // binary    = qYes + qNo (seed-initialized at creation)
-// N-outcome = b0 seed + sum(q vector) (q starts at zero; grows with trades)
+// N-outcome = b0 seed + sum(q vector) — q starts at zero and grows with trades.
+// Bond (5,000 PRX) is deliberately excluded: it is a refundable deposit, not liquidity.
 export function marketVol(m: any): bigint {
   if (m && Array.isArray(m.options) && m.options.length > 0) {
     const qSum = Array.isArray(m.q)
       ? (m.q as any[]).reduce((acc: bigint, x: any) => acc + BigInt(x ?? 0), 0n)
       : 0n;
-    const seed = BigInt(m.b0 ?? m.b_zero ?? m.seed ?? m.liquidity ?? 0);
+    const seed = BigInt(m?.b0 ?? m?.b_0 ?? m?.seed ?? m?.liquidity ?? 0);
     return qSum + seed;
   }
   return BigInt(m?.qYes ?? 0) + BigInt(m?.qNo ?? 0);

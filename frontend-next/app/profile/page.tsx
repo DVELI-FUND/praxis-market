@@ -303,19 +303,23 @@ export default function ProfilePage() {
             {activity.length > 0 && (
               <div className="mb-3 grid grid-cols-2 gap-3">
                 <div className="rounded-card border border-line bg-surface-grad p-4 shadow-card">
-                  <div className="font-mono text-[11px] uppercase tracking-[2px] text-ink-3">Tokens in</div>
+                  <div className="font-mono text-[11px] uppercase tracking-[2px] text-ink-3">Tokens in (recorded)</div>
                   <div className="mt-1 font-display text-[18px] font-extrabold text-up tabular-nums">
                     +{fmtPRXFull(activity.reduce((s, i) => s + (i.dir === "in" && i.amount ? i.amount : 0n), 0n))}
                   </div>
                 </div>
                 <div className="rounded-card border border-line bg-surface-grad p-4 shadow-card">
-                  <div className="font-mono text-[11px] uppercase tracking-[2px] text-ink-3">Tokens out</div>
+                  <div className="font-mono text-[11px] uppercase tracking-[2px] text-ink-3">Tokens out (recorded)</div>
                   <div className="mt-1 font-display text-[18px] font-extrabold text-down tabular-nums">
                     {fmtPRXFull(activity.reduce((s, i) => s + (i.dir === "out" && i.amount ? -i.amount : 0n), 0n))}
                   </div>
                 </div>
               </div>
             )}
+            <div className="mb-2 font-mono text-[10px] leading-relaxed text-ink-3">
+              Only amounts the chain actually recorded are shown. Transactions before the
+              amount-logging upgrade display — (bond/seed/refund were never written to the log).
+            </div>
             {activityLoading ? (
               <div className="rounded-card border border-line bg-surface-grad p-10 text-center shadow-card">
                 <div className="animate-pulseDot text-ink-3">Loading activity...</div>
