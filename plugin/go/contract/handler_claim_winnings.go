@@ -325,6 +325,13 @@ sets[2] = &PluginSetOp{Key: poolKey,              Value: rawMP}
 sets    = append(sets, &PluginSetOp{Key: KeyForTreasuryPool(), Value: rawTreasury})
 }
 
+// Log claim_winnings with payout amount (gated for replay safety)
+if amountLogActive(now) && payout > 0 {
+txLogOp, tlErr := buildMarketTxLogOp(market, msg.MarketId, "claim_winnings", msg.ClaimantAddress, now, false, 0, payout, "")
+if tlErr == nil {
+sets = append(sets, txLogOp)
+}
+}
 wr, werr := c.plugin.StateWrite(c, &PluginStateWriteRequest{Sets: sets})
 if pe := errCheckWrite(wr, werr); pe != nil {
 return &PluginDeliverResponse{Error: pe}

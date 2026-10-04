@@ -170,7 +170,11 @@ market.QYes, market.QNo = 0, 0
 }
 treasury := &TreasuryReserve{LockedReserve: FINALIZATION_BOUNTY, CreatorBond: CREATOR_BOND}
 
-txLogOp, pe := buildMarketTxLogOp(market, marketId, "create_market", msg.CreatorAddress, now, false, 0, 0, txHash)
+logAmt := uint64(0)
+if amountLogActive(now) {
+logAmt = totalCost
+}
+txLogOp, pe := buildMarketTxLogOp(market, marketId, "create_market", msg.CreatorAddress, now, false, 0, logAmt, txHash)
 if pe != nil { return &PluginDeliverResponse{Error: pe} }
 
 rawMarket, pe := SafeMarshal(market)
