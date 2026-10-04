@@ -7,6 +7,11 @@ const HIDDEN: string[] = [
   "6da413d908ca5d41bc90c25bec85cc33a1942538",
   "8fee15ad02f94760476d8330283423efdfc01bce",
   "46296c71dc08ca5a3e255464334cd42b2aabeb20",
+  "2e8b441c69827295f8b542c83a9dbeb9294f63bc",  // Levante vs Athletic Club
+  "d3ff3bfc79e5838efc954cff92b06e911361f78d",  // Levante vs Athletic Club
+  "dff858062b200369bacd849c8fddd9401fa21249",  // Arsenal vs Leeds United
+  "e4bd54853d5366e6302e437bb5dcecd46caf5fcf",  // Arsenal vs Leeds United
+  "f74013d327dd2d0728cdf120b5719e589a3d7f38",  // Republican Presidential Nominee 2028
   // IDS_END
 ];
 
