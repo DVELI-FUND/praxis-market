@@ -13,6 +13,7 @@ export interface MarketTx {
       bettorAddress?: string;
       outcome?: boolean;
       shares?: string | number;
+              cost?: string | number;
       amount?: string | number;
     };
   };

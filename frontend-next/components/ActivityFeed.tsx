@@ -26,10 +26,12 @@ export default function ActivityFeed({ mid }: Props) {
           return (
             <div key={i} className="flex items-center justify-between font-mono text-[12px]">
               <span className="text-ink-3">{addr}…</span>
-              <span className={isPredict ? (outcome ? "text-up" : "text-down") : "text-ink-2"}>
-                {isPredict ? `bought ${outcome ? "YES" : "NO"}` : tx.messageType}
+              <span className={isPredict ? "text-up" : "text-ink-2"}>
+                {isPredict ? `bought ${shares} shares` : tx.messageType}
               </span>
-              <span className="text-ink tabular-nums">{fmtPRX(shares)}</span>
+              {isPredict && tx.transaction.msg.cost && (
+                <span className="text-ink-3 tabular-nums">cost {fmtPRX(BigInt(tx.transaction.msg.cost))}</span>
+              )}
             </div>
           );
         })}

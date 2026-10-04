@@ -80,6 +80,7 @@ export interface MarketActivity {
   messageType: string;
   outcome?: boolean;
   shares?: bigint;
+  cost?: bigint;
   proposedOutcome?: boolean;
   b0?: bigint;
   outcomeIndex?: number; // N-outcome markets only

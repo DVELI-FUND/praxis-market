@@ -64,17 +64,19 @@ export default function ActivityTab({ mid, holders }: Props) {
 
         let detail = "";
         if (tx.messageType === "submit_prediction") {
-          const side = tx.outcome ? "text-up" : "text-down";
-          const label = tx.outcome ? "YES" : "NO";
-          const amt = fmtPRX(tx.shares || 0n);
-          detail = `<span class="${side} font-bold">${label}</span> &nbsp;${amt} PRX`;
+          const shares = tx.shares || 0n;
+          const cost = tx.cost || 0n;
+          const outcomeIdx = tx.outcomeIndex;
+          // For N-outcome: show option name if available; for binary: YES/NO
+          const label = outcomeIdx !== undefined ? `Option ${outcomeIdx}` : (tx.outcome ? "YES" : "NO");
+          detail = `${label} · ${shares} shares`;
+          if (cost > 0n) detail += ` · cost ${fmtPRX(cost)} PRX`;
         } else if (tx.messageType === "propose_outcome") {
           const side = tx.proposedOutcome ? "text-up" : "text-down";
           const label = tx.proposedOutcome ? "YES" : "NO";
           detail = `Proposed <span class="${side}">${label}</span>`;
         } else if (tx.messageType === "create_market") {
-          const b0 = fmtPRX(tx.b0 || 0n);
-          detail = `Market created · B0 ${b0} PRX`;
+          detail = "Market created";
         } else if (tx.messageType === "finalize_market") {
           detail = "Market finalized";
         } else if (tx.messageType === "cancel_market") {
