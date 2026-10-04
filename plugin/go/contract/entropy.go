@@ -34,6 +34,13 @@ var AUDIT_FIX_HEIGHT uint64 = ^uint64(0)
 // PANEL_ENTROPY_KEY_V2 is the real accumulator key (KeyForPanelEntropy was never called before).
 var PANEL_ENTROPY_KEY_V2 = KeyForPanelEntropy()
 
+// AMOUNT_LOG_HEIGHT: from this height, market tx-log entries carry the real
+// PRX amount in the Cost field (cancel = full refund). Additive field only —
+// old entries unmarshal with Cost=0, and the gate keeps replay deterministic.
+const AMOUNT_LOG_HEIGHT uint64 = 33_000
+
+func amountLogActive(height uint64) bool { return height >= AMOUNT_LOG_HEIGHT }
+
 func auditFixActive(height uint64) bool { return height >= AUDIT_FIX_HEIGHT }
 
 // entropyKeyFor returns the key file_dispute must read at the given height.

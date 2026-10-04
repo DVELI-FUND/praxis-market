@@ -72,7 +72,9 @@ export function useWalletActivity() {
           const cost = BigInt(t.cost ?? t.Cost ?? 0);
           let amount: bigint | null = null;
           let dir: "in" | "out" | "neutral" = "neutral";
-          if (OUT.some((k) => type.includes(k))) { dir = "out"; amount = cost > 0n ? -cost : shares > 0n ? -shares : null; }
+          if (type.includes("create_market")) { dir = "out"; amount = -5_000_000_000n; } // creator bond locked (5,000 PRX)
+          else if (type.includes("cancel_market")) { dir = "in"; amount = cost > 0n ? cost : null; } // refund (logged post-gate)
+          else if (OUT.some((k) => type.includes(k))) { dir = "out"; amount = cost > 0n ? -cost : shares > 0n ? -shares : null; }
           else if (IN.some((k) => type.includes(k))) { dir = "in"; amount = cost > 0n ? cost : shares > 0n ? shares : null; }
           items.push({
             key: `${t.txHash || t.tx_hash || ""}-${type}-${t.height}`,
