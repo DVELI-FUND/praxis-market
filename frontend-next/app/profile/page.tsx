@@ -342,7 +342,7 @@ export default function ProfilePage() {
                       {item.amount !== null ? (
                         <>
                           <div className={`font-display text-[16px] font-extrabold tabular-nums ${item.amount >= 0n ? "text-up" : "text-down"}`}>
-                            {item.amount >= 0n ? "+" : "−"}{item.est ? "≈" : ""}{fmtPRXFull(item.amount < 0n ? -item.amount : item.amount)}
+                            {item.amount >= 0n ? "+" : "−"}{fmtPRXFull(item.amount < 0n ? -item.amount : item.amount)}
                           </div>
                           <div className="font-mono text-[11px] text-ink-3">PRX</div>
                         </>

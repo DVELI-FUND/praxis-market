@@ -11,8 +11,8 @@ export interface ActivityItem {
   question: string;
   type: string;
   label: string;
-  amount: bigint | null;
-  est: boolean; // true = computed estimate, not on-chain recorded
+  shares: bigint;
+  amount: bigint | null; // ONLY on-chain recorded PRX. null = never recorded → show "—"
   dir: "in" | "out" | "neutral";
 }
 
@@ -26,9 +26,6 @@ const LABELS: Record<string, string> = {
   file_dispute: "Dispute filed",
   forfeit_position: "Position forfeited",
 };
-
-const BOND = 5_000_000_000n; // 5,000 PRX creator bond (refundable on cancel)
-const FEE = 10_000n;         // 0.01 PRX tx fee
 
 async function fetchJSON(url: string): Promise<any> {
   try {
@@ -48,11 +45,10 @@ export function useWalletActivity() {
   const { praxisAddress } = useWallet();
 
   const q = useQuery({
-    queryKey: ["wallet-activity-v2", praxisAddress],
+    queryKey: ["wallet-activity-v3", praxisAddress],
     queryFn: async (): Promise<ActivityItem[]> => {
       const addr = (praxisAddress || "").toLowerCase();
       if (!addr) return [];
-      // Direct RPC: includes CANCELLED markets (useMarkets filters them out)
       const rawMarkets = await fetchJSON(getPluginRPC() + "/v1/query/markets");
       const list: any[] = Array.isArray(rawMarkets) ? rawMarkets : [];
       const per = await Promise.all(
@@ -70,25 +66,14 @@ export function useWalletActivity() {
           const type: string = t.messageType || t.txType || t.type || "unknown";
           const cost = BigInt(t.cost ?? t.Cost ?? 0);
           const shares = BigInt(t.shares ?? t.Shares ?? 0);
+          // TRUTH ONLY: amount comes from the on-chain log's cost field.
+          // Entries written before the amount-logging upgrade have cost=0 → null → "—".
           let amount: bigint | null = null;
-          let est = false;
           let dir: "in" | "out" | "neutral" = "neutral";
-          if (type.includes("create_market")) {
-            // on-chain truth arrives post-gate; until then estimate bond+seed+fee
-            const seed = BigInt(inner.b0 ?? inner.b_zero ?? inner.seed ?? 0);
-            amount = cost > 0n ? -cost : -(BOND + seed + FEE);
-            est = cost === 0n;
-            dir = "out";
-          } else if (type.includes("cancel_market")) {
-            amount = cost > 0n ? cost : null; // pre-gate refunds were never logged
-            dir = "in";
-          } else if (type.includes("submit_prediction")) {
-            amount = cost > 0n ? -cost : shares > 0n ? -shares : null;
-            dir = "out";
-          } else if (type.includes("claim_winnings") || type.includes("reclaim")) {
-            amount = cost > 0n ? cost : null;
-            dir = "in";
-          }
+          if (type.includes("create_market")) { dir = "out"; amount = cost > 0n ? -cost : null; }
+          else if (type.includes("cancel_market")) { dir = "in"; amount = cost > 0n ? cost : null; }
+          else if (type.includes("submit_prediction")) { dir = "out"; amount = cost > 0n ? -cost : null; }
+          else if (type.includes("claim_winnings") || type.includes("reclaim")) { dir = "in"; amount = cost > 0n ? cost : null; }
           items.push({
             key: `${t.txHash || t.tx_hash || ""}-${type}-${t.height}`,
             txHash: t.txHash || t.tx_hash || "",
@@ -97,8 +82,8 @@ export function useWalletActivity() {
             question: inner.question || inner.rules || "",
             type,
             label: LABELS[type] || type,
+            shares,
             amount,
-            est,
             dir,
           });
         }
