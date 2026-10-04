@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchResolvers } from "@/lib/resolvers";
 import { fmtPRX } from "@/lib/format";
+import { getBlockSecs } from "@/lib/rpc";
 import { useHeight } from "@/hooks/useHeight";
 
 function tier(rrs: number): { name: string; cls: string; ring: string } {
@@ -12,7 +13,7 @@ function tier(rrs: number): { name: string; cls: string; ring: string } {
 }
 
 function fmtAge(blocks: number): string {
-  const secs = blocks * 10;
+  const secs = blocks * getBlockSecs();
   if (secs < 3600) return `${Math.floor(secs / 60)}m`;
   if (secs < 86400) return `${Math.floor(secs / 3600)}h`;
   const days = Math.floor(secs / 86400);

@@ -88,6 +88,25 @@ async function discoverChain(height: number): Promise<{ chainId?: number; networ
   return {};
 }
 
+// Seconds per block. Every countdown/date in the UI used a hard-coded 5s or 10s; measure it instead.
+let blockSecs = 5; // fallback = what create_market's datetimeToBlock assumed
+let blockSecsAt = 0;
+export function getBlockSecs(): number { return blockSecs; }
+
+async function measureBlockSecs(height: number): Promise<void> {
+  if (height < 50 || Date.now() - blockSecsAt < 10 * 60_000) return;
+  const span = Math.min(200, height - 2);
+  try {
+    const t = async (h: number) => {
+      const b = await rpc<{ blockHeader?: { time?: number | string } }>("/v1/query/block-by-height", { height: h });
+      return Number(b?.blockHeader?.time || 0);
+    };
+    const [t1, t0] = await Promise.all([t(height - 1), t(height - 1 - span)]);
+    const secs = (t1 - t0) / span / 1e6; // header time is in microseconds
+    if (secs > 0.5 && secs < 120) { blockSecs = secs; blockSecsAt = Date.now(); }
+  } catch { /* keep previous estimate */ }
+}
+
 export async function queryHeight(): Promise<HeightInfo> {
   const d = await rpc<{ height?: number | string; network_id?: number; networkID?: number }>(
     "/v1/query/height",
@@ -98,6 +117,7 @@ export async function queryHeight(): Promise<HeightInfo> {
   const chainId = found.chainId ?? FALLBACK_CHAIN_ID;
   const networkId = found.networkId ?? d.network_id ?? d.networkID;
   setChainContext(height, chainId, networkId);
+  void measureBlockSecs(height);
   return { height, networkId, chainId };
 }
 

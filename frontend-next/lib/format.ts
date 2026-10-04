@@ -1,3 +1,4 @@
+import { getBlockSecs } from "./rpc";
 // Formatting helpers — ported from Frontend/proto.js (PRX = 1e6 uPRX).
 export function fmtPRX(n: bigint | number | string | null | undefined): string {
   if (n === null || n === undefined || n === "") return "—";
@@ -46,12 +47,12 @@ export function b64ToHex(b64: string): string {
   }
 }
 
-// Human-readable countdown from block height (~10s/block).
+// Human-readable countdown from block height (seconds/block is measured from the chain, see rpc.ts).
 export function fmtCountdown(expiry: number, height: number): string {
   if (!expiry) return "—";
   const blocks = expiry - height;
   if (blocks <= 0) return "ended";
-  const secs = blocks * 10;
+  const secs = blocks * getBlockSecs();
   const d = Math.floor(secs / 86400);
   const h = Math.floor((secs % 86400) / 3600);
   const m = Math.floor((secs % 3600) / 60);

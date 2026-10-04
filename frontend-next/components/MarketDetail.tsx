@@ -4,8 +4,9 @@ import { useEffect, useState , useMemo, useRef} from "react";
 import Link from "next/link";
 import { useMarketDetail } from "@/hooks/useMarketDetail";
 import { useHeight } from "@/hooks/useHeight";
-import { extractCat, extractOutcomes, stripCatPrefix, yesPct, STATUS, nPrices , marketVol } from "@/lib/markets";
+import { extractCat, extractOutcomes, stripCatPrefix, yesPct, STATUS, nPrices , marketVol, marketLiquidity, binYesPrice } from "@/lib/markets";
 import { fmtPRX, fmtCountdown } from "@/lib/format";
+import { getBlockSecs } from "@/lib/rpc";
 import StatusPill from "./StatusPill";
 import ShareButton from "./ShareButton";
 import DetailTabs from "./DetailTabs";
@@ -58,11 +59,12 @@ export default function MarketDetail({ mid }: Props) {
     if (yes < 0n) yes = 0n;
     if (no < 0n) no = 0n;
     const minH = Math.max(0, height - 17280);
-    let pct24 = yes + no > 0n ? Number((yes * 10000n) / (yes + no)) / 100 : 50;
+    const pctAt = (y: bigint, n: number | bigint) => Math.round(binYesPrice(y, BigInt(n), market.b0) * 1000) / 10;
+    let pct24 = pctAt(yes, no);
     for (const t of trades) {
       const sh = BigInt(t.transaction?.msg?.shares || 0);
       if (t.transaction?.msg?.outcome) yes += sh; else no += sh;
-      if (t.height <= minH && yes + no > 0n) pct24 = Number((yes * 10000n) / (yes + no)) / 100;
+      if (t.height <= minH) pct24 = pctAt(yes, no);
     }
     const pct = yesPct(market);
   const isNOutcome = market.options && market.options.length > 0;
@@ -70,7 +72,7 @@ export default function MarketDetail({ mid }: Props) {
     return Math.round((pct - pct24) * 10) / 10;
   }, [txs, market, chain2?.height]);
   const fmtChg = (v: number) => (v > 0 ? `▲ ${v.toFixed(1)}%` : v < 0 ? `▼ ${Math.abs(v).toFixed(1)}%` : "— 0.0%");
-  const blkDate = (b: number) => new Date(Date.now() + (b - (chain2?.height ?? 0)) * 5000).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  const blkDate = (b: number) => new Date(Date.now() + (b - (chain2?.height ?? 0)) * getBlockSecs() * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
   const related = useMemo(() => allMarkets.filter((m2) => m2.marketId !== mid && m2.status === STATUS.LIVE).slice(0, 3), [allMarkets, mid]);
 
   if (isLoading) {
@@ -94,6 +96,7 @@ export default function MarketDetail({ mid }: Props) {
   const noPct = 100 - pct;
   const total = marketVol(market);
   const vol = total > 0n ? fmtPRX(total) : "—";
+  const liq = fmtPRX(marketLiquidity(market));
   const catKey = extractCat(market.rules);
   const outLbl = extractOutcomes(market.rules || "");
   const question = stripCatPrefix(market.question || market.rules || "(no question)");
@@ -139,6 +142,8 @@ export default function MarketDetail({ mid }: Props) {
               <h1 className="font-display text-[20px] font-extrabold leading-tight tracking-[-0.3px] text-ink md:text-[24px]">{question}</h1>
               <div className="mt-2 flex flex-wrap items-center gap-4 font-mono text-[13px]">
                 <span className="text-ink-2">Vol <b className="text-[15px] text-cyanx tabular-nums">{vol}</b></span>
+                <span className="text-ink-3">·</span>
+                <span className="text-ink-2">Liquidity <b className="text-[15px] text-ink tabular-nums">{liq}</b></span>
                 <span className="text-ink-3">·</span>
                 <span className="text-ink-2">Ends <b className="text-[15px] text-up tabular-nums">{fmtCountdown(Number(market.expiry), chain?.height ?? 0)}</b></span>
               </div>
@@ -235,7 +240,7 @@ export default function MarketDetail({ mid }: Props) {
           {/* price chart */}
           {!isNOutcome && (
             <div className="mb-4">
-              <PriceChart mid={mid} initialYes={market.qYes} initialNo={market.qNo} />
+              <PriceChart mid={mid} initialYes={market.qYes} initialNo={market.qNo} b0={market.b0} />
             </div>
           )}
 
@@ -246,10 +251,10 @@ export default function MarketDetail({ mid }: Props) {
           <div className="mb-4 overflow-hidden rounded-card border border-line bg-surface-grad shadow-card">
             <div className="border-b border-line px-4 py-3 font-display text-[15px] font-bold text-ink">Timeline & payout</div>
             <div className="space-y-2 px-4 py-3 font-mono text-[12px] text-ink-2">
-              <div className="flex justify-between gap-3"><span>Trading opened</span><span className="text-right text-ink-3">{(() => { const ob = Number((market as unknown as { openTime?: number }).openTime ?? 0); return ob > 0 ? `blk ${ob.toLocaleString()} · ${blkDate(ob)}` : "—"; })()}</span></div>
+              <div className="flex justify-between gap-3"><span>Trading opened</span><span className="text-right text-ink-3">{(() => { const ob = market.openTime; return ob > 0 ? `blk ${ob.toLocaleString()} · ${blkDate(ob)}` : "—"; })()}</span></div>
               <div className="flex justify-between gap-3"><span>Trading closes</span><span className="text-right text-amberx">blk {Number(market.expiry).toLocaleString()} · {blkDate(Number(market.expiry))}</span></div>
               <div className="flex justify-between gap-3"><span>Resolution</span><span className="text-right text-ink-3">bonded propose → dispute window → finalize</span></div>
-              <div className="flex justify-between gap-3"><span>Payout</span><span className="text-right text-up">1 PRX per winning share · losers forfeit</span></div>
+              <div className="flex justify-between gap-3"><span>Payout</span><span className="text-right text-up">{isNOutcome ? "1 PRX per winning share · losers forfeit" : "Winners split the pool pro-rata · losers forfeit"}</span></div>
             </div>
           </div>
 
@@ -291,12 +296,12 @@ function FaqSection({ pct, ends, isNOutcome }: { pct: number; ends: string; isNO
   const [open, setOpen] = useState<number | null>(0);
   const faqs = isNOutcome ? [
     { q: "What are the current odds?", a: "Each option's price represents its probability. The prices sum to 100% and move as traders buy shares in each option." },
-    { q: "How does payout work?", a: "The winning option pays 1 PRX per share. All other options pay 0. Your profit is the payout minus what you paid for the shares." },
+    { q: "How does payout work?", a: "Each winning-option share pays 1 PRX. All other options pay 0. Your profit is the payout minus what you paid for the shares." },
     { q: "When does this market resolve?", a: `Trading ends in ${ends}. After expiry, a resolver proposes the winning option and it finalizes unless disputed.` },
     { q: "How is resolution decided?", a: "Bonded resolvers stake PRX to propose the winning option. Anyone can dispute by staking; a correct challenge is rewarded, a rejected one is forfeited." },
   ] : [
     { q: "What are the current odds?", a: `YES is priced at ${pct}% and NO at ${100 - pct}%. Prices move as traders buy each side.` },
-    { q: `What does a YES price of ${pct}¢ mean?`, a: "It means the market currently assigns a " + pct + "% probability to the outcome resolving YES. Buying YES at this price pays 100¢ per share if correct." },
+    { q: `What does a YES price of ${pct}¢ mean?`, a: "It means the market currently assigns a " + pct + "% probability to the outcome resolving YES. If YES wins, YES holders split the pool pro-rata by shares held; a lower price means a bigger share of it per PRX paid." },
     { q: "When does this market resolve?", a: `Trading ends in ${ends}. After expiry, a resolver proposes the outcome and it finalizes unless disputed.` },
     { q: "How is resolution decided?", a: "Bonded resolvers stake PRX to propose the outcome. Anyone can dispute by staking; a correct challenge is rewarded, a rejected one is forfeited." },
   ];

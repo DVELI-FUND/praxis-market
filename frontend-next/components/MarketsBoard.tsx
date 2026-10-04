@@ -61,7 +61,7 @@ export default function MarketsBoard() {
     let list = filterByTab(markets, tab);
     if (cat !== "all") list = list.filter((m) => extractCat(m.rules) === cat && (!sub || parseSub(m.rules) === sub));
     return sortMarkets(list, sort);
-  }, [markets, tab, cat, sort]);
+  }, [markets, tab, cat, sub, sort]);
 
   const emptyLabel =
     tab === "live"
@@ -133,8 +133,8 @@ export default function MarketsBoard() {
             onChange={(e) => setSort(e.target.value as SortKey)}
             className="rounded-card border border-line bg-surface-grad px-3 py-1.5 font-mono text-[12px] text-ink-2 outline-none focus:border-line-2"
           >
-            <option value="vol">24H Volume</option>
-            <option value="totalVol">Total Volume</option>
+            <option value="vol">Volume</option>
+            <option value="totalVol">Liquidity</option>
             <option value="newest">Newest</option>
             <option value="closing">Expiring Soon</option>
             <option value="trending">Trending</option>

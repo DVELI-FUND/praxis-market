@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useWallet } from "@/store/wallet";
 import { getPluginRPC } from "@/lib/rpc";
 import { b64ToHex } from "@/lib/format";
+import { isHiddenMarket } from "@/lib/hiddenMarkets";
 
 export interface ActivityItem {
   key: string;
@@ -50,7 +51,7 @@ export function useWalletActivity() {
       const addr = (praxisAddress || "").toLowerCase();
       if (!addr) return [];
       const rawMarkets = await fetchJSON(getPluginRPC() + "/v1/query/markets");
-      const list: any[] = Array.isArray(rawMarkets) ? rawMarkets : [];
+      const list: any[] = (Array.isArray(rawMarkets) ? rawMarkets : []).filter((m: any) => !isHiddenMarket(m.id || m.marketId));
       const per = await Promise.all(
         list.slice(0, 150).map((m) => fetchJSON(getPluginRPC() + `/v1/query/market-txs?market=${m.id || m.marketId}&limit=200`))
       );
@@ -74,8 +75,9 @@ export function useWalletActivity() {
           else if (type.includes("cancel_market")) { dir = "in"; amount = cost > 0n ? cost : null; }
           else if (type.includes("submit_prediction")) { dir = "out"; amount = cost > 0n ? -cost : null; }
           else if (type.includes("claim_winnings") || type.includes("reclaim")) { dir = "in"; amount = cost > 0n ? cost : null; }
+          if (amount === null) dir = "neutral"; // never imply money moved when nothing was recorded
           items.push({
-            key: `${t.txHash || t.tx_hash || ""}-${type}-${t.height}`,
+            key: `${mid}-${t.txHash || t.tx_hash || ""}-${type}-${t.height}-${items.length}`,
             txHash: t.txHash || t.tx_hash || "",
             height: Number(t.height || 0),
             marketId: mid,

@@ -2,19 +2,22 @@
 import { useMemo, useState } from "react";
 import { useMarketTxs } from "@/lib/txHistory";
 import { useHeight } from "@/hooks/useHeight";
+import { binYesPrice } from "@/lib/markets";
+import { getBlockSecs } from "@/lib/rpc";
 
-interface Props { mid: string; initialYes: bigint; initialNo: bigint; }
+interface Props { mid: string; initialYes: bigint; initialNo: bigint; b0?: bigint; }
 
 const RANGES = { "1D": 17280, "1W": 120960, "1M": 518400, ALL: 0 } as const;
 type RangeKey = keyof typeof RANGES;
 
-export default function PriceChart({ mid, initialYes, initialNo }: Props) {
+export default function PriceChart({ mid, initialYes, initialNo, b0 = 0n }: Props) {
   const { data: txs = [] } = useMarketTxs(mid);
   const { data: chain } = useHeight();
   const [range, setRange] = useState<RangeKey>("1W");
 
-  const total0 = initialYes + initialNo;
-  const currentPct = total0 > 0n ? Number((initialYes * 10000n) / total0) / 100 : 50;
+  // chain price is the LMSR sigmoid((qYes-qNo)/b), not qYes/(qYes+qNo)
+  const priceAt = (y: bigint, n: bigint) => Math.round(binYesPrice(y, n, b0) * 10000) / 100;
+  const currentPct = priceAt(initialYes, initialNo);
   const height = chain?.height ?? 0;
 
   const allPoints = useMemo(() => {
@@ -32,11 +35,10 @@ export default function PriceChart({ mid, initialYes, initialNo }: Props) {
     for (const tx of trades) {
       const sh = BigInt(tx.transaction.msg.shares || 0);
       if (tx.transaction.msg.outcome) yes += sh; else no += sh;
-      const tot = yes + no;
-      if (tot > 0n) hist.push({ height: tx.height, pct: Number((yes * 10000n) / tot) / 100 });
+      hist.push({ height: tx.height, pct: priceAt(yes, no) });
     }
     return hist;
-  }, [txs, initialYes, initialNo]);
+  }, [txs, initialYes, initialNo, b0]);
 
   const minH = range === "ALL" ? 0 : Math.max(0, height - RANGES[range]);
   let points = allPoints.filter((p) => p.height >= minH);
@@ -52,7 +54,7 @@ export default function PriceChart({ mid, initialYes, initialNo }: Props) {
   const last = points[points.length - 1].pct;
   const up = last >= points[0].pct;
   const color = up ? "rgb(var(--up))" : "rgb(var(--down))";
-  const blockToTime = (bh: number) => new Date(Date.now() - (height - bh) * 5000);
+  const blockToTime = (bh: number) => new Date(Date.now() - (height - bh) * getBlockSecs() * 1000);
   const fmtD = (d: Date) => d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
   return (

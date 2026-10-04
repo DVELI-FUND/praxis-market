@@ -8,7 +8,8 @@ import { showConfirm } from "@/store/confirm";
 import { buildSigned, friendlyError, TYPE_URLS, waitForConfirmation } from "@/lib/tx";
 import { encPredict } from "@/lib/proto";
 import { submitTxRPC } from "@/lib/rpc";
-import { extractOutcomes, yesPct, nPrices , marketVol } from "@/lib/markets";
+import { extractOutcomes, yesPct, nPrices, binTradeCost, marketLiquidity } from "@/lib/markets";
+import { nTradeCost } from "@/lib/nOutcome";
 import { fmtPRX } from "@/lib/format";
 import type { MarketDetail } from "@/lib/detail";
 
@@ -40,20 +41,38 @@ export default function PredictPanel({ market, outcome, onOutcome, selectedOptio
   const pct = isNOutcome ? 0 : yesPct(market);
   const nPricesArr = isNOutcome ? nPrices(market.q, market.b0) : [];
 
+  // Quote straight from the LMSR the chain uses (price moves with size; fees are 1%+1% of TRADE COST, not of shares).
+  const sharesU = BigInt(Math.max(0, shares)) * 1_000_000n; // chain share units; each winning N-outcome share pays 1 uPRX
   const bd = useMemo(() => {
-    const tradeCost = shares;
-    const creatorFee = Math.ceil(shares * 0.01);
-    const resolverFee = Math.ceil(shares * 0.01);
-    const total = tradeCost + creatorFee + resolverFee;
-    const maxCost = Math.ceil(total * (1 + slip / 100));
-    const price = isNOutcome ? nPricesArr[selectedOption] * 100 : (outcome ? pct : 100 - pct);
-    const toWin = shares * 100 / price;
+    let cost = 0;
+    if (sharesU > 0n) {
+      cost = isNOutcome
+        ? nTradeCost(market.q, market.b0, selectedOption, sharesU)
+        : binTradeCost(market.qYes, market.qNo, market.b0, outcome, sharesU);
+    }
+    const tradeCost = Math.max(0, Math.ceil(cost));
+    const creatorFee = Math.ceil(tradeCost * 0.01);
+    const resolverFee = Math.ceil(tradeCost * 0.01);
+    // chain checks tradeCost + txFee + creatorFee + resolverFee <= maxCost
+    const maxCost = Math.ceil((tradeCost + creatorFee + resolverFee) * (1 + slip / 100)) + fee;
+    let toWin = Number(sharesU); // N-outcome: 1 uPRX per winning share
+    if (!isNOutcome) {
+      // binary pays pro-rata from the pool: pool_after * mine / (side shares after)
+      const side = outcome ? market.qYes : market.qNo;
+      const poolAfter = Number(marketLiquidity(market)) + tradeCost;
+      const denom = Number(side) + Number(sharesU);
+      toWin = denom > 0 ? (poolAfter * Number(sharesU)) / denom : 0;
+    }
     return { tradeCost, creatorFee, resolverFee, maxCost, toWin };
-  }, [shares, slip, outcome, pct, isNOutcome, nPricesArr, selectedOption]);
+  }, [sharesU, slip, outcome, isNOutcome, selectedOption, market.q, market.b0, market.qYes, market.qNo, fee]);
 
-  const pool = isNOutcome ? market.q.reduce((a, b) => a + b, 0n) : marketVol(market);
-  const cap = pool > 0n ? (pool * 2000n) / 10000n : 0n;
-  const over = pool > 0n && BigInt(bd.maxCost) > cap;
+  // Chain cap (checkPositionCapN / exceedsPositionCap): per-address shares <= 20% of the side's shares AFTER the trade
+  // (N-outcome floor: b/2). Existing holdings add to the numerator on-chain; they are not known here.
+  const sideAfter = isNOutcome
+    ? (() => { const base = (market.q[selectedOption] ?? 0n) + sharesU; const floor = market.b0 / 2n; return base < floor ? floor : base; })()
+    : (outcome ? market.qYes : market.qNo) + sharesU;
+  const cap = (sideAfter * 2000n) / 10000n;
+  const over = sharesU > 0n && sharesU > cap;
 
   const submit = async () => {
     if (!connected || !privKey || !pubKey || !praxisAddress) { toast("Connect wallet first", true); return; }
@@ -66,7 +85,7 @@ export default function PredictPanel({ market, outcome, onOutcome, selectedOptio
       ["Market ID", market.marketId.slice(0, 16) + "…", ""],
       ["Option", selectedLabel, "g"],
       ["Shares", shares.toLocaleString() + " PRX", ""],
-      ["Max Cost", bd.maxCost.toLocaleString() + " PRX", ""],
+      ["Max Cost", fmtPRX(bd.maxCost) + " PRX", ""],
     ]);
     if (!ok) return;
 
@@ -74,8 +93,8 @@ export default function PredictPanel({ market, outcome, onOutcome, selectedOptio
     try {
       // For N-outcome: pass outcomeIndex; for binary: pass outcome bool
       const inner = isNOutcome
-        ? encPredict(market.marketId, praxisAddress, false, BigInt(shares) * 1000000n, BigInt(bd.maxCost) * 1000000n, selectedOption)
-        : encPredict(market.marketId, praxisAddress, outcome, BigInt(shares) * 1000000n, BigInt(bd.maxCost) * 1000000n);
+        ? encPredict(market.marketId, praxisAddress, false, sharesU, BigInt(bd.maxCost), selectedOption)
+        : encPredict(market.marketId, praxisAddress, outcome, sharesU, BigInt(bd.maxCost));
       
       const tx = await buildSigned(privKey, pubKey, "submit_prediction", TYPE_URLS.submit_prediction, inner, {
         fee, height: chain.height, netId: chain.networkId, chainId: chain.chainId,
@@ -144,7 +163,7 @@ export default function PredictPanel({ market, outcome, onOutcome, selectedOptio
         )}
 
         <div className="mb-3">
-          <div className="mb-1 font-mono text-[11px] uppercase tracking-[2px] text-ink-2">Shares (PRX)</div>
+          <div className="mb-1 font-mono text-[11px] uppercase tracking-[2px] text-ink-2">Shares (payout in PRX)</div>
           <input type="number" value={shares} min={1} onChange={(e) => setShares(parseInt(e.target.value) || 0)} className={inputCls} />
           <div className="mt-2 grid grid-cols-4 gap-1.5">
             {[10, 50, 100, 500].map((v) => (
@@ -176,21 +195,21 @@ export default function PredictPanel({ market, outcome, onOutcome, selectedOptio
         </div>
 
         <div className="mb-3 space-y-1 rounded-card border border-line bg-bg-2 p-2.5 font-mono text-[11px]">
-          <div className="flex justify-between"><span className="text-ink-3">Trade cost</span><span className="text-up">{bd.tradeCost.toLocaleString()} PRX</span></div>
-          <div className="flex justify-between"><span className="text-ink-3">Market fee (2%)</span><span className="text-ink-2">{(bd.creatorFee + bd.resolverFee).toLocaleString()} PRX</span></div>
+          <div className="flex justify-between"><span className="text-ink-3">Trade cost</span><span className="text-up">{fmtPRX(bd.tradeCost)} PRX</span></div>
+          <div className="flex justify-between"><span className="text-ink-3">Market fee (2%)</span><span className="text-ink-2">{fmtPRX(bd.creatorFee + bd.resolverFee)} PRX</span></div>
           <div className="flex justify-between"><span className="text-ink-3">TX fee</span><span className="text-ink-2">{fee.toLocaleString()} uPRX</span></div>
-          <div className="flex justify-between border-t border-line pt-1"><span className="text-ink">Max cost</span><span className="text-up">{bd.maxCost.toLocaleString()} PRX</span></div>
-          <div className="flex justify-between border-t border-line pt-1"><span className="text-ink">To Win</span><span className="text-cyanx">{bd.toWin.toFixed(0)} PRX</span></div>
+          <div className="flex justify-between border-t border-line pt-1"><span className="text-ink">Max cost</span><span className="text-up">{fmtPRX(bd.maxCost)} PRX</span></div>
+          <div className="flex justify-between border-t border-line pt-1"><span className="text-ink">To Win</span><span className="text-cyanx">{fmtPRX(bd.toWin)} PRX</span></div>
         </div>
 
-        {pool > 0n && (
+        {sharesU > 0n && (
           <div className={`mb-3 rounded-card border p-2 font-mono text-[11px] ${over ? "border-down/40 bg-down-dim text-down" : "border-up/20 bg-up-dim text-ink-2"}`}>
-            {over ? `⚠ Exceeds 20% cap — max ${cap / 1000000n} PRX` : `20% position cap: ${cap / 1000000n} PRX`}
+            {over ? `⚠ Exceeds 20% cap — max ${fmtPRX(cap)} shares` : `20% position cap: ${fmtPRX(cap)} shares`}
           </div>
         )}
 
         <button onClick={() => void submit()} disabled={pending || over || !connected} className="w-full rounded-card bg-up py-3 font-sans text-[15px] font-extrabold text-black shadow-glowUp transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40">
-          {pending ? "▪▪▪ broadcasting…" : `⚡ Buy ${isNOutcome ? market.options[selectedOption] : (outcome ? outLbl.yes : outLbl.no)} · ${bd.maxCost} PRX max`}
+          {pending ? "▪▪▪ broadcasting…" : `⚡ Buy ${isNOutcome ? market.options[selectedOption] : (outcome ? outLbl.yes : outLbl.no)} · ${fmtPRX(bd.maxCost)} PRX max`}
         </button>
         {!connected && <div className="mt-2 text-center font-mono text-[11px] text-ink-3">connect wallet to trade</div>}
       </div>

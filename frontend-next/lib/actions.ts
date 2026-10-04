@@ -1,3 +1,4 @@
+import { getBlockSecs } from "@/lib/rpc";
 import { TYPE_URLS } from "@/lib/tx";
 import { buildRulesWithSub, buildRulesWithMeta } from "@/lib/cats";
 import { validateOptions } from "@/lib/nOutcome";
@@ -12,13 +13,13 @@ import {
 
 const W = 1000000n;
 
-// Convert a datetime-local string to a block height (5s blocks, Canopy default)
+// Convert a datetime-local string to a block height (measured seconds/block, see rpc.ts)
 export function datetimeToBlock(datetimeStr: string, currentHeight: number): number {
   if (!datetimeStr) return currentHeight + 1000;
   const targetMs = new Date(datetimeStr).getTime();
   const nowMs = Date.now();
   const deltaMs = Math.max(0, targetMs - nowMs);
-  const deltaBlocks = Math.floor(deltaMs / 5000);
+  const deltaBlocks = Math.floor(deltaMs / (getBlockSecs() * 1000));
   return currentHeight + deltaBlocks;
 }
 

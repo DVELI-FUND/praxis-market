@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { getPluginRPC } from "@/lib/rpc";
 import { useWallet } from "@/store/wallet";
+import { STATUS, binYesPrice, marketLiquidity } from "@/lib/markets";
+import { nPositionValue } from "@/lib/nOutcome";
 
 export interface Position {
   marketId: string;
@@ -61,4 +63,33 @@ export function usePositions() {
     staleTime: 30000,
     enabled: !!addr,
   });
+}
+
+interface ValuedMarket {
+  status: number;
+  options: string[];
+  q: bigint[];
+  qYes: bigint;
+  qNo: bigint;
+  b0: bigint;
+}
+
+/**
+ * Current value of a position in uPRX, matching what the chain would pay.
+ *  - claimed            -> 0 (already paid out)
+ *  - cancelled / voided -> costPaid (claim handler refunds CostPaid)
+ *  - N-outcome          -> shares * LMSR price (1 uPRX per winning share)
+ *  - binary             -> expected pro-rata pool payout (ComputePayout(pool, mine, totalSide));
+ *                          NOT 1 uPRX per share
+ * Resolved-but-unclaimed positions are still marked at live prices (winning index is not in the list endpoint).
+ */
+export function positionValue(pos: Position, m: ValuedMarket): bigint {
+  if (pos.claimed) return 0n;
+  if (m.status === STATUS.CANCELLED || m.status === STATUS.VOIDED) return pos.costPaid;
+  if (m.options.length > 0) return nPositionValue(pos.shares, m.q, m.b0);
+  const pYes = binYesPrice(m.qYes, m.qNo, m.b0);
+  const pool = Number(marketLiquidity(m));
+  const yes = m.qYes > 0n ? (Number(pos.sharesYes) / Number(m.qYes)) * pool * pYes : 0;
+  const no = m.qNo > 0n ? (Number(pos.sharesNo) / Number(m.qNo)) * pool * (1 - pYes) : 0;
+  return BigInt(Math.max(0, Math.round(yes + no)));
 }

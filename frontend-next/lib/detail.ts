@@ -1,6 +1,7 @@
 // Market detail data fetching — uses available plugin endpoints
 import { b64ToHex } from "@/lib/format";
-import { getPluginRPC } from "@/lib/rpc";
+import { getPluginRPC, queryHeight } from "@/lib/rpc";
+import { STATUS } from "@/lib/markets";
 
 export interface MarketDetail {
   marketId: string;
@@ -14,6 +15,8 @@ export interface MarketDetail {
   qNo: bigint;
   options: string[];
   q: bigint[];
+  openTime: number;
+  txCount: number;
 }
 
 export interface Holder {
@@ -106,20 +109,30 @@ async function pluginFetch<T>(path: string): Promise<T> {
 }
 
 export async function fetchMarket(mid: string): Promise<MarketDetail> {
-  const raw = await pluginFetch<{ id: string; market: { q_yes: string; q_no: string; expiry_time: string; status: number; question: string; rules: string; creator: string; b_eff: string; options?: string[]; q?: (string | number)[] } }>(`/v1/query/markets?id=${encodeURIComponent(mid)}`);
+  const raw = await pluginFetch<{ id: string; market: { q_yes: string; q_no: string; expiry_time: string; status: number; question: string; rules: string; creator: string; b_eff: string; options?: string[]; q?: (string | number)[]; open_time?: string | number; tx_count?: string | number } }>(`/v1/query/markets?id=${encodeURIComponent(mid)}`);
   const mk = raw.market;
+  const expiry = BigInt(mk.expiry_time || 0);
+  let status = mk.status ?? 0;
+  if (status === 0 && expiry) {
+    try {
+      const { height } = await queryHeight();
+      if (height > Number(expiry)) status = STATUS.AWAITING;
+    } catch { /* keep raw status */ }
+  }
   return {
     marketId: raw.id,
     question: mk.question || "(no question)",
     rules: mk.rules || "",
     creator: b64ToHex(mk.creator || ""),
     b0: BigInt(mk.b_eff || 0),
-    expiry: BigInt(mk.expiry_time || 0),
-    status: mk.status ?? 0,
+    expiry,
+    status,
     qYes: BigInt(mk.q_yes || 0),
     qNo: BigInt(mk.q_no || 0),
     options: Array.isArray(mk.options) ? mk.options : [],
     q: (mk.q || []).map((v) => BigInt(v || 0)),
+    openTime: Number(mk.open_time || 0),
+    txCount: Number(mk.tx_count || 0),
   };
 }
 

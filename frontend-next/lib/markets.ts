@@ -1,7 +1,7 @@
 import { b64ToHex } from "@/lib/format";
 import { getPluginRPC, queryHeight } from "@/lib/rpc";
 import { isHiddenMarket } from "@/lib/hiddenMarkets";
-import { nPrices } from "@/lib/nOutcome";
+import { nPrices, nCost } from "@/lib/nOutcome";
 
 export const CLOSED_WINDOW = 20000; // blocks — from Frontend/markets.js
 
@@ -163,7 +163,7 @@ export function filterByTab(markets: Market[], tab: TabKey): Market[] {
 export function sortMarkets(markets: Market[], sort: SortKey): Market[] {
   const arr = [...markets];
   if (sort === "vol") {
-    arr.sort((a, b) => Number(totalShares(b) - totalShares(a)));
+    arr.sort((a, b) => Number(marketVol(b) - marketVol(a)));
   } else if (sort === "expiry" || sort === "closing") {
     arr.sort((a, b) => Number(a.expiry - b.expiry));
   } else if (sort === "yes") {
@@ -175,7 +175,7 @@ export function sortMarkets(markets: Market[], sort: SortKey): Market[] {
   } else if (sort === "competitive") {
     arr.sort((a, b) => Math.abs(50 - yesPct(a)) - Math.abs(50 - yesPct(b)));
   } else if (sort === "totalVol") {
-    arr.sort((a, b) => Number(b.b0 - a.b0));
+    arr.sort((a, b) => Number(marketLiquidity(b) - marketLiquidity(a)));
   }
   return arr;
 }
@@ -188,9 +188,20 @@ export function totalShares(m: { qYes: bigint; qNo: bigint; q?: bigint[] }): big
   return m.q && m.q.length ? m.q.reduce((s, v) => s + v, 0n) : m.qYes + m.qNo;
 }
 
-// Legacy: YES percentage. N-outcome: percentage of option 0 (sort helper only; UIs show every option).
+// Binary LMSR YES price (0..1) = sigmoid((qYes - qNo) / b). Mirrors lmsr.go lmsrCost:
+// C = b*ln(e^(qYes/b) + e^(qNo/b)); price_yes = dC/dqYes. NOT qYes/(qYes+qNo).
+export function binYesPrice(qYes: bigint, qNo: bigint, b: bigint): number {
+  if (b <= 0n) {
+    const t = qYes + qNo;
+    return t > 0n ? Number(qYes) / Number(t) : 0.5;
+  }
+  return 1 / (1 + Math.exp(-(Number(qYes) - Number(qNo)) / Number(b)));
+}
+
+// Legacy binary: YES percentage from the LMSR price. N-outcome: percentage of option 0 (sort helper only; UIs show every option).
 export function yesPct(m: { qYes: bigint; qNo: bigint; options?: string[]; q?: bigint[]; b0?: bigint }): number {
   if (m.options && m.options.length > 0 && m.q && m.b0) return Math.round(nPrices(m.q, m.b0)[0] * 100);
+  if (m.b0 && m.b0 > 0n) return Math.round(binYesPrice(m.qYes, m.qNo, m.b0) * 100);
   const total = m.qYes + m.qNo;
   return total > 0n ? Number((m.qYes * 100n) / total) : 50;
 }
@@ -205,17 +216,50 @@ export { nPrices } from "@/lib/nOutcome";
 
 
 
-// Total market volume/liquidity:
-// binary    = qYes + qNo (seed-initialized at creation)
-// N-outcome = b0 seed + sum(q vector) — q starts at zero and grows with trades.
-// Bond (5,000 PRX) is deliberately excluded: it is a refundable deposit, not liquidity.
-export function marketVol(m: any): bigint {
+// ── Volume / liquidity — derived from on-chain state, in uPRX ──
+// Chain facts (handler_submit_prediction / handler_create_market):
+//   pool += tradeCost on every trade; position.CostPaid += tradeCost (fees are separate pools).
+//   binary:    b_eff = lmsrSeed, q starts at (b/2, b/2), pool starts at lmsrSeed
+//   N-outcome: b = seed/ln(N), q starts at 0, pool starts at seed ≈ b*ln(N)
+// Net traded volume (buys, ex-fees) = C(q) - C(q0).   Pool liquidity = seed + volume.
+// Raw share counts are NOT PRX and must never be shown as volume/liquidity.
+function lse2(a: number, b: number): number {
+  return a >= b ? a + Math.log1p(Math.exp(b - a)) : b + Math.log1p(Math.exp(a - b));
+}
+function marketCostParts(m: any): { cost: number; cost0: number; seed: number } {
+  const b = Number(m?.b0 ?? 0);
+  if (!(b > 0)) return { cost: 0, cost0: 0, seed: 0 };
   if (m && Array.isArray(m.options) && m.options.length > 0) {
-    const qSum = Array.isArray(m.q)
-      ? (m.q as any[]).reduce((acc: bigint, x: any) => acc + BigInt(x ?? 0), 0n)
-      : 0n;
-    const seed = BigInt(m?.b0 ?? m?.b_0 ?? m?.seed ?? m?.liquidity ?? 0);
-    return qSum + seed;
+    const q: bigint[] = Array.isArray(m.q) ? m.q : [];
+    const cost = nCost(q.length ? q : m.options.map(() => 0n), BigInt(Math.round(b)));
+    const cost0 = b * Math.log(m.options.length);
+    return { cost, cost0, seed: cost0 };
   }
-  return BigInt(m?.qYes ?? 0) + BigInt(m?.qNo ?? 0);
+  const qy = Number(m?.qYes ?? 0), qn = Number(m?.qNo ?? 0);
+  const cost = b * lse2(qy / b, qn / b);
+  const cost0 = b * lse2(0.5, 0.5);
+  return { cost, cost0, seed: b };
+}
+
+/** Binary quote (uPRX): C(after) - C(before), mirrors lmsr.go ComputeTradeCost. Quote only; chain is the source of truth. */
+export function binTradeCost(qYes: bigint, qNo: bigint, b: bigint, yes: boolean, shares: bigint): number {
+  const bb = Number(b);
+  if (!(bb > 0)) return 0;
+  const f = (y: number, n: number) => bb * lse2(y / bb, n / bb);
+  const y = Number(qYes), n = Number(qNo), s = Number(shares);
+  return f(yes ? y + s : y, yes ? n : n + s) - f(y, n);
+}
+
+/** Net PRX traded so far (uPRX), excluding fees. 0 for a market nobody has traded. */
+export function marketVol(m: any): bigint {
+  const { cost, cost0 } = marketCostParts(m);
+  const v = Math.round(cost - cost0);
+  return v > 0 ? BigInt(v) : 0n;
+}
+
+/** PRX actually held in the market pool (uPRX) = creator seed + net traded volume. */
+export function marketLiquidity(m: any): bigint {
+  const { cost, cost0, seed } = marketCostParts(m);
+  const v = Math.round(seed + (cost - cost0));
+  return v > 0 ? BigInt(v) : 0n;
 }

@@ -2,12 +2,13 @@
 import KeystorePanel from "@/components/KeystorePanel";
 import { useMemo, useState } from "react";
 import { useWallet } from "@/store/wallet";
-import { usePositions } from "@/lib/positions";
+import { usePositions, positionValue } from "@/lib/positions";
 import { useQuery } from "@tanstack/react-query";
 import { queryAccount } from "@/lib/rpc";
 import { b64ToHex, fmtPRX, fmtPRXFull } from "@/lib/format";
 import { useMarkets } from "@/hooks/useMarkets";
-import { stripCatPrefix, yesPct, extractCat, STATUS } from "@/lib/markets";
+import { stripCatPrefix, extractCat, STATUS } from "@/lib/markets";
+import { topShareIndex } from "@/lib/nOutcome";
 import { ACTIONS } from "@/lib/actions";
 import ActionForm from "@/components/ActionForm";
 import LogoMark from "@/components/LogoMark";
@@ -45,20 +46,20 @@ export default function ProfilePage() {
     return positions.map((pos) => {
       const market = markets.find((m) => m.marketId === pos.marketId);
       if (!market) return { ...pos, market: null, value: 0n, cat: "other" };
-      const pct = yesPct(market);
-      const value = (pos.sharesYes * BigInt(pct)) / 100n + (pos.sharesNo * BigInt(100 - pct)) / 100n;
+      const value = positionValue(pos, market);
       return { ...pos, market, value, cat: extractCat(market.rules) };
     });
   }, [positions, markets]);
 
-  const positionsValue = enriched.reduce((s, p) => s + p.value, 0n);
+  const shown = enriched.filter((p) => p.market);
+  const positionsValue = shown.reduce((s, p) => s + p.value, 0n);
   const netWorth = balance + positionsValue;
 
   const byCategory = useMemo(() => {
     const acc: Record<string, bigint> = {};
-    for (const p of enriched) acc[p.cat] = (acc[p.cat] || 0n) + p.value;
+    for (const p of shown) acc[p.cat] = (acc[p.cat] || 0n) + p.value;
     return Object.entries(acc).sort((a, b) => Number(b[1] - a[1]));
-  }, [enriched]);
+  }, [shown]);
 
   const copyAddr = async () => {
     if (!praxisAddress) return;
@@ -167,7 +168,7 @@ export default function ProfilePage() {
         ) : (
           <div className="space-y-2">
             {byCategory.slice(0, 4).map(([cat, val]) => {
-              const pct = netWorth > 0n ? Number((val * 100n) / netWorth) : 0;
+              const pct = netWorth > 0n ? Math.min(100, Number((val * 10000n) / netWorth) / 100) : 0;
               return (
                 <div key={cat} className="flex items-center gap-3">
                   <span className="w-[60px] font-mono text-[12px] text-ink-2">{cat}</span>
@@ -187,7 +188,7 @@ export default function ProfilePage() {
       <div className="mb-6">
         <div className="mb-4 flex gap-2">
           <button onClick={() => setTab("positions")} className={`rounded-pill px-4 py-2 font-mono text-[13px] font-bold transition-colors ${tab === "positions" ? "bg-up text-black" : "bg-surface-grad text-ink-2 hover:text-ink"}`}>
-            Positions ({enriched.length})
+            Positions ({shown.length})
           </button>
           <button onClick={() => setTab("stats")} className={`rounded-pill px-4 py-2 font-mono text-[13px] font-bold transition-colors ${tab === "stats" ? "bg-up text-black" : "bg-surface-grad text-ink-2 hover:text-ink"}`}>
             Stats
@@ -206,11 +207,13 @@ export default function ProfilePage() {
             ) : (
               enriched.map((pos) => {
                 if (!pos.market) return null;
-                const costPaid = BigInt(Math.round(Number((pos as any).costPaid || 0)));
+                const costPaid = pos.costPaid;
                 const pnl = pos.value - costPaid;
                 const pnlPct = costPaid > 0n ? Number((pnl * 10000n) / costPaid) / 100 : 0;
-                const held = pos.sharesYes >= pos.sharesNo ? "YES" : "NO";
-                const shares = pos.sharesYes >= pos.sharesNo ? pos.sharesYes : pos.sharesNo;
+                const isN = pos.market.options.length > 0;
+                const topIdx = isN ? topShareIndex(pos.shares) : -1;
+                const held = isN ? (pos.market.options[topIdx] ?? "—") : pos.sharesYes >= pos.sharesNo ? "YES" : "NO";
+                const shares = isN ? (topIdx >= 0 ? pos.shares[topIdx] : 0n) : pos.sharesYes >= pos.sharesNo ? pos.sharesYes : pos.sharesNo;
                 const status = pos.market.status === STATUS.LIVE ? "LIVE" : "ENDED";
                 const fmtNum = (big: bigint) => {
                   const str = fmtPRX(big);
@@ -231,7 +234,7 @@ export default function ProfilePage() {
                           <span className="line-clamp-2 font-display text-[15px] font-semibold text-ink">{stripCatPrefix(pos.market.question || pos.market.rules || "")}</span>
                         </div>
                         <div className="flex items-center gap-4 font-mono text-[12px] text-ink-3">
-                          <span><b className={held === "YES" ? "text-up" : "text-down"}>{held}</b> {fmtPRX(shares)} shares</span>
+                          <span><b className={held === "NO" ? "text-down" : "text-up"}>{held}</b> {fmtPRX(shares)} shares</span>
                           <span>Value <b className="text-ink tabular-nums">{fmtNum(pos.value)}</b></span>
                         </div>
                       </div>
@@ -253,7 +256,7 @@ export default function ProfilePage() {
 
         {tab === "stats" && (
           <div className="space-y-3">
-            {enriched.length === 0 ? (
+            {shown.length === 0 ? (
               <div className="rounded-card border border-line bg-surface-grad p-10 text-center shadow-card">
                 <div className="font-mono text-[12px] text-ink-3">No stats yet — trade a market to see performance</div>
               </div>
@@ -262,21 +265,19 @@ export default function ProfilePage() {
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                   <div className="rounded-card border border-line bg-surface-grad p-4 shadow-card">
                     <div className="font-mono text-[11px] uppercase tracking-[2px] text-ink-3">Positions</div>
-                    <div className="mt-1 font-display text-[20px] font-extrabold text-ink tabular-nums">{enriched.length}</div>
+                    <div className="mt-1 font-display text-[20px] font-extrabold text-ink tabular-nums">{shown.length}</div>
                   </div>
                   <div className="rounded-card border border-line bg-surface-grad p-4 shadow-card">
                     <div className="font-mono text-[11px] uppercase tracking-[2px] text-ink-3">Total Value</div>
-                    <div className="mt-1 font-display text-[20px] font-extrabold text-up tabular-nums">{fmtPRX(positionsValue)}</div>
+                    <div className="mt-1 font-display text-[20px] font-extrabold text-up tabular-nums">{fmtPRXFull(positionsValue)}</div>
                   </div>
                   <div className="rounded-card border border-line bg-surface-grad p-4 shadow-card">
                     <div className="font-mono text-[11px] uppercase tracking-[2px] text-ink-3">Best Performer</div>
                     <div className="mt-1 font-display text-[20px] font-extrabold text-up tabular-nums">
                       {(() => {
-                        const best = enriched.reduce((acc, p) => {
-                          const pnl = p.value - BigInt(Math.round(Number((p as any).costPaid || 0)));
-                          return pnl > acc.pnl ? { pnl, name: p.market?.question || "?" } : acc;
-                        }, { pnl: 0n, name: "?" });
-                        return `${best.pnl > 0n ? "+" : ""}${fmtPRX(best.pnl)}`;
+                        const pnls = shown.map((p) => p.value - p.costPaid);
+                        const best = pnls.reduce((a, b) => (b > a ? b : a), pnls[0]);
+                        return `${best > 0n ? "+" : ""}${fmtPRXFull(best)}`;
                       })()}
                     </div>
                   </div>
@@ -284,11 +285,9 @@ export default function ProfilePage() {
                     <div className="font-mono text-[11px] uppercase tracking-[2px] text-ink-3">Worst Performer</div>
                     <div className="mt-1 font-display text-[20px] font-extrabold text-down tabular-nums">
                       {(() => {
-                        const worst = enriched.reduce((acc, p) => {
-                          const pnl = p.value - BigInt(Math.round(Number((p as any).costPaid || 0)));
-                          return pnl < acc.pnl ? { pnl, name: p.market?.question || "?" } : acc;
-                        }, { pnl: 0n, name: "?" });
-                        return `${fmtPRX(worst.pnl)}`;
+                        const pnls = shown.map((p) => p.value - p.costPaid);
+                        const worst = pnls.reduce((a, b) => (b < a ? b : a), pnls[0]);
+                        return `${worst > 0n ? "+" : ""}${fmtPRXFull(worst)}`;
                       })()}
                     </div>
                   </div>

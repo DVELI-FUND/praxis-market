@@ -1,12 +1,12 @@
 "use client";
 import Link from "next/link";
 import { useMarkets } from "@/hooks/useMarkets";
-import { extractOutcomes, stripCatPrefix, yesPct , marketVol } from "@/lib/markets";
+import { extractOutcomes, stripCatPrefix, yesPct , marketVol, marketLiquidity } from "@/lib/markets";
 import { fmtPRX } from "@/lib/format";
 
 export default function LiveTicker() {
   const { data: markets = [] } = useMarkets();
-  const live = markets.filter((m) => marketVol(m) >= 100_000000n); // >= 100 PRX, skip test junk
+  const live = markets.filter((m) => marketLiquidity(m) >= 100_000000n); // >= 100 PRX, skip test junk
   if (live.length === 0) return null;
   const items = [...live, ...live]; // duplicate for seamless loop
 

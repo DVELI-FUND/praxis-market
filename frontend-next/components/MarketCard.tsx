@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { marketVol } from "@/lib/markets";
+import { marketVol, marketLiquidity } from "@/lib/markets";
 import type { Market } from "@/lib/markets";
 import { CAT_SYMBOLS, extractCat, extractOutcomes, stripCatPrefix, yesPct, nPrices } from "@/lib/markets";
 import BannerImg from "./BannerImg";
@@ -25,8 +25,9 @@ export default function MarketCard({ market, featured = false, bookmarked, onTog
   // Binary market: use yesPct
   const pct = isNOutcome ? 0 : yesPct(market);
   const noPct = 100 - pct;
-  const total = isNOutcome ? market.q.reduce((a, b) => a + b, 0n) : marketVol(market);
-  const vol = total > 0n ? fmtPRX(total) : "—";
+  const traded = marketVol(market);
+  const vol = traded > 0n ? fmtPRX(traded) : "—";
+  const liq = fmtPRX(marketLiquidity(market));
 
   // N-outcome: calculate prices for all options
   const nPricesArr = isNOutcome ? nPrices(market.q, market.b0) : [];
@@ -137,6 +138,7 @@ export default function MarketCard({ market, featured = false, bookmarked, onTog
         <div className="mt-auto flex items-center justify-between border-t border-line pt-2 font-mono text-[13px] text-ink-3">
           <span>
             Vol <b className="text-[14px] text-cyanx">{vol}</b>
+            <span className="ml-3">Liq <b className="text-[14px] text-ink-2">{liq}</b></span>
           </span>
           <span className="tabular-nums">
             {market.expiry ? "Ends " + fmtCountdown(Number(market.expiry), chain?.height ?? 0) : "—"}
