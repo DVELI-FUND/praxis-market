@@ -33,6 +33,9 @@ export default function PredictPanel({ market, outcome, onOutcome, selectedOptio
   const setSelectedOption = propOnSelectOption !== undefined ? propOnSelectOption : setInternalSelectedOption;
 
   const [shares, setShares] = useState(1);
+  // "spend" mode: user types how much PRX to spend; we solve for the largest whole number of shares that fits
+  const [mode, setMode] = useState<"shares" | "spend">("shares");
+  const [spend, setSpend] = useState(10);
   const [slip, setSlip] = useState(2);
   const [fee] = useState(10000);
   const [pending, setPending] = useState(false);
@@ -42,7 +45,30 @@ export default function PredictPanel({ market, outcome, onOutcome, selectedOptio
   const nPricesArr = isNOutcome ? nPrices(market.q, market.b0) : [];
 
   // Quote straight from the LMSR the chain uses (price moves with size; fees are 1%+1% of TRADE COST, not of shares).
-  const sharesU = BigInt(Math.max(0, shares)) * 1_000_000n; // chain share units; each winning N-outcome share pays 1 uPRX
+  const totalCostFor = (n: number): number => {
+    if (n <= 0) return 0;
+    const su = BigInt(n) * 1_000_000n;
+    const c = isNOutcome
+      ? nTradeCost(market.q, market.b0, selectedOption, su)
+      : binTradeCost(market.qYes, market.qNo, market.b0, outcome, su);
+    const t = Math.max(0, Math.ceil(c));
+    return t + Math.ceil(t * 0.01) * 2 + fee; // trade cost + creator/resolver fees + tx fee (before impact buffer)
+  };
+  const sharesFromSpend = useMemo(() => {
+    const budget = Math.max(0, spend) * 1_000_000;
+    if (budget <= fee) return 0;
+    let lo = 0;
+    let hi = 1_000_000_000;
+    while (lo < hi) {
+      const mid = Math.floor((lo + hi + 1) / 2);
+      if (totalCostFor(mid) <= budget) lo = mid;
+      else hi = mid - 1;
+    }
+    return lo;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spend, selectedOption, outcome, isNOutcome, market.q, market.b0, market.qYes, market.qNo, fee]);
+  const effShares = mode === "spend" ? sharesFromSpend : shares;
+  const sharesU = BigInt(Math.max(0, effShares)) * 1_000_000n; // chain share units; each winning N-outcome share pays 1 uPRX
   const bd = useMemo(() => {
     let cost = 0;
     if (sharesU > 0n) {
@@ -77,14 +103,14 @@ export default function PredictPanel({ market, outcome, onOutcome, selectedOptio
   const submit = async () => {
     if (!connected || !privKey || !pubKey || !praxisAddress) { toast("Connect wallet first", true); return; }
     if (!chain?.height) { toast("Node not connected", true); return; }
-    if (shares < 1) { toast("Shares min 1 PRX", true); return; }
+    if (effShares < 1) { toast(mode === "spend" ? "Amount too small to buy a share" : "Shares min 1 PRX", true); return; }
 
     const selectedLabel = isNOutcome ? market.options[selectedOption] : (outcome ? outLbl.yes : outLbl.no);
     
     const ok = await showConfirm("Submit Prediction", [
       ["Market ID", market.marketId.slice(0, 16) + "…", ""],
       ["Option", selectedLabel, "g"],
-      ["Shares", shares.toLocaleString() + " PRX", ""],
+      ["Shares", effShares.toLocaleString() + " (pays " + effShares.toLocaleString() + " PRX if it wins)", ""],
       ["Max Cost", fmtPRX(bd.maxCost) + " PRX", ""],
     ]);
     if (!ok) return;
@@ -106,7 +132,7 @@ export default function PredictPanel({ market, outcome, onOutcome, selectedOptio
         queryClient.invalidateQueries({ queryKey: ["market-txs", market.marketId] });
         queryClient.invalidateQueries({ queryKey: ["market", market.marketId] });
         queryClient.invalidateQueries({ queryKey: ["position", market.marketId, praxisAddress] });
-        toast(`✓ Position confirmed: +${fmtPRX(shares)} shares ${selectedLabel}`);
+        toast(`✓ Position confirmed: +${effShares.toLocaleString()} shares ${selectedLabel}`);
       } else {
         toast(res.message, true);
       }
@@ -163,15 +189,39 @@ export default function PredictPanel({ market, outcome, onOutcome, selectedOptio
         )}
 
         <div className="mb-3">
-          <div className="mb-1 font-mono text-[11px] uppercase tracking-[2px] text-ink-2">Shares (payout in PRX)</div>
-          <input type="number" value={shares} min={1} onChange={(e) => setShares(parseInt(e.target.value) || 0)} className={inputCls} />
-          <div className="mt-2 grid grid-cols-4 gap-1.5">
-            {[10, 50, 100, 500].map((v) => (
-              <button key={v} onClick={() => setShares(v)} className="rounded-card border border-line bg-bg-2 py-1.5 font-mono text-[12px] text-ink-2 transition-colors hover:border-up hover:text-up">
-                {v}
+          <div className="mb-2 grid grid-cols-2 gap-1 rounded-card border border-line bg-bg-2 p-1">
+            {([["spend", "Spend (PRX)"], ["shares", "Shares"]] as const).map(([m, label]) => (
+              <button key={m} onClick={() => setMode(m)} className={`rounded-card py-1.5 font-mono text-[11px] font-bold uppercase transition-colors ${mode === m ? "bg-up text-black" : "text-ink-3 hover:text-ink-2"}`}>
+                {label}
               </button>
             ))}
           </div>
+          {mode === "spend" ? (
+            <>
+              <div className="mb-1 font-mono text-[11px] uppercase tracking-[2px] text-ink-2">Amount to spend (PRX, incl. fees)</div>
+              <input type="number" value={spend} min={0} onChange={(e) => setSpend(parseFloat(e.target.value) || 0)} className={inputCls} />
+              <div className="mt-1 font-mono text-[11px] text-ink-3">≈ {sharesFromSpend.toLocaleString()} shares · wins {sharesFromSpend.toLocaleString()} PRX if correct</div>
+              <div className="mt-2 grid grid-cols-4 gap-1.5">
+                {[1, 5, 10, 50].map((v) => (
+                  <button key={v} onClick={() => setSpend(v)} className="rounded-card border border-line bg-bg-2 py-1.5 font-mono text-[12px] text-ink-2 transition-colors hover:border-up hover:text-up">
+                    {v}
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="mb-1 font-mono text-[11px] uppercase tracking-[2px] text-ink-2">Shares (each pays 1 PRX if it wins)</div>
+              <input type="number" value={shares} min={1} onChange={(e) => setShares(parseInt(e.target.value) || 0)} className={inputCls} />
+              <div className="mt-2 grid grid-cols-4 gap-1.5">
+                {[10, 50, 100, 500].map((v) => (
+                  <button key={v} onClick={() => setShares(v)} className="rounded-card border border-line bg-bg-2 py-1.5 font-mono text-[12px] text-ink-2 transition-colors hover:border-up hover:text-up">
+                    {v}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
         <div className="mb-3">

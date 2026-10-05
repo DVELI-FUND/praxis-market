@@ -28,9 +28,10 @@ const TYPE_COLOR: Record<string, string> = {
 interface Props {
   mid: string;
   holders: Holder[];
+  options?: string[];
 }
 
-export default function ActivityTab({ mid, holders }: Props) {
+export default function ActivityTab({ mid, holders, options = [] }: Props) {
   const [activities, setActivities] = useState<MarketActivity[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -68,8 +69,10 @@ export default function ActivityTab({ mid, holders }: Props) {
           const cost = tx.cost || 0n;
           const outcomeIdx = tx.outcomeIndex;
           // For N-outcome: show option name if available; for binary: YES/NO
-          const label = outcomeIdx !== undefined ? `Option ${outcomeIdx}` : (tx.outcome ? "YES" : "NO");
-          detail = `${label} · ${shares} shares`;
+          const label = options.length > 0 && outcomeIdx !== undefined
+            ? (options[outcomeIdx] ?? `Option ${outcomeIdx + 1}`)
+            : (tx.outcome ? "YES" : "NO");
+          detail = `${label} · ${fmtPRX(shares)} shares`;
           if (cost > 0n) detail += ` · cost ${fmtPRX(cost)} PRX`;
         } else if (tx.messageType === "propose_outcome") {
           const side = tx.proposedOutcome ? "text-up" : "text-down";

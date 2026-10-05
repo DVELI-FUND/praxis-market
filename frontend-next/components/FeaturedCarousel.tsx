@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useMarkets } from "@/hooks/useMarkets";
 import { useHeight } from "@/hooks/useHeight";
-import { extractCat, extractImg, extractOutcomes, stripCatPrefix, STATUS, yesPct , marketVol } from "@/lib/markets";
+import { extractCat, extractImg, extractOutcomes, stripCatPrefix, STATUS, yesPct , marketVol, leadOption } from "@/lib/markets";
 import { fmtPRX, fmtCountdown } from "@/lib/format";
 import StatusPill from "./StatusPill";
 
@@ -29,7 +29,9 @@ export default function FeaturedCarousel() {
 
   if (featured.length === 0) return null;
   const m = featured[idx];
-  const pct = yesPct(m);
+  const lead = leadOption(m);
+  const isN = lead.pct >= 0;
+  const pct = isN ? lead.pct : yesPct(m);
   const total = marketVol(m);
   const vol = total > 0n ? fmtPRX(total) : "—";
   const imgUrl = extractImg(m.rules);
@@ -62,7 +64,7 @@ export default function FeaturedCarousel() {
 
         <div className="mb-4 flex flex-wrap items-end gap-5">
           <div>
-            <div className="font-mono text-[11px] uppercase tracking-[2px] text-ink-3">{outLbl.yes} chance</div>
+            <div className="font-mono text-[11px] uppercase tracking-[2px] text-ink-3">{isN ? lead.label : outLbl.yes} chance</div>
             <div className="font-display text-[36px] font-extrabold leading-none text-up tabular-nums md:text-[44px]">
               {pct}<span className="text-[18px] opacity-60">%</span>
             </div>

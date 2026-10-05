@@ -39,7 +39,7 @@ export default function DetailTabs({ mid, market, holders, disputeContext }: Pro
         ))}
       </div>
       <div className="rounded-b-card border border-line bg-surface shadow-card">
-        {tab === "activity" && <ActivityTab mid={mid} holders={holders} />}
+        {tab === "activity" && <ActivityTab mid={mid} holders={holders} options={market.options} />}
         {tab === "holders" && <HoldersTab holders={holders} options={market.options} />}
         {tab === "info" && <InfoTab market={market} disputeContext={disputeContext} />}
       </div>

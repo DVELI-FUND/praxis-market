@@ -89,9 +89,18 @@ async function discoverChain(height: number): Promise<{ chainId?: number; networ
 }
 
 // Seconds per block. Every countdown/date in the UI used a hard-coded 5s or 10s; measure it instead.
-let blockSecs = 5; // fallback = what create_market's datetimeToBlock assumed
+let blockSecs = 5; // last-resort fallback only; creating a market refuses to use it (see blockSecsReady)
 let blockSecsAt = 0;
+let blockSecsMeasured = false;
+const BLOCK_SECS_KEY = "praxis_block_secs";
+try {
+  // reuse the last measurement so a fresh page load doesn't fall back to the 5s guess
+  const saved = typeof window !== "undefined" ? Number(window.localStorage.getItem(BLOCK_SECS_KEY)) : 0;
+  if (saved > 0.5 && saved < 120) { blockSecs = saved; blockSecsMeasured = true; }
+} catch { /* storage unavailable */ }
 export function getBlockSecs(): number { return blockSecs; }
+/** True once seconds/block came from the chain (or a previous measurement), not the 5s guess. */
+export function blockSecsReady(): boolean { return blockSecsMeasured; }
 
 async function measureBlockSecs(height: number): Promise<void> {
   if (height < 50 || Date.now() - blockSecsAt < 10 * 60_000) return;
@@ -103,7 +112,10 @@ async function measureBlockSecs(height: number): Promise<void> {
     };
     const [t1, t0] = await Promise.all([t(height - 1), t(height - 1 - span)]);
     const secs = (t1 - t0) / span / 1e6; // header time is in microseconds
-    if (secs > 0.5 && secs < 120) { blockSecs = secs; blockSecsAt = Date.now(); }
+    if (secs > 0.5 && secs < 120) {
+      blockSecs = secs; blockSecsAt = Date.now(); blockSecsMeasured = true;
+      try { window.localStorage.setItem(BLOCK_SECS_KEY, String(secs)); } catch { /* ignore */ }
+    }
   } catch { /* keep previous estimate */ }
 }
 

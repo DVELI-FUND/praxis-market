@@ -273,7 +273,7 @@ export default function ProfilePage() {
                   </div>
                   <div className="rounded-card border border-line bg-surface-grad p-4 shadow-card">
                     <div className="font-mono text-[11px] uppercase tracking-[2px] text-ink-3">Best Performer</div>
-                    <div className="mt-1 font-display text-[20px] font-extrabold text-up tabular-nums">
+                    <div className={`mt-1 font-display text-[20px] font-extrabold tabular-nums ${shown.some((p) => p.value - p.costPaid < 0n) && shown.every((p) => p.value - p.costPaid < 0n) ? "text-down" : "text-up"}`}>
                       {(() => {
                         const pnls = shown.map((p) => p.value - p.costPaid);
                         const best = pnls.reduce((a, b) => (b > a ? b : a), pnls[0]);
@@ -283,7 +283,7 @@ export default function ProfilePage() {
                   </div>
                   <div className="rounded-card border border-line bg-surface-grad p-4 shadow-card">
                     <div className="font-mono text-[11px] uppercase tracking-[2px] text-ink-3">Worst Performer</div>
-                    <div className="mt-1 font-display text-[20px] font-extrabold text-down tabular-nums">
+                    <div className={`mt-1 font-display text-[20px] font-extrabold tabular-nums ${shown.every((p) => p.value - p.costPaid >= 0n) ? "text-up" : "text-down"}`}>
                       {(() => {
                         const pnls = shown.map((p) => p.value - p.costPaid);
                         const worst = pnls.reduce((a, b) => (b < a ? b : a), pnls[0]);

@@ -180,6 +180,17 @@ export function sortMarkets(markets: Market[], sort: SortKey): Market[] {
   return arr;
 }
 
+/** Leading option for N-outcome markets (label + % chance); binary markets return YES. */
+export function leadOption(m: { options?: string[]; q?: bigint[]; b0: bigint; rules?: string }): { label: string; pct: number } {
+  if (m.options && m.options.length > 0 && m.q && m.q.length === m.options.length) {
+    const p = nPrices(m.q, m.b0);
+    let best = 0;
+    for (let i = 1; i < p.length; i++) if (p[i] > p[best]) best = i;
+    return { label: m.options[best], pct: Math.round(p[best] * 100) };
+  }
+  return { label: "", pct: -1 };
+}
+
 export function isNMarket(m: { options?: string[] }): boolean {
   return !!m.options && m.options.length > 0;
 }

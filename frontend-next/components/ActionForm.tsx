@@ -3,6 +3,7 @@ import NOutcomeOptionsInput from "./NOutcomeOptionsInput";
 import { useEffect, useState , useMemo} from "react";
 import type { ActionDef, Vals } from "@/lib/actions";
 import { datetimeToBlock } from "@/lib/actions";
+import { blockSecsReady } from "@/lib/rpc";
 import { useWallet } from "@/store/wallet";
 import { useHeight } from "@/hooks/useHeight";
 import { useRoles } from "@/lib/roles";
@@ -699,7 +700,11 @@ export default function ActionForm({ def }: { def: ActionDef }) {
                 onChange={(e) => set(f.id, e.target.value)}
                 className="w-full rounded-card border border-line-2 bg-bg px-3 py-2 font-mono text-[14px] text-ink outline-none focus:border-up"
               />
-              {String(vals[f.id] || "") && chain?.height ? (
+              {String(vals[f.id] || "") && chain?.height && !blockSecsReady() ? (
+                <div className="mt-1 rounded border border-amberx/40 bg-amberx/5 px-2 py-1 font-mono text-[11px] text-amberx">
+                  measuring block time…
+                </div>
+              ) : String(vals[f.id] || "") && chain?.height ? (
                 <div className="mt-1 rounded border border-amberx/40 bg-amberx/5 px-2 py-1 font-mono text-[11px] text-amberx">
                   Block #{datetimeToBlock(String(vals[f.id]), chain.height).toLocaleString()}
                   {" (~"}

@@ -1,4 +1,4 @@
-import { getBlockSecs } from "@/lib/rpc";
+import { getBlockSecs, blockSecsReady } from "@/lib/rpc";
 import { TYPE_URLS } from "@/lib/tx";
 import { buildRulesWithSub, buildRulesWithMeta } from "@/lib/cats";
 import { validateOptions } from "@/lib/nOutcome";
@@ -219,6 +219,8 @@ export const ACTIONS: Record<string, ActionDef> = {
     },
     validate: (v) => {
       if (!String(v.question ?? "").trim()) return "Question required";
+      // expiry is converted to a block height; refuse to guess seconds/block (the chain is ~20s, not 5s)
+      if (!blockSecsReady()) return "Still measuring block time — wait a few seconds and try again";
       const rawOpts = String(v.options ?? "").trim();
       if (rawOpts) {
         const err = validateOptions(rawOpts.split("|"));
