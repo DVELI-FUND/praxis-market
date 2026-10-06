@@ -7,7 +7,8 @@ import { getBlockSecs } from "@/lib/rpc";
 
 interface Props { mid: string; initialYes: bigint; initialNo: bigint; b0?: bigint; }
 
-const RANGES = { "1D": 17280, "1W": 120960, "1M": 518400, ALL: 0 } as const;
+const RANGES = { "1D": 1, "1W": 7, "1M": 30, ALL: 0 } as const; // days
+const blocksPerDay = () => Math.max(1, Math.round(86400 / getBlockSecs()));
 type RangeKey = keyof typeof RANGES;
 
 export default function PriceChart({ mid, initialYes, initialNo, b0 = 0n }: Props) {
@@ -40,10 +41,10 @@ export default function PriceChart({ mid, initialYes, initialNo, b0 = 0n }: Prop
     return hist;
   }, [txs, initialYes, initialNo, b0]);
 
-  const minH = range === "ALL" ? 0 : Math.max(0, height - RANGES[range]);
+  const minH = range === "ALL" ? 0 : Math.max(0, height - RANGES[range] * blocksPerDay());
   let points = allPoints.filter((p) => p.height >= minH);
   if (points.length < 2) {
-    const start = minH || Math.max(0, height - 17280);
+    const start = minH || Math.max(0, height - blocksPerDay());
     points = [ { height: start, pct: currentPct }, { height: height || start + 1, pct: currentPct } ];
   }
 

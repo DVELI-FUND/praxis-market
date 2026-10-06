@@ -58,7 +58,7 @@ export default function MarketDetail({ mid }: Props) {
     let yes = market.qYes - yesAdd, no = market.qNo - noAdd;
     if (yes < 0n) yes = 0n;
     if (no < 0n) no = 0n;
-    const minH = Math.max(0, height - 17280);
+    const minH = Math.max(0, height - Math.round(86400 / getBlockSecs()));
     const pctAt = (y: bigint, n: number | bigint) => Math.round(binYesPrice(y, BigInt(n), market.b0) * 1000) / 10;
     let pct24 = pctAt(yes, no);
     for (const t of trades) {

@@ -170,7 +170,7 @@ export default function RewardPoolPage({ pool }: { pool: PoolKey }) {
 
       {pool === "investor" && (
         <div className="mb-4 rounded-card border border-amberx/40 bg-amberx/5 p-3 font-mono text-[12px] text-amberx">
-          Vesting window: 241,920 blocks (~28 days). Rewards vest linearly.
+          Claim cooldown: 120,960 blocks (~14 days at 10s/block). One claim per cooldown.
         </div>
       )}
 

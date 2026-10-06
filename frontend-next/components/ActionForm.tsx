@@ -69,7 +69,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
       else if (f.type === "cat") init[f.id] = "crypto";
       else if (f.type === "league") init[f.id] = "";
       else if (f.type === "datetimeOpt") init[f.id] = "";
-      else if (f.type === "datetime") init[f.id] = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 16);
+      else if (f.type === "datetime") init[f.id] = new Date(Date.now() + 7 * 86400000 - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
       else init[f.id] = "";
     }
     return init;

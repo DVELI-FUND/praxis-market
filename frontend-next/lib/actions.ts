@@ -100,7 +100,7 @@ export const ACTIONS: Record<string, ActionDef> = {
     build: (v) => encClaimCreatorFee(s(v, "mid"), s(v, "addr")),
   },
   cancel: {
-    key: "cancel", msgType: "cancel_market", title: "Cancel Market", eye: "Admin", sub: "Cancel an open market before expiry — creator bond returned", gate: "creator",
+    key: "cancel", msgType: "cancel_market", title: "Cancel Market", eye: "Admin", sub: "Cancel an open market with no predictions — bond and liquidity returned", gate: "creator",
     fields: [ MID, WALLET, FEE ],
     build: (v) => encCancelMarket(s(v, "mid"), s(v, "addr")),
   },
