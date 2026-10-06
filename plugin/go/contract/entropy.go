@@ -43,6 +43,16 @@ func amountLogActive(height uint64) bool { return height >= AMOUNT_LOG_HEIGHT }
 
 func auditFixActive(height uint64) bool { return height >= AUDIT_FIX_HEIGHT }
 
+// CANCEL_FIX_HEIGHT: first height where creator liquidity is returned.
+// cancel_market refunds bond + reserve + LMSR seed; reclaim_stake pays
+// the seed stranded in earlier cancelled markets. MaxUint64 = DISABLED.
+// Set well ahead of the live tip; all nodes must be upgraded first.
+var CANCEL_FIX_HEIGHT uint64 = ^uint64(0)
+
+func cancelFixActive(height uint64) bool {
+return height >= CANCEL_FIX_HEIGHT || auditFixActive(height)
+}
+
 // entropyKeyFor returns the key file_dispute must read at the given height.
 func entropyKeyFor(height uint64) []byte {
 	if auditFixActive(height) {

@@ -95,6 +95,11 @@ if market == nil {
 return &PluginDeliverResponse{Error: ErrMarketNotFound()}
 }
 
+// Cancelled never-traded market: pay out the stranded seed (height-gated).
+if market.Status == STATUS_CANCELLED && cancelFixActive(now) {
+return c.reclaimCancelledSeed(msg, market, marketPool, claimantAcc)
+}
+
 // Only reclaimable if STATUS_OPEN, expiry passed, and no proposal ever filed
 if market.Status != STATUS_OPEN {
 return &PluginDeliverResponse{Error: ErrMarketNotReclaimable()}
@@ -120,7 +125,7 @@ refund += position.CostPaid
 }
 }
 
-gated := auditFixActive(now)
+gated := cancelFixActive(now)
 isCreator := bytesEqual(msg.ClaimantAddress, market.Creator)
 posRefund := refund // pool-funded part: this claimant's own position cost
 var seed uint64

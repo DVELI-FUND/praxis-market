@@ -136,7 +136,7 @@ return &PluginDeliverResponse{Error: ErrMarketNotFound()}
 if market.Status != STATUS_OPEN {
 return &PluginDeliverResponse{Error: ErrMarketNotOpen()}
 }
-gated := auditFixActive(now)
+gated := cancelFixActive(now)
 // Legacy (below AUDIT_FIX_HEIGHT): cancel after expiry is rejected.
 // Gated: an empty OPEN market may be cancelled after expiry, otherwise bond + seed are stuck.
 if !gated && now >= market.ExpiryTime {

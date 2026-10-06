@@ -89,7 +89,8 @@ async function discoverChain(height: number): Promise<{ chainId?: number; networ
 }
 
 // Seconds per block. Every countdown/date in the UI used a hard-coded 5s or 10s; measure it instead.
-let blockSecs = 5; // last-resort fallback only; creating a market refuses to use it (see blockSecsReady)
+const PIN_BLOCK_SECS = Number(process.env.NEXT_PUBLIC_BLOCK_SECS) || 0; // >0 pins the value and skips measuring
+let blockSecs = PIN_BLOCK_SECS || 10; // fallback = design block time of chain 30; the measured value overrides it
 let blockSecsAt = 0;
 let blockSecsMeasured = false;
 const BLOCK_SECS_KEY = "praxis_block_secs";
@@ -103,7 +104,7 @@ export function getBlockSecs(): number { return blockSecs; }
 export function blockSecsReady(): boolean { return blockSecsMeasured; }
 
 async function measureBlockSecs(height: number): Promise<void> {
-  if (height < 50 || Date.now() - blockSecsAt < 10 * 60_000) return;
+  if (PIN_BLOCK_SECS || height < 50 || Date.now() - blockSecsAt < 10 * 60_000) return;
   const span = Math.min(200, height - 2);
   try {
     const t = async (h: number) => {

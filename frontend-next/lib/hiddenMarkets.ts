@@ -12,6 +12,7 @@ const HIDDEN: string[] = [
   "dff858062b200369bacd849c8fddd9401fa21249",  // Arsenal vs Leeds United
   "e4bd54853d5366e6302e437bb5dcecd46caf5fcf",  // Arsenal vs Leeds United
   "f74013d327dd2d0728cdf120b5719e589a3d7f38",  // Republican Presidential Nominee 2028
+  "0fc779d76fdbc99493b1648bbe9646f0fa782635",  // Republican Presidential Nominee 2028 (wrong expiry)
   // IDS_END
 ];
 

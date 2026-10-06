@@ -34,7 +34,7 @@ export default function PredictPanel({ market, outcome, onOutcome, selectedOptio
 
   const [shares, setShares] = useState(1);
   // "spend" mode: user types how much PRX to spend; we solve for the largest whole number of shares that fits
-  const [mode, setMode] = useState<"shares" | "spend">("shares");
+  const [mode, setMode] = useState<"shares" | "spend">("spend");
   const [spend, setSpend] = useState(10);
   const [slip, setSlip] = useState(2);
   const [fee] = useState(10000);
