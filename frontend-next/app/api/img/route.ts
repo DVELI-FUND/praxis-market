@@ -8,20 +8,30 @@ export const dynamic = "force-dynamic";
 // header to <img> loads and i.imgur.com hotlink-blocks those (403/404).
 // A server-side fetch carries no Referer, so it always succeeds.
 async function proxyImage(imgUrl: string, cache: Record<string, string>): Promise<Response> {
-  try {
-    const ir = await fetch(imgUrl, {
-      headers: { "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) PraxisBannerBot/1.0" },
-      redirect: "follow",
-    });
-    if (!ir.ok) return proxyImage(imgUrl, cache);
-    const ct = (ir.headers.get("content-type") || "").split(";")[0];
-    if (!ct.startsWith("image/")) return proxyImage(imgUrl, cache);
-    const buf = await ir.arrayBuffer();
-    if (buf.byteLength > 4_500_000) return proxyImage(imgUrl, cache);
-    return new Response(buf, { headers: { ...cache, "Content-Type": ct, "X-Content-Type-Options": "nosniff" } });
-  } catch {
-    return proxyImage(imgUrl, cache);
+  const fallback = () =>
+    new Response(null, { status: 302, headers: { ...cache, Location: imgUrl } });
+  // Attempt 1: direct fetch (no Referer sent server-side, defeats hotlink block).
+  // Attempt 2: wsrv.nl image proxy in case imgur blocks Vercel egress IPs.
+  const attempts = [imgUrl, "https://wsrv.nl/?url=" + encodeURIComponent(imgUrl)];
+  for (const u of attempts) {
+    try {
+      const ir = await fetch(u, {
+        headers: { "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) PraxisBannerBot/1.0" },
+        redirect: "follow",
+      });
+      if (!ir.ok) continue;
+      const ct = (ir.headers.get("content-type") || "").split(";")[0];
+      if (!ct.startsWith("image/")) continue;
+      const buf = await ir.arrayBuffer();
+      if (buf.byteLength === 0 || buf.byteLength > 4_500_000) continue;
+      return new Response(buf, {
+        headers: { ...cache, "Content-Type": ct, "X-Content-Type-Options": "nosniff" },
+      });
+    } catch {
+      // try next attempt
+    }
   }
+  return fallback();
 }
 
 
