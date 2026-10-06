@@ -4,6 +4,27 @@ const ALLOWED = ["imgur.com", "i.imgur.com", "ipfs.io", "dweb.link", "gateway.pi
 
 export const dynamic = "force-dynamic";
 
+// Proxy resolved image bytes through our own origin: browsers attach a Referer
+// header to <img> loads and i.imgur.com hotlink-blocks those (403/404).
+// A server-side fetch carries no Referer, so it always succeeds.
+async function proxyImage(imgUrl: string, cache: Record<string, string>): Promise<Response> {
+  try {
+    const ir = await fetch(imgUrl, {
+      headers: { "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) PraxisBannerBot/1.0" },
+      redirect: "follow",
+    });
+    if (!ir.ok) return proxyImage(imgUrl, cache);
+    const ct = (ir.headers.get("content-type") || "").split(";")[0];
+    if (!ct.startsWith("image/")) return proxyImage(imgUrl, cache);
+    const buf = await ir.arrayBuffer();
+    if (buf.byteLength > 4_500_000) return proxyImage(imgUrl, cache);
+    return new Response(buf, { headers: { ...cache, "Content-Type": ct, "X-Content-Type-Options": "nosniff" } });
+  } catch {
+    return proxyImage(imgUrl, cache);
+  }
+}
+
+
 export async function GET(req: Request) {
   const url = new URL(req.url).searchParams.get("url") || "";
   let target: URL;
@@ -37,14 +58,14 @@ export async function GET(req: Request) {
     if (m) {
       let img = m[1];
       if (img.startsWith("//")) img = "https:" + img;
-      return new Response(null, { status: 302, headers: { ...cache, Location: img } });
+      return proxyImage(img, cache);
     }
     
     // Fallback for imgur albums: hunt for any i.imgur.com direct image URL in the HTML
     if (target.hostname.includes("imgur")) {
       const imgurMatch = html.match(/https?:\/\/i\.imgur\.com\/[a-zA-Z0-9]+\.(jpg|jpeg|png|gif|webp)/i);
       if (imgurMatch) {
-        return new Response(null, { status: 302, headers: { ...cache, Location: imgurMatch[0] } });
+        return proxyImage(imgurMatch[0], cache);
       }
     }
     
@@ -53,7 +74,7 @@ export async function GET(req: Request) {
       const mr = await fetch("https://api.microlink.io/?url=" + encodeURIComponent(target.href));
       const mj = (await mr.json()) as { data?: { image?: { url?: string } } };
       const mi = mj?.data?.image?.url;
-      if (mi) return new Response(null, { status: 302, headers: { ...cache, Location: mi } });
+      if (mi) return proxyImage(mi, cache);
     } catch {
       // fall through to 404
     }
