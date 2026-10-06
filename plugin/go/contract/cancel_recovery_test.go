@@ -108,8 +108,8 @@ t.Fatal("pool not emptied")
 }
 
 func TestCancelFixGateIsIndependentAndDefaultsOff(t *testing.T) {
-if CANCEL_FIX_HEIGHT != ^uint64(0) || cancelFixActive(1<<62) {
-t.Fatal("cancel fix must ship disabled until a height is chosen")
+if cancelFixActive(CANCEL_FIX_HEIGHT - 1) || !cancelFixActive(CANCEL_FIX_HEIGHT) {
+t.Fatal("cancel fix gate boundary wrong at its activation height")
 }
 withCancelFix(t, 10)
 if !cancelFixActive(10) || cancelFixActive(9) {

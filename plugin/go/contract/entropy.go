@@ -47,7 +47,7 @@ func auditFixActive(height uint64) bool { return height >= AUDIT_FIX_HEIGHT }
 // cancel_market refunds bond + reserve + LMSR seed; reclaim_stake pays
 // the seed stranded in earlier cancelled markets. MaxUint64 = DISABLED.
 // Set well ahead of the live tip; all nodes must be upgraded first.
-var CANCEL_FIX_HEIGHT uint64 = ^uint64(0)
+var CANCEL_FIX_HEIGHT uint64 = 40805
 
 func cancelFixActive(height uint64) bool {
 return height >= CANCEL_FIX_HEIGHT || auditFixActive(height)
