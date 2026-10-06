@@ -1,4 +1,5 @@
 "use client";
+import { parseUTC, fmtUTCDate, fmtUTCTime } from "@/lib/utc";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -64,7 +65,7 @@ export default function SportsPage() {
 
   const games = useMemo(() => filtered
     .filter((g) => g.koStr)
-    .map((g) => ({ ...g, ko: Date.parse(g.koStr!) }))
+    .map((g) => ({ ...g, ko: parseUTC(g.koStr!) }))
     .filter((g) => !isNaN(g.ko)) as (Game & { koStr: string })[], [filtered]);
 
   const props = useMemo(() => filtered.filter((g) => !g.koStr), [filtered]);
@@ -74,7 +75,7 @@ export default function SportsPage() {
   const byDate = useMemo(() => {
     const map = new Map<string, Map<string, typeof games>>();
     for (const g of (liveOnly ? [] : upcoming)) {
-      const d = new Date(g.ko).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+      const d = fmtUTCDate(g.ko);
       if (!map.has(d)) map.set(d, new Map());
       const lm = map.get(d)!;
       if (!lm.has(g.lg)) lm.set(g.lg, []);
@@ -96,7 +97,7 @@ export default function SportsPage() {
             {isLive ? (
               <span className="flex items-center gap-1 font-bold text-down"><span className="h-1.5 w-1.5 animate-pulseDot rounded-full bg-down" />LIVE</span>
             ) : (
-              <span>{new Date(g.ko).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}</span>
+              <span>{fmtUTCTime(g.ko)}</span>
             )}
             <span className="rounded bg-surface-2 px-2 py-0.5 font-bold text-ink-2">{g.lg}</span>
             {vol > 0n && <span>Vol {fmtPRX(vol)}</span>}

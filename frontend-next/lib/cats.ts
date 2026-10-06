@@ -1,3 +1,4 @@
+import { parseUTC } from "./utc";
 // Category & subcategory tree. Subs ride on-chain as [SUB:key] in rules.
 export interface SubDef { key: string; label: string; icon: string }
 export interface CatDef { key: string; label: string; icon: string; subs: SubDef[] }
@@ -58,7 +59,7 @@ export const LG_RE = /\[LG:([^\]]+)\]/;
 export function buildRulesWithMeta(ko: string, lg: string, rules: string): string {
   const stripped = rules.replace(new RegExp(KO_RE.source, "g"), "").replace(new RegExp(LG_RE.source, "g"), "").trim();
   const parts: string[] = [];
-  if (ko && !isNaN(Date.parse(ko))) parts.push("[KO:" + new Date(ko).toISOString() + "]");
+  if (ko && !isNaN(parseUTC(ko))) parts.push("[KO:" + new Date(parseUTC(ko)).toISOString() + "]");
   if (lg) parts.push("[LG:" + lg.trim().toUpperCase().slice(0, 12) + "]");
   return parts.concat(stripped ? [stripped] : []).join(" ");
 }

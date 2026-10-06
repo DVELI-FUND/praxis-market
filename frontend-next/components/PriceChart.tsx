@@ -56,7 +56,7 @@ export default function PriceChart({ mid, initialYes, initialNo, b0 = 0n }: Prop
   const up = last >= points[0].pct;
   const color = up ? "rgb(var(--up))" : "rgb(var(--down))";
   const blockToTime = (bh: number) => new Date(Date.now() - (height - bh) * getBlockSecs() * 1000);
-  const fmtD = (d: Date) => d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const fmtD = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 
   return (
     <div className="rounded-card border border-line bg-surface-grad p-4 shadow-card">

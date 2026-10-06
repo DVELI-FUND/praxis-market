@@ -1,4 +1,5 @@
 "use client";
+import { parseUTC, utcInputValue } from "@/lib/utc";
 import NOutcomeOptionsInput from "./NOutcomeOptionsInput";
 import { useEffect, useState , useMemo} from "react";
 import type { ActionDef, Vals } from "@/lib/actions";
@@ -69,7 +70,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
       else if (f.type === "cat") init[f.id] = "crypto";
       else if (f.type === "league") init[f.id] = "";
       else if (f.type === "datetimeOpt") init[f.id] = "";
-      else if (f.type === "datetime") init[f.id] = new Date(Date.now() + 7 * 86400000 - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+      else if (f.type === "datetime") init[f.id] = utcInputValue(7 * 86400000);
       else init[f.id] = "";
     }
     return init;
@@ -709,12 +710,12 @@ export default function ActionForm({ def }: { def: ActionDef }) {
                   Block #{datetimeToBlock(String(vals[f.id]), chain.height).toLocaleString()}
                   {" (~"}
                   {(() => {
-                    const ms = new Date(String(vals[f.id])).getTime() - Date.now();
+                    const ms = parseUTC(String(vals[f.id])) - Date.now();
                     const d = Math.floor(ms / 86400000);
                     const h = Math.floor((ms % 86400000) / 3600000);
                     return d > 0 ? `${d}d ${h}h` : `${h}h`;
                   })()}
-                  {" from now, "}
+                  {" from now, UTC "}{String(vals[f.id]).replace("T", " ")}{", "}
                   {(datetimeToBlock(String(vals[f.id]), chain.height) - chain.height).toLocaleString()}
                   {" blocks)"}
                 </div>

@@ -1,4 +1,5 @@
 "use client";
+import { parseUTC } from "@/lib/utc";
 import { useState } from "react";
 import { useWallet } from "@/store/wallet";
 import { isMasterAuthority } from "@/lib/genesis";
@@ -54,8 +55,8 @@ export default function BatchSeederPage() {
           errors.push(`#${i + 1}: unknown subcategory "${m.sub}" for ${m.cat}`);
         }
         
-        const expDate = new Date(m.exp);
-        if (isNaN(expDate.getTime())) errors.push(`#${i + 1}: invalid expiry "${m.exp}"`);
+        if (isNaN(parseUTC(m.exp))) errors.push(`#${i + 1}: invalid expiry "${m.exp}" (UTC, e.g. 2027-01-01T12:00)`);
+        if (m.ko && isNaN(parseUTC(m.ko))) errors.push(`#${i + 1}: invalid kickoff "${m.ko}" (UTC)`);
       });
       
       if (errors.length > 0) {
@@ -229,7 +230,7 @@ export default function BatchSeederPage() {
                       <div className="flex items-center gap-2 font-mono text-[11px] text-ink-3">
                         <span className="uppercase">{m.cat}{m.sub ? ` · ${m.sub}` : ""}</span>
                         <span>·</span>
-                        <span>Expires {m.exp}</span>
+                        <span>Expires {m.exp} UTC</span>
                       </div>
                       {m.error && (
                         <div className="mt-1 font-mono text-[12px] text-down">{m.error}</div>

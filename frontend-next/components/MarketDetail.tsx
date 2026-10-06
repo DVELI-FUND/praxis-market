@@ -72,7 +72,7 @@ export default function MarketDetail({ mid }: Props) {
     return Math.round((pct - pct24) * 10) / 10;
   }, [txs, market, chain2?.height]);
   const fmtChg = (v: number) => (v > 0 ? `▲ ${v.toFixed(1)}%` : v < 0 ? `▼ ${Math.abs(v).toFixed(1)}%` : "— 0.0%");
-  const blkDate = (b: number) => new Date(Date.now() + (b - (chain2?.height ?? 0)) * getBlockSecs() * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  const blkDate = (b: number) => new Date(Date.now() + (b - (chain2?.height ?? 0)) * getBlockSecs() * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }) + " UTC";
   const related = useMemo(() => allMarkets.filter((m2) => m2.marketId !== mid && m2.status === STATUS.LIVE).slice(0, 3), [allMarkets, mid]);
 
   if (isLoading) {

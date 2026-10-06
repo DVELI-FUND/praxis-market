@@ -1,3 +1,4 @@
+import { parseUTC } from "@/lib/utc";
 import { getBlockSecs, blockSecsReady } from "@/lib/rpc";
 import { TYPE_URLS } from "@/lib/tx";
 import { buildRulesWithSub, buildRulesWithMeta } from "@/lib/cats";
@@ -16,7 +17,8 @@ const W = 1000000n;
 // Convert a datetime-local string to a block height (measured seconds/block, see rpc.ts)
 export function datetimeToBlock(datetimeStr: string, currentHeight: number): number {
   if (!datetimeStr) return currentHeight + 1000;
-  const targetMs = new Date(datetimeStr).getTime();
+  const targetMs = parseUTC(datetimeStr);
+  if (isNaN(targetMs)) return currentHeight + 1000;
   const nowMs = Date.now();
   const deltaMs = Math.max(0, targetMs - nowMs);
   const deltaBlocks = Math.floor(deltaMs / (getBlockSecs() * 1000));
@@ -192,14 +194,14 @@ export const ACTIONS: Record<string, ActionDef> = {
       { id: "cat", label: "Category", type: "cat" },
       { id: "sub", label: "Subcategory", type: "sub" },
       { id: "lg", label: "League / Tournament (optional)", type: "league", hint: "e.g. ATP, MLB, UCL, KHL — groups games" },
-      { id: "ko", label: "Kickoff / Start (optional)", type: "datetimeOpt", hint: "ISO e.g. 2026-10-03T17:00 — powers Live & schedule" },
+      { id: "ko", label: "Kickoff / Start (optional) — UTC", type: "datetimeOpt", hint: "All times are UTC. e.g. 2026-10-03T17:00 = 17:00 UTC — powers Live & schedule" },
       { id: "question", label: "Question", type: "text" },
       { id: "out_yes", label: "Custom YES label (optional)", type: "text" },
       { id: "out_no", label: "Custom NO label (optional)", type: "text" },
       { id: "options", label: "Outcome options", type: "text" },
       { id: "creator", label: "Creator Address", type: "wallet" },
       { id: "b0", label: "B0 Liquidity (PRX)", type: "number", def: 60, scale: W },
-      { id: "expiry", label: "Expiry", type: "datetime" },
+      { id: "expiry", label: "Expiry (UTC)", type: "datetime", hint: "All times are UTC" },
       { id: "rules", label: "Rules / Resolution criteria", type: "text" },
       { id: "img", label: "Banner Image URL (optional)", type: "text", hint: "imgur album/page, i.imgur.com direct, or ipfs:// — auto-resolved" },
       FEE,
