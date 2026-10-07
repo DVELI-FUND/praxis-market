@@ -14,11 +14,11 @@ export function normalizeBanner(url: string): string {
     // imgur hotlink-blocks raw i.imgur.com/imgur.com requests intermittently —
     // always route through our own resolver so we control the fetch server-side.
     if (p.hostname === "i.imgur.com" || p.hostname === "imgur.com") {
-      return "/api/img?url=" + encodeURIComponent(u);
+      return "/api/img?url=" + encodeURIComponent(u) + "&v=2";
     }
     if (DIRECT_RE.test(p.pathname)) return u;
     // HTML page → server-side og:image resolver
-    return "/api/img?url=" + encodeURIComponent(u);
+    return "/api/img?url=" + encodeURIComponent(u) + "&v=2";
   } catch {
     return u;
   }

@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 // A server-side fetch carries no Referer, so it always succeeds.
 async function proxyImage(imgUrl: string, cache: Record<string, string>): Promise<Response> {
   const fallback = () =>
-    new Response(null, { status: 302, headers: { ...cache, Location: imgUrl } });
+    new Response(null, { status: 302, headers: { "Cache-Control": "no-store", Location: imgUrl } });
   // Attempt 1: direct fetch (no Referer sent server-side, defeats hotlink block).
   // Attempt 2: wsrv.nl image proxy in case imgur blocks Vercel egress IPs.
   const attempts = [imgUrl, "https://wsrv.nl/?url=" + encodeURIComponent(imgUrl)];
