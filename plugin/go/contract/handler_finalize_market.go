@@ -95,7 +95,8 @@ return &PluginDeliverResponse{}
 
 pathA := market.Status == STATUS_DISPUTED && dispute != nil && dispute.VoteStatus == VOTE_TALLIED
 pathB := market.Status == STATUS_PROPOSED && dispute == nil
-if !pathA && !pathB {
+pathQ := resolverFixActive(now) && market.Status == STATUS_DISPUTED && dispute != nil && dispute.VoteStatus == VOTE_NO_QUORUM
+if !pathA && !pathB && !pathQ {
 return &PluginDeliverResponse{Error: ErrNotFinalized()}
 }
 
@@ -103,7 +104,7 @@ if pathB {
 if proposal == nil {
 return &PluginDeliverResponse{Error: ErrInternal()}
 }
-disputeWindow   := ComputeDisputeBlocks(market.OpenTime, market.ExpiryTime)
+disputeWindow   := ComputeDisputeBlocksAt(now, market.OpenTime, market.ExpiryTime)
 disputeDeadline := proposal.ProposalBlock + disputeWindow
 // Reject if dispute window is still open — too early to finalize.
 // In TEST_MODE, skip the window check so tests don't wait 34,560 blocks.
@@ -138,7 +139,7 @@ readKeys2 = append(readKeys2, &PluginKeyRead{QueryId: resolverRecQId,  Key: KeyF
 readKeys2 = append(readKeys2, &PluginKeyRead{QueryId: globalStatsQId,  Key: KeyForGlobalStats()})
 readKeys2 = append(readKeys2, &PluginKeyRead{QueryId: resolverFeeQId,  Key: KeyForResolverFeePool(msg.MarketId)})
 
-if pathA && dispute != nil {
+if (pathA || pathQ) && dispute != nil {
 disputerQId = nextQueryId()
 disputerKey = KeyForAccount(dispute.DisputerAddress)
 readKeys2 = append(readKeys2, &PluginKeyRead{QueryId: disputerQId, Key: disputerKey})
@@ -195,6 +196,33 @@ _ = Unmarshal(r.Entries[0].Value, resolverFeePool)
 }
 }
 
+fixed := resolverFixActive(now)
+var extraOps []*PluginSetOp
+disputerAliased := false
+if fixed {
+if bytesEqual(msg.CallerAddr, proposal.ResolverAddr) {
+proposerAcc = callerAcc
+}
+if bytesEqual(msg.CallerAddr, market.Creator) {
+creatorAcc = callerAcc
+}
+if bytesEqual(market.Creator, proposal.ResolverAddr) {
+creatorAcc = proposerAcc
+}
+if dispute != nil {
+switch {
+case bytesEqual(dispute.DisputerAddress, msg.CallerAddr):
+disputerAcc = callerAcc
+disputerAliased = true
+case bytesEqual(dispute.DisputerAddress, proposal.ResolverAddr):
+disputerAcc = proposerAcc
+disputerAliased = true
+case bytesEqual(dispute.DisputerAddress, market.Creator):
+disputerAcc = creatorAcc
+disputerAliased = true
+}
+}
+}
 bounty := FINALIZATION_BOUNTY
 if treasury.LockedReserve < bounty {
 bounty = treasury.LockedReserve
@@ -204,12 +232,19 @@ callerAcc.Amount       += bounty
 
 var bondReturn uint64
 if proposal != nil {
+if fixed {
+if resolverRec.StakeAmount > ^uint64(0)-proposal.ProposalBond {
+return &PluginDeliverResponse{Error: ErrInvalidAmount()}
+}
+resolverRec.StakeAmount += proposal.ProposalBond
+} else {
 bondReturn = proposal.ProposalBond
 if treasury.LockedReserve < bondReturn {
 bondReturn = treasury.LockedReserve
 }
 treasury.LockedReserve -= bondReturn
 proposerAcc.Amount     += bondReturn
+}
 }
 // Return creator bond on successful finalization.
 if treasury.CreatorBond > 0 {
@@ -225,7 +260,7 @@ market.Status = STATUS_FINALIZED
 
 var epochOps []*PluginSetOp
 // PRIS v1.0-r3: RRS increment and resolver fee payout on correct finalization (pathB).
-if pathB && proposal != nil {
+if (pathB || pathQ) && proposal != nil {
 resolverRec.RrsScore += 10
 resolverRec.SuccessfulResolutions++
 weight := uint64(1)
@@ -247,6 +282,17 @@ resolverFeePool.Amount   = 0
 }
 }
 
+if pathQ && dispute != nil {
+if disputerAcc.Amount > ^uint64(0)-dispute.DisputeBond {
+return &PluginDeliverResponse{Error: ErrInvalidAmount()}
+}
+disputerAcc.Amount += dispute.DisputeBond
+if !disputerAliased {
+rawDA, peDA := SafeMarshal(disputerAcc)
+if peDA != nil { return &PluginDeliverResponse{Error: peDA} }
+extraOps = append(extraOps, &PluginSetOp{Key: KeyForAccount(dispute.DisputerAddress), Value: rawDA})
+}
+}
 var txLogOp *PluginSetOp
 var pe *PluginError
 if isNOutcome(market) {
@@ -275,8 +321,13 @@ rawProposer, pe := SafeMarshal(proposerAcc)
 if pe != nil { return &PluginDeliverResponse{Error: pe} }
 sets = append(sets, &PluginSetOp{Key: proposerKey, Value: rawProposer})
 }
+if fixed && pathA && proposal != nil {
+rawRecA, peA := SafeMarshal(resolverRec)
+if peA != nil { return &PluginDeliverResponse{Error: peA} }
+sets = append(sets, &PluginSetOp{Key: KeyForResolverRecord(proposal.ResolverAddr), Value: rawRecA})
+}
 // PRIS: write resolver record, global stats, resolver fee pool
-if pathB && proposal != nil {
+if (pathB || pathQ) && proposal != nil {
 rawRec, pe := SafeMarshal(resolverRec)
 if pe != nil { return &PluginDeliverResponse{Error: pe} }
 rawStats, pe := SafeMarshal(globalStats)
@@ -311,6 +362,12 @@ sets = append(sets, &PluginSetOp{Key: KeyForOutcome(msg.MarketId), Value: rawO})
 
 if pathA && dispute != nil {
 slashAmount := dispute.DisputeBond
+slashKey := KeyForSlashRecord(dispute.DisputerAddress)
+if fixed {
+// winning-side voters were paid their share at tally time
+slashAmount = dispute.DisputeBond - ComputeBps(dispute.DisputeBond, VOTER_SHARE_BPS)
+slashKey = KeyForSlashRecordV2(msg.MarketId, dispute.DisputerAddress)
+}
 slash := &SlashRecord{
 SlashedAddress: dispute.DisputerAddress,
 SlashAmount:    slashAmount,
@@ -318,11 +375,19 @@ SlashedAt:      now,
 }
 rawSlash, pe := SafeMarshal(slash)
 if pe != nil { return &PluginDeliverResponse{Error: pe} }
-sets = append(sets, &PluginSetOp{Key: KeyForSlashRecord(dispute.DisputerAddress), Value: rawSlash})
+sets = append(sets, &PluginSetOp{Key: slashKey, Value: rawSlash})
 _ = disputerAcc
 _ = disputerKey
 }
 
+if fixed {
+sets = append(sets, extraOps...)
+lops, lerr := c.lockOps([][]byte{proposal.ResolverAddr}, -1)
+if lerr != nil {
+return &PluginDeliverResponse{Error: lerr}
+}
+sets = append(sets, lops...)
+}
 wr, werr := c.plugin.StateWrite(c, &PluginStateWriteRequest{Sets: sets})
 if pe := errCheckWrite(wr, werr); pe != nil {
 return &PluginDeliverResponse{Error: pe}

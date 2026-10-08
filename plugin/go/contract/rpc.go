@@ -895,7 +895,7 @@ result["your_position"] = map[string]interface{}{
 result["your_position"] = nil
 }
 }
-disputeBlocks := ComputeDisputeBlocks(mkt.OpenTime, mkt.ExpiryTime)
+disputeBlocks := ComputeDisputeBlocksAt(GetGlobalHeight(), mkt.OpenTime, mkt.ExpiryTime)
 if TEST_MODE {
 disputeBlocks = TEST_DISPUTE_BLOCKS
 }

@@ -109,6 +109,15 @@ if !fullExit {
 if record.UnbondingAmount > 0 {
 	return &PluginDeliverResponse{Error: ErrUnbondingAlreadyPending()}
 }
+if resolverFixActive(height) && fullExit {
+locked, lockErr := c.resolverLocked(msg.ResolverAddress)
+if lockErr != nil {
+return &PluginDeliverResponse{Error: lockErr}
+}
+if locked {
+return &PluginDeliverResponse{Error: ErrResolverLocked()}
+}
+}
 
 // ── Apply RRS penalty ─────────────────────────────────────────────────
 if fullExit {

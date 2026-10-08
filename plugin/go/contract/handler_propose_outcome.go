@@ -105,6 +105,9 @@ return &PluginDeliverResponse{Error: ErrMarketNotFound()}
 if resolverRec.RrsScore < MIN_RRS_TO_PROPOSE {
 return &PluginDeliverResponse{Error: ErrResolverSuspended()}
 }
+if resolverFixActive(now) && !resolverRec.IsActive {
+return &PluginDeliverResponse{Error: ErrResolverNotActive()}
+}
 
 	// ── COI-1: resolver must not hold a position in this market ─────────────────
 	resolPosQId := nextQueryId()
@@ -219,17 +222,25 @@ if pe != nil {
 return &PluginDeliverResponse{Error: pe}
 }
 
+var lockSets []*PluginSetOp
+if resolverFixActive(now) {
+lops, lerr := c.lockOps([][]byte{msg.ResolverAddress}, 1)
+if lerr != nil {
+return &PluginDeliverResponse{Error: lerr}
+}
+lockSets = lops
+}
 // ── NF-5 FIX: 4-key atomic write ─────────────────────────────────────────
 // All four commit together or none do.
 // On failure: market.Status stays OPEN/EXPIRED, 0x13 stays nil, retry is safe.
 wr, werr := c.plugin.StateWrite(c, &PluginStateWriteRequest{
-Sets: []*PluginSetOp{
+Sets: append([]*PluginSetOp{
 {Key: KeyForMarket(msg.MarketId),              Value: rawM},
 {Key: KeyForResolverRecord(msg.ResolverAddress), Value: rawRR},
 {Key: KeyForProposal(msg.MarketId),             Value: rawPR},
 {Key: KeyForResolverState(msg.MarketId),        Value: rawRS}, // NF-5
 txLogOp,
-},
+}, lockSets...),
 })
 if pe := errCheckWrite(wr, werr); pe != nil {
 return &PluginDeliverResponse{Error: pe}

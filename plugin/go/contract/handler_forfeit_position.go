@@ -63,6 +63,14 @@ func (c *Contract) DeliverMessageForfeitPosition(msg *MessageForfeitPosition, fe
 			}
 		}
 	}
+	var fixMarket *MarketState
+	if resolverFixActive(now) {
+		fm, fpe := c.forfeitGuard(msg.MarketId, msg.ResolverAddress, now)
+		if fpe != nil {
+			return &PluginDeliverResponse{Error: fpe}
+		}
+		fixMarket = fm
+	}
 	if position != nil && anyShares(position.Shares) {
 return &PluginDeliverResponse{Error: ErrInvalidParam()}
 }
@@ -86,6 +94,11 @@ if position == nil || (position.SharesYes == 0 && position.SharesNo == 0) {
 	refund         := position.CostPaid
 	account.Amount += refund
 	pool.Amount    -= refund
+	if fixMarket != nil {
+		fixMarket.QYes = subOrZero(fixMarket.QYes, position.SharesYes)
+		fixMarket.QNo = subOrZero(fixMarket.QNo, position.SharesNo)
+		fixMarket.TotalPositions = subOrZero(fixMarket.TotalPositions, 1)
+	}
 	// Zero the position
 	position.SharesYes = 0
 	position.SharesNo  = 0
@@ -96,12 +109,20 @@ if position == nil || (position.SharesYes == 0 && position.SharesNo == 0) {
 	if pe != nil { return &PluginDeliverResponse{Error: pe} }
 	rawPool, pe := SafeMarshal(pool)
 	if pe != nil { return &PluginDeliverResponse{Error: pe} }
+	fixOps := []*PluginSetOp{}
+	if fixMarket != nil {
+		rawMF, mpe := SafeMarshal(fixMarket)
+		if mpe != nil {
+			return &PluginDeliverResponse{Error: mpe}
+		}
+		fixOps = append(fixOps, &PluginSetOp{Key: KeyForMarket(msg.MarketId), Value: rawMF})
+	}
 	wr, werr := c.plugin.StateWrite(c, &PluginStateWriteRequest{
-		Sets: []*PluginSetOp{
+		Sets: append(fixOps, []*PluginSetOp{
 			{Key: KeyForPosition(msg.MarketId, msg.ResolverAddress), Value: rawPos},
 			{Key: KeyForAccount(msg.ResolverAddress),                Value: rawAcc},
 			{Key: KeyForMarketPool(msg.MarketId),                    Value: rawPool},
-		},
+		}...),
 	})
 	if pe := errCheckWrite(wr, werr); pe != nil {
 		return &PluginDeliverResponse{Error: pe}

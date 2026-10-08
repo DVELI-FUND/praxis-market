@@ -108,6 +108,9 @@ if proposalRaw != nil {
 return &PluginDeliverResponse{Error: ErrMarketNotReclaimable()}
 }
 reclaimOpen := market.ExpiryTime + RESOLUTION_DELAY_BLOCKS + GRACE_PERIOD_BLOCKS
+if resolverFixActive(now) {
+reclaimOpen = addSat(market.ExpiryTime, PROPOSAL_WINDOW_V2)
+}
 if now <= reclaimOpen {
 return &PluginDeliverResponse{Error: ErrReclaimWindowClosed()}
 }
@@ -176,6 +179,13 @@ if pe != nil { return &PluginDeliverResponse{Error: pe} }
 sets := []*PluginSetOp{
 {Key: KeyForAccount(msg.ClaimantAddress), Value: rawAcc},
 {Key: KeyForMarketPool(msg.MarketId),     Value: rawPool},
+}
+if resolverFixActive(now) {
+// Flip to CANCELLED atomically so a late proposal can never dilute the winners.
+market.Status = STATUS_CANCELLED
+rawMk, peMk := SafeMarshal(market)
+if peMk != nil { return &PluginDeliverResponse{Error: peMk} }
+sets = append(sets, &PluginSetOp{Key: KeyForMarket(msg.MarketId), Value: rawMk})
 }
 var deletes []*PluginDeleteOp
 

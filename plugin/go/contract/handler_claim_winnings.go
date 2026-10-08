@@ -226,6 +226,9 @@ resolutionDelay = TEST_RESOLUTION_DELAY
 gracePeriod     = TEST_GRACE_PERIOD
 claimGrace      = TEST_CLAIM_GRACE_PERIOD
 }
+if resolverFixActive(now) && !TEST_MODE {
+claimGrace = CLAIM_GRACE_PERIOD_V2
+}
 _ = resolutionDelay
 _ = gracePeriod
 // The claim window is measured from finalization (OutcomeState.ResolvedAt), not from

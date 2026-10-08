@@ -86,6 +86,12 @@ return &PluginDeliverResponse{Error: ErrTallyNotReady()}
 }
 
 slashQId    := nextQueryId()
+slashLegacyQId := nextQueryId()
+slashKey := KeyForSlashRecord(dispute.DisputerAddress)
+primarySlashKey := slashKey
+if resolverFixActive(now) {
+primarySlashKey = KeyForSlashRecordV2(msg.MarketId, dispute.DisputerAddress)
+}
 claimAccQId := nextQueryId()
 treasQId    := nextQueryId()
 resolverRecQId := nextQueryId()
@@ -93,7 +99,8 @@ resFeeQId      := nextQueryId()
 
 resp2, err := c.plugin.StateRead(c, &PluginStateReadRequest{
 Keys: []*PluginKeyRead{
-{QueryId: slashQId,    Key: KeyForSlashRecord(dispute.DisputerAddress)},
+{QueryId: slashQId,    Key: primarySlashKey},
+{QueryId: slashLegacyQId, Key: slashKey},
 {QueryId: claimAccQId, Key: KeyForAccount(msg.ClaimantAddress)},
 {QueryId: treasQId,       Key: KeyForTreasuryReserve(msg.MarketId)},
 {QueryId: resolverRecQId, Key: KeyForResolverRecord(proposal.ResolverAddr)},
@@ -115,9 +122,15 @@ resFeePool  := &Pool{}
 
 for _, r := range resp2.Results {
 switch r.QueryId {
-case slashQId:
+case slashQId, slashLegacyQId:
 if len(r.Entries) == 0 || len(r.Entries[0].Value) == 0 {
-return &PluginDeliverResponse{Error: ErrNoSlashToClaim()}
+continue
+}
+if r.QueryId == slashLegacyQId && slash != nil {
+continue
+}
+if r.QueryId == slashQId {
+slashKey = primarySlashKey
 }
 slash = &SlashRecord{}
 if pe := Unmarshal(r.Entries[0].Value, slash); pe != nil {
@@ -154,16 +167,24 @@ if slash == nil || slash.SlashAmount == 0 {
 return &PluginDeliverResponse{Error: ErrNoSlashToClaim()}
 }
 
+fixed := resolverFixActive(now)
 slashAmount := slash.SlashAmount
+if !fixed {
 if treasury.LockedReserve < slashAmount {
 slashAmount = treasury.LockedReserve
 }
 treasury.LockedReserve -= slashAmount
+}
+if fixed && claimAcc.Amount > ^uint64(0)-slashAmount {
+return &PluginDeliverResponse{Error: ErrInvalidAmount()}
+}
 claimAcc.Amount        += slashAmount
 slash.SlashAmount       = 0
 
 // PRIS v1.0-r3: RRS -50 (floor 0) and sweep resolver fee pool to treasury
-if resolverRec.RrsScore >= 50 {
+if fixed {
+// the claimant won the dispute: no RRS penalty
+} else if resolverRec.RrsScore >= 50 {
 resolverRec.RrsScore -= 50
 } else {
 resolverRec.RrsScore = PRIS_RRS_FLOOR
@@ -172,6 +193,17 @@ resolverRec.RrsScore = PRIS_RRS_FLOOR
 // AUDIT: this used to be a second, separate StateWrite whose result was discarded and
 // whose read/marshal errors were skipped silently. It is now folded into the single
 // atomic write below and every error is returned.
+var feeOps []*PluginSetOp
+if fixed && resFeePool.Amount > 0 {
+if claimAcc.Amount > ^uint64(0)-resFeePool.Amount {
+return &PluginDeliverResponse{Error: ErrInvalidAmount()}
+}
+claimAcc.Amount += resFeePool.Amount
+resFeePool.Amount = 0
+rawRF, peRF := SafeMarshal(resFeePool)
+if peRF != nil { return &PluginDeliverResponse{Error: peRF} }
+feeOps = append(feeOps, &PluginSetOp{Key: KeyForResolverFeePool(msg.MarketId), Value: rawRF})
+}
 var sweepOps []*PluginSetOp
 if resFeePool.Amount > 0 {
 tPoolQId := nextQueryId()
@@ -224,12 +256,13 @@ rawResolverRec, pe := SafeMarshal(resolverRec)
 if pe != nil { return &PluginDeliverResponse{Error: pe} }
 
 sets := []*PluginSetOp{
-{Key: KeyForSlashRecord(dispute.DisputerAddress), Value: rawSlash},
+{Key: slashKey, Value: rawSlash},
 {Key: KeyForAccount(msg.ClaimantAddress),         Value: rawAcc},
 {Key: KeyForTreasuryReserve(msg.MarketId),        Value: rawT},
 {Key: KeyForResolverRecord(proposal.ResolverAddr), Value: rawResolverRec},
 }
 sets = append(sets, sweepOps...)
+sets = append(sets, feeOps...)
 
 wr, werr := c.plugin.StateWrite(c, &PluginStateWriteRequest{Sets: sets})
 if pe := errCheckWrite(wr, werr); pe != nil {

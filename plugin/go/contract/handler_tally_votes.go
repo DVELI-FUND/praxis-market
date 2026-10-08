@@ -17,6 +17,9 @@ now := GetGlobalHeight()
 if now == 0 {
 return &PluginDeliverResponse{Error: ErrHeightNotSet()}
 }
+if resolverFixActive(now) {
+return c.tallyVotesFixed(msg, now)
+}
 
 marketQId  := nextQueryId()
 disputeQId := nextQueryId()

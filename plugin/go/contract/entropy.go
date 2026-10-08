@@ -29,7 +29,7 @@ import (
 // ─────────────────────────────────────────────────────────────────────────────
 
 // AUDIT_FIX_HEIGHT is the first block height that uses the repaired entropy path.
-var AUDIT_FIX_HEIGHT uint64 = ^uint64(0)
+var AUDIT_FIX_HEIGHT uint64 = 64483
 
 // PANEL_ENTROPY_KEY_V2 is the real accumulator key (KeyForPanelEntropy was never called before).
 var PANEL_ENTROPY_KEY_V2 = KeyForPanelEntropy()

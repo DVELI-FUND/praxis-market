@@ -52,6 +52,9 @@ resolutionDelay = TEST_RESOLUTION_DELAY
 gracePeriod     = TEST_GRACE_PERIOD
 }
 cancelThreshold := market.ExpiryTime + resolutionDelay + gracePeriod
+if resolverFixActive(now) && !TEST_MODE {
+cancelThreshold = addSat(market.ExpiryTime, PROPOSAL_WINDOW_V2)
+}
 if now <= cancelThreshold {
 return nil, nil
 }

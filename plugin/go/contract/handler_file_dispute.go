@@ -109,7 +109,10 @@ if proposal == nil {
 return &PluginDeliverResponse{Error: ErrInternal()}
 }
 
-disputeWindow   := ComputeDisputeBlocks(market.OpenTime, market.ExpiryTime)
+if resolverFixActive(now) && msg.DisputeBond < ComputeMinBond(market) {
+return &PluginDeliverResponse{Error: ErrInsufficientBond()}
+}
+disputeWindow   := ComputeDisputeBlocksAt(now, market.OpenTime, market.ExpiryTime)
 disputeDeadline := proposal.ProposalBlock + disputeWindow
 if now > disputeDeadline {
 return &PluginDeliverResponse{Error: ErrDisputeWindowClosed()}
@@ -132,7 +135,7 @@ rangeResp, err := c.plugin.StateRead(c, &PluginStateReadRequest{
 Ranges: []*PluginRangeRead{
 {
 QueryId: resolverRangeQId,
-Prefix:  resolverRecordPrefix,
+Prefix:  resolverScanPrefix(now),
 Limit:   0,
 Reverse: false,
 },
@@ -162,6 +165,9 @@ if bytesEqual(rec.ResolverAddress, msg.DisputerAddress) {
 continue
 }
 if rec.RrsScore < MIN_RRS_TO_PROPOSE {
+continue
+}
+if resolverFixActive(now) && (!rec.IsActive || rec.StakeAmount < MIN_RESOLVER_STAKE) {
 continue
 }
 candidates = append(candidates, rec.ResolverAddress)
@@ -224,6 +230,9 @@ if auditFixActive(now) && entropyVal == 0 {
 return &PluginDeliverResponse{Error: ErrInternal()}
 }
 seed := entropyVal ^ (now * FIBONACCI_HASH_CONSTANT)
+if resolverFixActive(now) {
+seed = panelSeedV2(entropyVal, msg.MarketId, proposal, msg.DisputerAddress, txHash, now)
+}
 panel := derivePanel(candidates, int(panelSize), seed)
 if len(panel) == 0 {
 return &PluginDeliverResponse{Error: ErrInsufficientPanelCandidates()}
@@ -262,6 +271,13 @@ sets := []*PluginSetOp{
 {Key: feePoolKey,                  Value: rawFee},
 {Key: treasyPoolKey,               Value: rawTreasy},
 txLogOp,
+}
+if resolverFixActive(now) {
+lops, lerr := c.lockOps(panel, 1)
+if lerr != nil {
+return &PluginDeliverResponse{Error: lerr}
+}
+sets = append(sets, lops...)
 }
 var deletes []*PluginDeleteOp
 if disputer.Amount == 0 {
