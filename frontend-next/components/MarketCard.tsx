@@ -92,18 +92,46 @@ export default function MarketCard({ market, featured = false, bookmarked, onTog
 
       <div className="flex flex-1 flex-col px-4 pb-3 pt-3">
         {isNOutcome ? (
-          // N-outcome: show all options with prices
-          <div className="space-y-2">
-            {market.options.slice(0, 2).map((opt, idx) => {
-              const price = Math.round(nPricesArr[idx] * 100);
-              return (
-                <div key={idx} className="flex items-center justify-between rounded-card border border-up/25 bg-up-dim px-3 py-2 transition-colors group-hover:border-up/50">
-                  <span className="max-w-[55%] truncate font-mono text-[14px] font-bold text-up">{opt}</span>
-                  <span className="font-display text-[16px] font-bold text-up tabular-nums">{price}¢</span>
+          // N-outcome: show top 2 options by price + chance header
+          (() => {
+            const indexed = market.options.map((opt, idx) => ({
+              name: opt,
+              price: Math.round(nPricesArr[idx] * 100),
+            }));
+            const sorted = [...indexed].sort((a, b) => b.price - a.price);
+            const top2 = sorted.slice(0, 2);
+            const leader = sorted[0];
+            const moreCount = market.options.length - 2;
+            return (
+              <>
+                <div className="mb-2 flex items-baseline justify-between">
+                  <span className="inline-block font-display font-extrabold tracking-[-0.5px] text-up tabular-nums text-[24px]">
+                    {leader.price}
+                    <span className="text-[14px] opacity-60">%</span>
+                  </span>
+                  <span className="font-mono text-[13px] uppercase tracking-[1px] text-ink-3">
+                    {leader.name.length > 20 ? leader.name.slice(0, 20) + "…" : leader.name}
+                  </span>
                 </div>
-              );
-            })}
-          </div>
+                <div className="mb-3 h-[4px] overflow-hidden rounded-pill bg-line">
+                  <div className="h-full rounded-pill bg-up transition-all duration-500" style={{ width: `${leader.price}%` }} />
+                </div>
+                <div className="space-y-2">
+                  {top2.map((opt, idx) => (
+                    <div key={idx} className="flex items-center justify-between rounded-card border border-up/25 bg-up-dim px-3 py-2 transition-colors group-hover:border-up/50">
+                      <span className="max-w-[55%] truncate font-mono text-[14px] font-bold text-up">{opt.name}</span>
+                      <span className="font-display text-[16px] font-bold text-up tabular-nums">{opt.price}¢</span>
+                    </div>
+                  ))}
+                  {moreCount > 0 && (
+                    <div className="rounded-card border border-line bg-surface px-3 py-2 text-center font-mono text-[12px] text-ink-3">
+                      +{moreCount} more
+                    </div>
+                  )}
+                </div>
+              </>
+            );
+          })()
         ) : (
           // Binary market: show YES/NO as before
           <>
