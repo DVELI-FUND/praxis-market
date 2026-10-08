@@ -9,6 +9,10 @@ export const MIN_RESOLVER_STAKE = 500000000000n; // 500,000 PRX in uPRX
 export const UNBONDING_BLOCKS = 60480; // ~7 days @10s/block
 export const PARTIAL_RRS_HIT = 10; // RRS penalty on partial unstake
 export const RRS_INITIAL = 10;
+export const EPOCH_BLOCKS = 500; // PRIS_EPOCH_BLOCKS ~83 min @10s/block
+export const PANEL_SIZE = 3; // MIN_PANEL_SIZE
+export const PANEL_SIZE_ELEVATED = 7; // ELEVATED_RISK_PANEL_SIZE (pool >= 25,000 PRX)
+export const epochOf = (height: number) => Math.floor(height / EPOCH_BLOCKS);
 
 export interface Resolver {
   address: string;
@@ -52,9 +56,9 @@ export function useMyResolver(): Resolver | null {
 }
 
 // Protocol tier weights — handler_claim_resolver_reward.go (rrsWeight):
-// 1x Bronze / 3x Silver (RRS 50+) / 7x Gold (RRS 200+)
+// VOTE_WEIGHT_*: 1x Bronze (RRS 10-49) / 2x Silver (RRS 50-199) / 3x Gold (RRS 200+). Hard cap 3x.
 export function tierOf(rrs: number): { label: string; weight: number; cls: string } {
-  if (rrs >= 200) return { label: "Gold", weight: 7, cls: "border-amberx/40 bg-amberx/10 text-amberx" };
-  if (rrs >= 50) return { label: "Silver", weight: 3, cls: "border-line-2 bg-surface-2 text-ink-2" };
+  if (rrs >= 200) return { label: "Gold", weight: 3, cls: "border-amberx/40 bg-amberx/10 text-amberx" };
+  if (rrs >= 50) return { label: "Silver", weight: 2, cls: "border-line-2 bg-surface-2 text-ink-2" };
   return { label: "Bronze", weight: 1, cls: "border-[#cd7f32]/40 bg-[#cd7f32]/10 text-[#cd7f32]" };
 }

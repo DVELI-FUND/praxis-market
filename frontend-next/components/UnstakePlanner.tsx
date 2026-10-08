@@ -98,6 +98,10 @@ export default function UnstakePlanner({ rec, amount, onAmount, currentHeight }:
       </div>
 
       <div className="mt-2 space-y-1 border-t border-line pt-2">
+        <div className="flex items-start gap-1.5 text-amberx">
+          <span>!</span>
+          <span>Blocked while you have an open proposal (slash-evasion guard) — wait for it to finalize first</span>
+        </div>
         {checks.map((c, i) => (
           <div key={i} className={`flex items-start gap-1.5 ${c.ok ? "text-ink-3" : "text-down"}`}>
             <span>{c.ok ? "✓" : "✗"}</span>

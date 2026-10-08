@@ -1056,6 +1056,9 @@ switch {
 case rec.RrsScore == 0:
 eligible = false
 reason = "resolver RRS is 0 -- not qualified"
+case myScore == 0 && perEpoch:
+eligible = false
+reason = "no resolutions in this epoch (or already claimed)"
 case myScore == 0:
 eligible = false
 reason = "no successful resolutions on record"
