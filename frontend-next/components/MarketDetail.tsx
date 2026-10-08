@@ -1,5 +1,4 @@
 "use client";
-import MobileTradeBar from "@/components/MobileTradeBar";
 import { useEffect, useState , useMemo, useRef} from "react";
 import Link from "next/link";
 import { useMarketDetail } from "@/hooks/useMarketDetail";
@@ -281,8 +280,7 @@ export default function MarketDetail({ mid }: Props) {
 
         <div className="mt-4 md:mt-0">
           <div ref={ticketRef} className="scroll-mt-4"><PredictPanel market={market} outcome={outcome} onOutcome={setOutcome} selectedOption={selectedOption} onSelectOption={setSelectedOption} /></div>
-          {market.options.length === 0 && <MobileTradeBar market={market} outcome={outcome} onOutcome={setOutcome} onScrollToTicket={scrollToTicket} />}
-          <div className="h-44 md:hidden" aria-hidden />
+          <div className="h-28 md:hidden" aria-hidden />
         </div>
       </div>
     </div>
