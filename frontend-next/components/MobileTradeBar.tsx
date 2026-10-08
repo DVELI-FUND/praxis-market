@@ -11,7 +11,7 @@ interface Props {
 }
 
 export default function MobileTradeBar({ market, outcome, onOutcome, onScrollToTicket }: Props) {
-  const { status } = useWallet();
+  const { status, connect } = useWallet();
   const connected = status === "connected" || status === "drift";
   const outLbl = extractOutcomes(market.rules || "");
   const pct = yesPct(market);
@@ -23,24 +23,26 @@ export default function MobileTradeBar({ market, outcome, onOutcome, onScrollToT
           <button
             onClick={() => {
               onOutcome(true);
+              if (!connected) { void connect(); return; }
               onScrollToTicket();
             }}
             className={`rounded-card border-2 py-3 font-mono text-[13px] font-bold transition-all ${
               outcome ? "border-up bg-up/10 text-up" : "border-line text-ink-3"
             }`}
           >
-            {outLbl.yes} {pct}¢
+            Buy {outLbl.yes} {pct}¢
           </button>
           <button
             onClick={() => {
               onOutcome(false);
+              if (!connected) { void connect(); return; }
               onScrollToTicket();
             }}
             className={`rounded-card border-2 py-3 font-mono text-[13px] font-bold transition-all ${
               !outcome ? "border-up bg-up/10 text-up" : "border-line text-ink-3"
             }`}
           >
-            {outLbl.no} {100 - pct}¢
+            Buy {outLbl.no} {100 - pct}¢
           </button>
         </div>
         {!connected && (

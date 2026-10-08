@@ -260,7 +260,7 @@ export default function PredictPanel({ market, outcome, onOutcome, selectedOptio
           </div>
         )}
 
-        <button onClick={() => void submit()} disabled={pending || over || !connected || !canSign} className="w-full rounded-card bg-up py-3 font-sans text-[15px] font-extrabold text-black shadow-glowUp transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40">
+        <button id="praxis-buy-btn" onClick={() => void submit()} disabled={pending || over || !connected || !canSign} className="w-full rounded-card bg-up py-3 font-sans text-[15px] font-extrabold text-black shadow-glowUp transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40">
           {pending ? "▪▪▪ broadcasting…" : !connected ? "Connect wallet to trade" : !canSign ? "🔒 Unlock signing key to trade" : `⚡ Buy ${isNOutcome ? market.options[selectedOption] : (outcome ? outLbl.yes : outLbl.no)} · ${fmtPRX(bd.maxCost)} PRX max`}
         </button>
         {!connected && <div className="mt-2 text-center font-mono text-[11px] text-ink-3">connect wallet to trade</div>}

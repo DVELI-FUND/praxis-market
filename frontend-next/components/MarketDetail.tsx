@@ -26,7 +26,7 @@ export default function MarketDetail({ mid }: Props) {
   const [outcome, setOutcome] = useState(true);
   const [selectedOption, setSelectedOption] = useState(0);
   const ticketRef = useRef<HTMLDivElement>(null);
-  const scrollToTicket = () => ticketRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const scrollToTicket = () => { const b = document.getElementById("praxis-buy-btn"); (b ?? ticketRef.current)?.scrollIntoView({ behavior: "smooth", block: "center" }); };
   const [bookmarked, setBookmarked] = useState(false);
 
   useEffect(() => {
@@ -281,7 +281,8 @@ export default function MarketDetail({ mid }: Props) {
 
         <div className="mt-4 md:mt-0">
           <div ref={ticketRef} className="scroll-mt-4"><PredictPanel market={market} outcome={outcome} onOutcome={setOutcome} selectedOption={selectedOption} onSelectOption={setSelectedOption} /></div>
-          <MobileTradeBar market={market} outcome={outcome} onOutcome={setOutcome} onScrollToTicket={scrollToTicket} />
+          {market.options.length === 0 && <MobileTradeBar market={market} outcome={outcome} onOutcome={setOutcome} onScrollToTicket={scrollToTicket} />}
+          <div className="h-44 md:hidden" aria-hidden />
         </div>
       </div>
     </div>

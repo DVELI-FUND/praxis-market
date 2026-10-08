@@ -99,7 +99,7 @@ export const useWallet = create<WalletState>((set, get) => ({
     if (prev === "connecting") return; // double-tap guard
     set({ status: "connecting", error: null, walletName: w.name });
     try {
-      const s = await connectWith(w);
+      const s = await Promise.race([connectWith(w), new Promise<never>((_, rej) => setTimeout(() => rej(new Error("Wallet did not respond, try again")), 30000))]);
       lastWallet = w;
       setActiveProvider(w.provider);
       attachAccountListener(w.provider);
