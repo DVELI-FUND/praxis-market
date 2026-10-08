@@ -94,7 +94,7 @@ export default function MarketCard({ market, featured = false, bookmarked, onTog
         {isNOutcome ? (
           // N-outcome: show all options with prices
           <div className="space-y-2">
-            {market.options.map((opt, idx) => {
+            {market.options.slice(0, 2).map((opt, idx) => {
               const price = Math.round(nPricesArr[idx] * 100);
               return (
                 <div key={idx} className="flex items-center justify-between rounded-card border border-up/25 bg-up-dim px-3 py-2 transition-colors group-hover:border-up/50">
