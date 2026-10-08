@@ -995,6 +995,8 @@ Keys: []*PluginKeyRead{
 {QueryId: 1, Key: KeyForResolverRecord(addr)},
 {QueryId: 2, Key: KeyForResolverEpochPool(epoch)},
 {QueryId: 3, Key: KeyForGlobalStats()},
+{QueryId: 4, Key: KeyForResolverEpochScore(epoch, addr)},
+{QueryId: 5, Key: KeyForEpochWeightedTotal(epoch)},
 },
 })
 if qErr != nil {
@@ -1028,9 +1030,22 @@ Unmarshal(v, stats)
 }
 weight := uint64(rrsWeight(rec.RrsScore))
 myScore := rec.SuccessfulResolutions * weight
+totalW := stats.TotalWeightedResolutions
+perEpoch := resolverEpochFixed(epoch)
+if perEpoch {
+epScore, epTotal := &Pool{}, &Pool{}
+if v := getEntry(4); v != nil {
+Unmarshal(v, epScore)
+}
+if v := getEntry(5); v != nil {
+Unmarshal(v, epTotal)
+}
+myScore = epScore.Amount
+totalW = epTotal.Amount
+}
 var payout uint64
-if stats.TotalWeightedResolutions > 0 {
-payout = pool.Amount * myScore / stats.TotalWeightedResolutions
+if totalW > 0 {
+payout = mulDiv(pool.Amount, myScore, totalW)
 if payout > pool.Amount {
 payout = pool.Amount
 }
@@ -1041,10 +1056,10 @@ switch {
 case rec.RrsScore == 0:
 eligible = false
 reason = "resolver RRS is 0 -- not qualified"
-case rec.SuccessfulResolutions == 0:
+case myScore == 0:
 eligible = false
 reason = "no successful resolutions on record"
-case rec.LastClaimedEpoch >= epoch:
+case !perEpoch && rec.LastClaimedEpoch >= epoch:
 eligible = false
 reason = "epoch already claimed"
 case epoch >= currentEpoch:
@@ -1053,7 +1068,7 @@ reason = "epoch not yet finalized -- can only claim past epochs"
 case pool.Amount == 0:
 eligible = false
 reason = "epoch pool is empty"
-case stats.TotalWeightedResolutions == 0:
+case totalW == 0:
 eligible = false
 reason = "no weighted resolutions recorded for this epoch"
 case payout == 0:
@@ -1065,7 +1080,7 @@ result := map[string]interface{}{
 "epoch":                      epoch,
 "current_epoch":              currentEpoch,
 "epoch_pool_amount":          strconv.FormatUint(pool.Amount, 10),
-"total_weighted_resolutions": strconv.FormatUint(stats.TotalWeightedResolutions, 10),
+"total_weighted_resolutions": strconv.FormatUint(totalW, 10),
 "successful_resolutions":     rec.SuccessfulResolutions,
 "rrs_score":                  rec.RrsScore,
 "tier_weight":                weight,
@@ -1074,6 +1089,8 @@ result := map[string]interface{}{
 "eligible":                   eligible,
 "eligible_reason":            reason,
 "pool_type":                  "resolver",
+"epoch_score":                myScore,
+"per_epoch_accounting":      perEpoch,
 }
 w.Header().Set("Content-Type", "application/json")
 json.NewEncoder(w).Encode(result)

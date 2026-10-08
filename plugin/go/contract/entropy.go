@@ -108,3 +108,19 @@ func (c *Contract) advancePanelEntropyV2(height uint64) *PluginError {
 	})
 	return errCheckWrite(wr, werr)
 }
+
+
+// RESOLVER_REWARD_FIX_HEIGHT: first height whose EPOCHS use per-epoch resolver
+// reward accounting (see resolver_epoch.go). Before it, claim_resolver_reward keeps the
+// legacy all-time GlobalStats math. MaxUint64 = DISABLED. Consensus-critical:
+// set well ahead of the live tip and upgrade every node first.
+var RESOLVER_REWARD_FIX_HEIGHT uint64 = ^uint64(0)
+
+// resolverEpochFixed reports whether an epoch is settled with per-epoch accounting.
+// Keyed on the epoch's first block so an epoch is never split between the two schemes.
+func resolverEpochFixed(epoch uint64) bool {
+	if RESOLVER_REWARD_FIX_HEIGHT == ^uint64(0) {
+		return false
+	}
+	return epoch*PRIS_EPOCH_BLOCKS >= RESOLVER_REWARD_FIX_HEIGHT
+}

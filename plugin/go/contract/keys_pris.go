@@ -117,3 +117,16 @@ return JoinLenPrefix(marketTxPrefix, marketId, uint64ToBytes(seq))
 func KeyForMarketTxPrefix(marketId []byte) []byte {
 return JoinLenPrefix(marketTxPrefix, marketId)
 }
+
+// ── Per-epoch resolver reward accounting (RESOLVER_REWARD_FIX_HEIGHT) ───────
+//   0x32  EpochWeightedTotal   per epoch            — Pool.Amount = sum of tier weights recorded in epoch
+//   0x33  ResolverEpochScore   per (epoch, resolver) — Pool.Amount = that resolver's weighted resolutions in epoch
+var epochWeightedTotalPrefix = []byte{0x32}
+var resolverEpochScorePrefix = []byte{0x33}
+
+func KeyForEpochWeightedTotal(epoch uint64) []byte {
+	return JoinLenPrefix(epochWeightedTotalPrefix, uint64ToBytes(epoch))
+}
+func KeyForResolverEpochScore(epoch uint64, addr []byte) []byte {
+	return JoinLenPrefix(resolverEpochScorePrefix, uint64ToBytes(epoch), addr)
+}

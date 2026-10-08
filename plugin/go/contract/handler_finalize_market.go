@@ -223,6 +223,7 @@ treasury.CreatorBond = 0
 market.FinalizedPoolAmount = marketPool.Amount
 market.Status = STATUS_FINALIZED
 
+var epochOps []*PluginSetOp
 // PRIS v1.0-r3: RRS increment and resolver fee payout on correct finalization (pathB).
 if pathB && proposal != nil {
 resolverRec.RrsScore += 10
@@ -234,6 +235,11 @@ weight = uint64(VOTE_WEIGHT_GOLD)
 weight = uint64(VOTE_WEIGHT_SILVER)
 }
 globalStats.TotalWeightedResolutions += weight
+if ep := now / PRIS_EPOCH_BLOCKS; resolverEpochFixed(ep) {
+ops, epe := c.epochWeightOps(ep, proposal.ResolverAddr, weight)
+if epe != nil { return &PluginDeliverResponse{Error: epe} }
+epochOps = append(epochOps, ops...)
+}
 // Pay resolver fee pool to resolver
 if resolverFeePool.Amount > 0 {
 proposerAcc.Amount      += resolverFeePool.Amount
@@ -280,6 +286,7 @@ if pe != nil { return &PluginDeliverResponse{Error: pe} }
 sets = append(sets, &PluginSetOp{Key: KeyForResolverRecord(proposal.ResolverAddr), Value: rawRec})
 sets = append(sets, &PluginSetOp{Key: KeyForGlobalStats(),                          Value: rawStats})
 sets = append(sets, &PluginSetOp{Key: KeyForResolverFeePool(msg.MarketId),          Value: rawResFee})
+sets = append(sets, epochOps...)
 }
 	if openCount.Amount > 0 {
 		openCount.Amount--

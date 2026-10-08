@@ -46,6 +46,11 @@ if claimEpoch >= currentEpoch {
 return &PluginDeliverResponse{Error: ErrInvalidParam()}
 }
 
+// Epochs at/after RESOLVER_REWARD_FIX_HEIGHT use per-epoch accounting.
+if resolverEpochFixed(claimEpoch) {
+return c.claimResolverRewardEpoch(msg, fee, claimEpoch)
+}
+
 recQId      := nextQueryId()
 poolQId     := nextQueryId()
 accQId      := nextQueryId()
