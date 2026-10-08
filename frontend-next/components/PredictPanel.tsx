@@ -22,7 +22,7 @@ interface Props {
 }
 
 export default function PredictPanel({ market, outcome, onOutcome, selectedOption: propSelectedOption, onSelectOption: propOnSelectOption }: Props) {
-  const { status, praxisAddress, privKey, pubKey } = useWallet();
+  const { status, praxisAddress, privKey, pubKey, walletName } = useWallet();
   const { data: chain } = useHeight();
   const toast = useToast((s) => s.show);
   const queryClient = useQueryClient();
@@ -41,6 +41,7 @@ export default function PredictPanel({ market, outcome, onOutcome, selectedOptio
   const [pending, setPending] = useState(false);
 
   const connected = status === "connected" || status === "drift";
+  const canSign = !!privKey && !!pubKey;
   const pct = isNOutcome ? 0 : yesPct(market);
   const nPricesArr = isNOutcome ? nPrices(market.q, market.b0) : [];
 
@@ -101,7 +102,8 @@ export default function PredictPanel({ market, outcome, onOutcome, selectedOptio
   const over = sharesU > 0n && sharesU > cap;
 
   const submit = async () => {
-    if (!connected || !privKey || !pubKey || !praxisAddress) { toast("Connect wallet first", true); return; }
+    if (!connected) { toast("Connect wallet first", true); return; }
+    if (!privKey || !pubKey || !praxisAddress) { toast("Read-only connection — unlock the Manual Keystore to sign this trade", true); return; }
     if (!chain?.height) { toast("Node not connected", true); return; }
     if (effShares < 1) { toast(mode === "spend" ? "Amount too small to buy a share" : "Shares min 1 PRX", true); return; }
 
@@ -258,10 +260,16 @@ export default function PredictPanel({ market, outcome, onOutcome, selectedOptio
           </div>
         )}
 
-        <button onClick={() => void submit()} disabled={pending || over || !connected} className="w-full rounded-card bg-up py-3 font-sans text-[15px] font-extrabold text-black shadow-glowUp transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40">
-          {pending ? "▪▪▪ broadcasting…" : `⚡ Buy ${isNOutcome ? market.options[selectedOption] : (outcome ? outLbl.yes : outLbl.no)} · ${fmtPRX(bd.maxCost)} PRX max`}
+        <button onClick={() => void submit()} disabled={pending || over || !connected || !canSign} className="w-full rounded-card bg-up py-3 font-sans text-[15px] font-extrabold text-black shadow-glowUp transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40">
+          {pending ? "▪▪▪ broadcasting…" : !connected ? "Connect wallet to trade" : !canSign ? "🔒 Unlock signing key to trade" : `⚡ Buy ${isNOutcome ? market.options[selectedOption] : (outcome ? outLbl.yes : outLbl.no)} · ${fmtPRX(bd.maxCost)} PRX max`}
         </button>
         {!connected && <div className="mt-2 text-center font-mono text-[11px] text-ink-3">connect wallet to trade</div>}
+        {connected && !canSign && (
+          <div className="mt-2 rounded-card border border-amberx/30 bg-amberx/10 px-3 py-2 text-center font-mono text-[11px] leading-relaxed text-amberx">
+            Read-only via {walletName || "injected wallet"} — browser wallets cannot sign Praxis transactions.
+            Unlock the Manual Keystore (Advanced section below) with the key for {(praxisAddress || "").slice(0, 8)}…{(praxisAddress || "").slice(-4)} to trade.
+          </div>
+        )}
       </div>
     </div>
   );
