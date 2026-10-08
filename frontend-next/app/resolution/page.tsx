@@ -20,16 +20,16 @@ export default function ResolutionPage() {
   const rows = stage === "proposed" ? proposed : stage === "review" ? review : finalized;
 
   const STAGES: { id: Stage; label: string; count: number; desc: string; accent: string }[] = [
-    { id: "proposed", label: "Proposed", count: proposed.length, desc: "Outcome isn't final yet. Stake to challenge it if incorrect or resolved too early.", accent: "border-amberx/40 text-amberx" },
-    { id: "review", label: "In Review", count: review.length, desc: "Someone staked to challenge the outcome. The resolvers are reviewing the dispute.", accent: "border-bluex/40 text-bluex" },
-    { id: "finalized", label: "Finalized", count: finalized.length, desc: "No dispute was filed, or the committee ruled. The outcome is final and will not change.", accent: "border-up/40 text-up" },
+    { id: "proposed", label: "Proposed", count: proposed.length, desc: "Outcome isn't final yet. Post a bond to challenge it if incorrect or resolved too early.", accent: "border-amberx/40 text-amberx" },
+    { id: "review", label: "In Review", count: review.length, desc: "A bond was posted to challenge the outcome. A random resolver panel is voting (commit, then reveal).", accent: "border-bluex/40 text-bluex" },
+    { id: "finalized", label: "Finalized", count: finalized.length, desc: "No dispute was filed, or the panel upheld the proposed outcome. The outcome is final.", accent: "border-up/40 text-up" },
   ];
 
   return (
     <main className="relative z-10 mx-auto min-h-screen max-w-[1100px] px-4 py-8 pb-24 md:px-8">
       <div className="mb-2 font-display text-[26px] font-extrabold tracking-[-0.5px] text-ink">Market Resolution</div>
       <p className="mb-6 max-w-[560px] text-[15px] leading-relaxed text-ink-2">
-        Disagree with an outcome? Stake PRX to challenge it. If the challenge is accepted your stake is returned plus a reward; if rejected it is forfeited.
+        Disagree with an outcome? Anyone can post a bond to challenge it during the dispute window. A random resolver panel votes: if you win, your bond is returned and the market is voided (all bettors refunded); if you lose, your bond is forfeited to the proposing resolver.
       </p>
 
       {/* stage cards */}

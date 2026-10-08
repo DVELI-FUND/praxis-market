@@ -1,7 +1,7 @@
 "use client";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { fetchResolvers } from "@/lib/resolvers";
+import { fetchResolvers, MIN_RESOLVER_STAKE, UNBONDING_BLOCKS, PANEL_SIZE, PANEL_SIZE_ELEVATED } from "@/lib/resolvers";
 import { fmtPRX } from "@/lib/format";
 import { getBlockSecs } from "@/lib/rpc";
 import { useHeight } from "@/hooks/useHeight";
@@ -44,7 +44,9 @@ export default function ResolversPage() {
   }, [resolvers]);
 
   const enriched = useMemo(() => {
-    return resolvers.map((r, i) => {
+    // Rank by RRS (it sets vote + reward weight); stake only breaks ties.
+    const ranked = [...resolvers].sort((a, b) => b.rrsScore - a.rrsScore || Number(b.stake - a.stake));
+    return ranked.map((r, i) => {
       const age = currentBlock > r.registeredAt ? currentBlock - r.registeredAt : 0;
       const shown = r.stake > 0n ? r.stake : r.unbonding;
       const stakePct = stats.totalStake > 0n ? Number((shown * 10000n) / stats.totalStake) / 100 : 0;
@@ -59,14 +61,26 @@ export default function ResolversPage() {
           <span className="inline-block h-px w-5 bg-up" /> Network
         </div>
         <h1 className="font-display text-[22px] font-extrabold tracking-[-0.3px]">Browse Resolvers</h1>
-        <p className="mt-1 text-[15px] text-ink-2">Active resolvers staking $PRX to guarantee market outcomes</p>
+        <p className="mt-1 text-[15px] text-ink-2">Active resolvers staking $PRX to guarantee market outcomes · ranked by RRS</p>
       </div>
 
       {/* tier legend */}
       <div className="mb-4 flex flex-wrap items-center gap-4 font-mono text-[11px] text-ink-3">
-        <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#d4a017]" /> Gold · RRS 200+ · 7x rewards</span>
-        <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#a8b3c4]" /> Silver · RRS 50+ · 3x</span>
-        <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#b08968]" /> Bronze · 1x</span>
+        <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#d4a017]" /> Gold · RRS 200+ · 3x votes &amp; rewards</span>
+        <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#a8b3c4]" /> Silver · RRS 50–199 · 2x</span>
+        <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#b08968]" /> Bronze · RRS 10–49 · 1x</span>
+      </div>
+
+      {/* guidelines */}
+      <div className="mb-4 rounded-card border border-line bg-bg-2 p-3 font-mono text-[11px] leading-relaxed text-ink-3">
+        <div className="mb-1 text-ink-2">How resolving works</div>
+        <ul className="space-y-0.5">
+          <li>• Stake at least {fmtPRX(MIN_RESOLVER_STAKE)} PRX to register. Stake above the minimum does <b className="text-ink-2">not</b> raise your weight or panel odds — it only funds bigger proposal bonds.</li>
+          <li>• New resolvers start at RRS 10 (Bronze). Clean finalization +10 · win a dispute +20 · slashed −50 · partial unstake −10 · full exit resets to 10.</li>
+          <li>• Tier sets vote weight on dispute panels and reward weight: Bronze 1× · Silver 2× · Gold 3× (capped at 3×).</li>
+          <li>• Disputes are decided by a random panel of {PANEL_SIZE} resolvers ({PANEL_SIZE_ELEVATED} when the market pool is 25,000+ PRX). The proposer, the disputer and anyone holding a position are excluded.</li>
+          <li>• Unstaking takes {UNBONDING_BLOCKS.toLocaleString()} blocks (~7 days) and is blocked while you have an open proposal.</li>
+        </ul>
       </div>
 
       {/* stat widgets */}

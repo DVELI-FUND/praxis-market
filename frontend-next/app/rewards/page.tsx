@@ -2,13 +2,13 @@
 import Link from "next/link";
 import { useWallet } from "@/store/wallet";
 import { useHeight } from "@/hooks/useHeight";
-import { useMyResolver, tierOf } from "@/lib/resolvers";
+import { useMyResolver, tierOf, epochOf } from "@/lib/resolvers";
 import { useRoles } from "@/lib/roles";
 
 const PH12_CANARY = "PRAXIS-NEXT-PH12";
 
 const POOLS: { pool: string; icon: string; name: string; share: string; desc: string; color: string; border: string }[] = [
-  { pool: "resolver", icon: "◈", name: "Resolver", share: "20%", desc: "Fees from markets you validated", color: "text-up", border: "border-up/30" },
+  { pool: "resolver", icon: "◈", name: "Resolver", share: "20%", desc: "Shared by resolvers by tier-weighted resolutions per epoch", color: "text-up", border: "border-up/30" },
   { pool: "builder", icon: "◎", name: "Builder", share: "20%", desc: "Protocol development", color: "text-bluex", border: "border-bluex/30" },
   { pool: "community", icon: "◉", name: "Community", share: "20%", desc: "Community contributions", color: "text-amberx", border: "border-amberx/30" },
   { pool: "investor", icon: "◆", name: "Investor", share: "20%", desc: "Early investment returns", color: "text-pinkx", border: "border-pinkx/30" },
@@ -20,7 +20,7 @@ export default function RewardsPage() {
   const roles = useRoles();
   const { data: chain } = useHeight();
   const myResolver = useMyResolver();
-  const currentEpoch = chain?.height ? Math.floor(chain.height / 1000) : 0;
+  const currentEpoch = chain?.height ? epochOf(chain.height) : 0;
 
   return (
     <main className="relative z-10 mx-auto min-h-screen max-w-[980px] px-4 py-6 pb-24 md:px-8">
@@ -88,7 +88,7 @@ export default function RewardsPage() {
               <li>• 1% creator fee + 1% resolver fee on every trade</li>
               <li>• Fees split 20% × 5 pools (resolver / builder / community / investor / protocol)</li>
               <li>• Epoch = 500 blocks ≈ 83 min at 10s/block</li>
-              <li>• Resolver share = pool × (resolutions × weight) / Σ weighted — 1× / 3× / 7× tiers</li>
+              <li>• Resolver share = epoch pool × (your tier-weighted resolutions that epoch) / Σ weighted resolutions that epoch — Bronze 1× / Silver 2× / Gold 3×</li>
               <li>• Only past epochs are claimable (current epoch not yet snapshotted)</li>
             </ul>
           </div>

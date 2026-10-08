@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useMyResolver, MIN_RESOLVER_STAKE, UNBONDING_BLOCKS, PARTIAL_RRS_HIT } from "@/lib/resolvers";
+import { useMyResolver, tierOf, MIN_RESOLVER_STAKE, UNBONDING_BLOCKS, PARTIAL_RRS_HIT } from "@/lib/resolvers";
 import { useHeight } from "@/hooks/useHeight";
 import { fmtPRX } from "@/lib/format";
 
@@ -35,6 +35,12 @@ export default function ResolverStatusCard({ hideCta = false }: { hideCta?: bool
             {rec.rrsScore} · {rec.active ? "active" : "inactive"}
           </span>
         </div>
+        <div className="flex justify-between">
+          <span className="text-ink-3">Tier / weight</span>
+          <span>
+            {tierOf(rec.rrsScore).label} · {tierOf(rec.rrsScore).weight}×
+          </span>
+        </div>
       </div>
 
       {released && !hideCta && (
@@ -47,7 +53,7 @@ export default function ResolverStatusCard({ hideCta = false }: { hideCta?: bool
       )}
 
       <div className="mt-2 border-t border-line pt-2 text-[11px] leading-relaxed text-ink-3">
-        min stake {fmtPRX(MIN_RESOLVER_STAKE)} PRX · partial unstake must leave ≥ min · partial =
+        min stake {fmtPRX(MIN_RESOLVER_STAKE)} PRX (extra stake does not raise weight) · partial unstake must leave ≥ min · partial =
         RRS −{PARTIAL_RRS_HIT} · full exit resets RRS · unbonding{" "}
         {UNBONDING_BLOCKS.toLocaleString()} blocks · one pending unbonding at a time
       </div>

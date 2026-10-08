@@ -5,7 +5,7 @@ import ActionForm from "./ActionForm";
 import { ACTIONS } from "@/lib/actions";
 import { useWallet } from "@/store/wallet";
 import { useHeight } from "@/hooks/useHeight";
-import { useMyResolver, tierOf } from "@/lib/resolvers";
+import { useMyResolver, tierOf, epochOf } from "@/lib/resolvers";
 import { getPluginRPC } from "@/lib/rpc";
 
 export type PoolKey = "resolver" | "builder" | "community" | "investor" | "protocol";
@@ -52,6 +52,8 @@ interface RewardContext {
   tier_weight?: number;
   successful_resolutions?: number;
   total_weighted_resolutions?: string;
+  epoch_score?: number;
+  per_epoch_accounting?: boolean;
 }
 
 function StatCard({ label, value, sub, accent }: { label: string; value: string; sub: string; accent: string }) {
@@ -74,7 +76,7 @@ export default function RewardPoolPage({ pool }: { pool: PoolKey }) {
   const { praxisAddress } = useWallet();
   const { data: chain } = useHeight();
   const myResolver = useMyResolver();
-  const currentEpoch = chain?.height ? Math.floor(chain.height / 1000) : 0;
+  const currentEpoch = chain?.height ? epochOf(chain.height) : 0;
 
   const [epochs, setEpochs] = useState<RewardContext[]>([]);
   const [loading, setLoading] = useState(false);
@@ -198,7 +200,7 @@ export default function RewardPoolPage({ pool }: { pool: PoolKey }) {
               <div className="mt-3 rounded-card border border-line bg-bg-2 p-2.5 font-mono text-[11px] leading-relaxed">
                 <span className="text-ink-3">Payout formula:</span>
                 <br />
-                <span className="text-ink">epoch_pool × (resolutions × weight) / Σ(weighted resolutions)</span>
+                <span className="text-ink">epoch_pool × (your weighted resolutions in that epoch) / Σ(weighted resolutions in that epoch)</span>
               </div>
             </>
           ) : (
@@ -261,9 +263,11 @@ export default function RewardPoolPage({ pool }: { pool: PoolKey }) {
                 <tbody>
                   {epochs.map((epochData) => {
                     const isCurrent = epochData.epoch === currentEpoch;
-                    const isClaimed = epochData.last_claimed_epoch >= epochData.epoch;
+                    // Per-epoch accounting deletes your score on claim, so eligibility alone is the truth;
+                    // legacy epochs still gate on last_claimed_epoch.
+                    const isClaimed = !epochData.per_epoch_accounting && epochData.last_claimed_epoch >= epochData.epoch;
                     const isClaimable = epochData.eligible && !isClaimed && !isCurrent;
-                    const isNoActivity = !epochData.eligible && epochData.eligible_reason?.includes("no successful resolutions");
+                    const isNoActivity = !epochData.eligible && (epochData.eligible_reason?.includes("no successful resolutions") || epochData.eligible_reason?.includes("no resolutions in this epoch"));
 
                     let status = "";
                     let statusColor = "text-ink-3";

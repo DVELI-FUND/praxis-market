@@ -53,7 +53,7 @@ const SECTIONS: NavSection[] = [
       { href: "/action/register", label: "Register", icon: "◈", badge: "RESOLVER" , gate: "connected"},
       { href: "/action/forfeit", label: "Forfeit Position", icon: "↩", badge: "RESOLVER" , gate: "resolver"},
       { href: "/action/propose", label: "Propose Outcome", icon: "⚖", badge: "RESOLVER" , gate: "resolver"},
-      { href: "/action/dispute", label: "File Dispute", icon: "⚠", badge: "RESOLVER" , gate: "resolver"},
+      { href: "/action/dispute", label: "File Dispute", icon: "⚠", gate: "connected"},
       { href: "/action/commit", label: "Commit Vote", icon: "◌", badge: "RESOLVER" , gate: "resolver"},
       { href: "/action/reveal", label: "Reveal Vote", icon: "○", badge: "RESOLVER" , gate: "resolver"},
       { href: "/action/tally", label: "Tally Votes", icon: "≡", badge: "RESOLVER" , gate: "resolver"},

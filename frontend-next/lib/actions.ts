@@ -13,6 +13,8 @@ import {
 } from "@/lib/proto";
 
 const W = 1000000n;
+const EPOCH_BLOCKS = 500; // PRIS_EPOCH_BLOCKS
+const epochOf = (h: number) => Math.floor(h / EPOCH_BLOCKS);
 
 // Convert a datetime-local string to a block height (measured seconds/block, see rpc.ts)
 export function datetimeToBlock(datetimeStr: string, currentHeight: number): number {
@@ -127,7 +129,7 @@ export const ACTIONS: Record<string, ActionDef> = {
     },
   },
   dispute: {
-    key: "dispute", msgType: "file_dispute", planner: "dispute",  title: "File Dispute", eye: "Resolver", sub: "Challenge a proposed outcome during the dispute window", gate: "resolver",
+    key: "dispute", msgType: "file_dispute", planner: "dispute",  title: "File Dispute", eye: "Dispute", sub: "Challenge a proposed outcome during the dispute window — anyone can dispute; bond is forfeited if rejected",
     fields: [ MID, WALLET, { id: "bond", label: "Bond Amount (PRX)", type: "number", def: 60, scale: W, min: 1, hint: "Forfeited if your dispute is rejected" }, FEE ],
     build: (v) => encDispute(s(v, "mid"), s(v, "addr"), u(v, "bond")),
   },
@@ -179,12 +181,12 @@ export const ACTIONS: Record<string, ActionDef> = {
     build: () => encClaimGenesisFoundation(),
   },
   unstake: {
-    key: "unstake", msgType: "unstake_resolver", title: "Unstake Resolver", eye: "Resolver", sub: "Begin 120,960-block unbonding period — partial or full exit", gate: "resolver", statusCard: "resolver",
+    key: "unstake", msgType: "unstake_resolver", title: "Unstake Resolver", eye: "Resolver", sub: "Begin 60,480-block (~7 day) unbonding period — partial or full exit. Blocked while you have an open proposal", gate: "resolver", statusCard: "resolver",
     fields: [ WALLET, { id: "amount", label: "Amount (PRX) — 0 = full exit", type: "number", def: 0, scale: W }, FEE ],
     build: (v) => encUnstakeResolver(s(v, "addr"), u(v, "amount")),
   },
   claimunbonded: {
-    key: "claimunbonded", msgType: "claim_unbonded_stake", title: "Claim Unbonded Stake", eye: "Resolver", sub: "Release tokens after the 120,960-block unbonding period", gate: "resolver", statusCard: "resolver",
+    key: "claimunbonded", msgType: "claim_unbonded_stake", title: "Claim Unbonded Stake", eye: "Resolver", sub: "Release tokens after the 60,480-block (~7 day) unbonding period", gate: "resolver", statusCard: "resolver",
     fields: [ WALLET, FEE ],
     build: (v) => encClaimUnbonded(s(v, "addr")),
   },
@@ -258,10 +260,10 @@ ACTIONS.claim_resolver = {
   msgType: "claim_resolver_reward",
   title: "Claim Resolver Reward",
   eye: "Rewards",
-  sub: "Earn 20% of transaction fees for validating markets — claim per epoch",
+  sub: "Claim your tier-weighted share of the resolver pool for a completed epoch (500 blocks)",
   fields: REWARD_FIELDS_EPOCH,
   build: (v, ctx) => {
-    const epoch = Number(v.epoch) || Math.floor(ctx.height / 1000) - 1;
+    const epoch = Number(v.epoch) || epochOf(ctx.height) - 1;
     return encRewardResolver(s(v, "addr"), BigInt(epoch));
   },
 };

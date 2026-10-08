@@ -39,7 +39,8 @@ export default function ResolutionPlanner({ mid, mode, wallet, bondValue = 0, on
   const nPricesArr = isNOutcome && m && m.q && m.b0 ? nPrices(m.q, m.b0) : [];
   const pool = m ? (isNOutcome ? m.q.reduce((a, b) => a + b, 0n) : marketVol(m)) : 0n;
   const poolNum = Number(pool / 1000000n);
-  const minBond = Math.max(poolNum * 0.01, 60);
+  // Contract: ComputeMinBond = max(b_eff / 100, MIN_B0 = 60 PRX)
+  const minBond = Math.max(m ? Number(m.b0 / 1000000n) / 100 : 0, 60);
   const elevated = pool >= ELEVATED;
 
   // auto-raise propose bond to protocol minimum
@@ -109,14 +110,14 @@ export default function ResolutionPlanner({ mid, mode, wallet, bondValue = 0, on
         }`}
       >
         {elevated
-          ? `⚠ ELEVATED RISK · pool ${fmtPRX(pool)} PRX (≥ 25k) · panel 7 resolvers`
-          : `✓ Standard market · pool ${fmtPRX(pool)} PRX · panel 5 resolvers`}
+          ? `⚠ ELEVATED RISK · pool ${fmtPRX(pool)} PRX (≥ 25k) · panel of 7 resolvers`
+          : `✓ Standard market · pool ${fmtPRX(pool)} PRX · panel of 3 resolvers`}
       </div>
 
       <div className="space-y-1 text-ink-2">
         {mode === "propose" && (
           <div className="flex justify-between">
-            <span className="text-ink-3">Min bond (max 1% pool, 60)</span>
+            <span className="text-ink-3">Min bond (1% of b_eff, floor 60)</span>
             <span className="text-up tabular-nums">{Math.ceil(minBond)} PRX</span>
           </div>
         )}
