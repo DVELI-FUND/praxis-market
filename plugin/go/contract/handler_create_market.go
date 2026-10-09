@@ -97,8 +97,12 @@ if pe := Unmarshal(r.Entries[0].Value, feePool); pe != nil {
 return &PluginDeliverResponse{Error: pe}
 }
 		case gTreasuryQId:
-			if pe := Unmarshal(r.Entries[0].Value, gTreasury); pe != nil {
-				return &PluginDeliverResponse{Error: pe}
+			// repaired read (gated); pre-cutover this is a no-op and the buggy read lived
+			// in the midxQId case below. see CREATE_MARKET_FIX_HEIGHT
+			if createMarketFixActive(now) {
+				if pe := Unmarshal(r.Entries[0].Value, gTreasury); pe != nil {
+					return &PluginDeliverResponse{Error: pe}
+				}
 			}
 		case ocQId:
 			if len(r.Entries) > 0 && len(r.Entries[0].Value) > 0 {
@@ -107,6 +111,14 @@ return &PluginDeliverResponse{Error: pe}
 		case midxQId:
 			if pe := Unmarshal(r.Entries[0].Value, midx); pe != nil {
 				return &PluginDeliverResponse{Error: pe}
+			}
+			if !createMarketFixActive(now) {
+				// pre-cutover (v2026.273) bug reproduced verbatim: unmarshalling the
+				// market-index bytes into the treasury Pool errors when the index is
+				// non-empty, failing create_market with no writes
+				if pe := Unmarshal(r.Entries[0].Value, gTreasury); pe != nil {
+					return &PluginDeliverResponse{Error: pe}
+				}
 			}
 	}
 }
@@ -171,7 +183,7 @@ market.QYes, market.QNo = 0, 0
 treasury := &TreasuryReserve{LockedReserve: FINALIZATION_BOUNTY, CreatorBond: CREATOR_BOND}
 
 logAmt := uint64(0)
-if amountLogActive(now) {
+if amountLogMarketClaimActive(now) {
 logAmt = totalCost
 }
 txLogOp, pe := buildMarketTxLogOp(market, marketId, "create_market", msg.CreatorAddress, now, false, 0, logAmt, txHash)
