@@ -91,6 +91,10 @@ investorPool  := &Pool{}
 protocolPool  := &Pool{}
 resolverPool  := &Pool{}
 
+if patchV3Active(height) && (poolResp == nil || poolResp.Error != nil) {
+// PATCH V3: fail closed. Treating unreadable pools as empty would overwrite them.
+return ErrInternal()
+}
 if poolResp != nil && poolResp.Error == nil {
 for _, r := range poolResp.Results {
 if len(r.Entries) == 0 {
@@ -98,19 +102,23 @@ continue
 }
 switch r.QueryId {
 case bPoolQId:
-_ = Unmarshal(r.Entries[0].Value, builderPool)
+if pe := Unmarshal(r.Entries[0].Value, builderPool); pe != nil && patchV3Active(height) { return pe }
 case cPoolQId:
-_ = Unmarshal(r.Entries[0].Value, communityPool)
+if pe := Unmarshal(r.Entries[0].Value, communityPool); pe != nil && patchV3Active(height) { return pe }
 case iPoolQId:
-_ = Unmarshal(r.Entries[0].Value, investorPool)
+if pe := Unmarshal(r.Entries[0].Value, investorPool); pe != nil && patchV3Active(height) { return pe }
 case pPoolQId:
-_ = Unmarshal(r.Entries[0].Value, protocolPool)
+if pe := Unmarshal(r.Entries[0].Value, protocolPool); pe != nil && patchV3Active(height) { return pe }
 case rPoolQId:
-_ = Unmarshal(r.Entries[0].Value, resolverPool)
+if pe := Unmarshal(r.Entries[0].Value, resolverPool); pe != nil && patchV3Active(height) { return pe }
 }
 }
 }
 
+if patchV3Active(height) {
+// PATCH V3: rounding dust goes to the protocol pool instead of being burned.
+protocolShare = treasury.Amount - resolverShare - builderShare - communityShare - investorShare
+}
 builderPool.Amount   += builderShare
 communityPool.Amount += communityShare
 investorPool.Amount  += investorShare

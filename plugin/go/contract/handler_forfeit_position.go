@@ -77,6 +77,9 @@ return &PluginDeliverResponse{Error: ErrInvalidParam()}
 if position == nil || (position.SharesYes == 0 && position.SharesNo == 0) {
 		return &PluginDeliverResponse{Error: ErrNoPosition()}
 	}
+	if patchV3Active(now) && position.Claimed {
+		return &PluginDeliverResponse{Error: ErrAlreadyClaimed()}
+	}
 	if account == nil {
 		return &PluginDeliverResponse{Error: ErrInsufficientFunds()}
 	}
@@ -127,5 +130,10 @@ if position == nil || (position.SharesYes == 0 && position.SharesNo == 0) {
 	if pe := errCheckWrite(wr, werr); pe != nil {
 		return &PluginDeliverResponse{Error: pe}
 	}
-	return &PluginDeliverResponse{}
+	if patchV3Active(now) {
+if pe := c.chargeAndRoute(msg.ResolverAddress, fee); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
+}
+return &PluginDeliverResponse{}
 }

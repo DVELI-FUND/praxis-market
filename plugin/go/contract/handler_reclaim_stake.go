@@ -97,7 +97,13 @@ return &PluginDeliverResponse{Error: ErrMarketNotFound()}
 
 // Cancelled never-traded market: pay out the stranded seed (height-gated).
 if market.Status == STATUS_CANCELLED && cancelFixActive(now) {
-return c.reclaimCancelledSeed(msg, market, marketPool, claimantAcc)
+rc := c.reclaimCancelledSeed(msg, market, marketPool, claimantAcc)
+if rc.Error == nil && patchV3Active(now) {
+if pe := c.chargeAndRoute(msg.ClaimantAddress, fee); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
+}
+return rc
 }
 
 // Only reclaimable if STATUS_OPEN, expiry passed, and no proposal ever filed
@@ -209,6 +215,16 @@ Deletes: deletes,
 })
 if pe := errCheckWrite(wr, werr); pe != nil {
 return &PluginDeliverResponse{Error: pe}
+}
+if patchV3Active(now) {
+if resolverFixActive(now) {
+if pe := c.decOpenCount(market.Creator); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
+}
+if pe := c.chargeAndRoute(msg.ClaimantAddress, fee); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
 }
 return &PluginDeliverResponse{}
 }

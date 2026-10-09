@@ -121,7 +121,11 @@ return &PluginDeliverResponse{Error: ErrResolverLocked()}
 
 // ── Apply RRS penalty ─────────────────────────────────────────────────
 if fullExit {
+if patchV3Active(height) && record.RrsScore < PRIS_RRS_INITIAL {
+// PATCH V3: exiting must not launder a slashed score.
+} else {
 record.RrsScore = PRIS_RRS_INITIAL // reset to Bronze baseline
+}
 record.IsActive = false
 } else {
 if record.RrsScore > PRIS_UNSTAKE_PARTIAL_RRS_HIT {

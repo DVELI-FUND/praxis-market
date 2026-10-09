@@ -1,6 +1,5 @@
 package contract
 
-import "os"
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Praxis Prediction Market — Named Constants
@@ -159,7 +158,9 @@ var PANEL_ENTROPY_KEY []byte
 //   - Cap is share-based so pool growth does not progressively loosen it.
 const MAX_POSITION_BPS uint64 = 2000
 
-var TEST_MODE = os.Getenv("PRAXIS_TEST_MODE") == "true"
+// PATCH V3: no longer read from the environment (a consensus-affecting switch must
+// never depend on a per-node env var). Tests set it directly.
+var TEST_MODE = false
 const TEST_DISPUTE_BLOCKS        uint64 = 20
 const TEST_RESOLUTION_DELAY      uint64 = 2
 const TEST_GRACE_PERIOD          uint64 = 2

@@ -102,7 +102,8 @@ existing.StakeAmount += msg.StakeAmount
 			return &PluginDeliverResponse{Error: ErrInsufficientResolverStake()}
 		}
 existing.IsActive = true // re-activate on re-registration after full exit
-		if existing.RrsScore < PRIS_RRS_INITIAL {
+		// PATCH V3: topping up must not lift a slashed/suspended RRS back to Bronze.
+		if existing.RrsScore < PRIS_RRS_INITIAL && !patchV3Active(now) {
 			existing.RrsScore = PRIS_RRS_INITIAL
 		}
 record = existing

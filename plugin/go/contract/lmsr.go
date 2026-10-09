@@ -88,6 +88,26 @@ if shares < PRECISION_SCALE {
 return 0, ErrSharesBelowMinimum()
 }
 
+if patchV3Active(GetGlobalHeight()) {
+// PATCH V3: deterministic integer engine (no float64) for binary markets too.
+yes, no := qYes, qNo
+if outcome {
+if yes > ^uint64(0)-shares {
+return 0, ErrInvalidAmount()
+}
+} else if no > ^uint64(0)-shares {
+return 0, ErrInvalidAmount()
+}
+idx := 1
+if outcome {
+idx = 0
+}
+cst, err := TradeCostN([]uint64{yes, no}, bEff, idx, shares)
+if err != nil {
+return 0, ErrInvalidAmount()
+}
+return cst, nil
+}
 costBefore := lmsrCost(qYes, qNo, bEff)
 
 var qYesNew, qNoNew uint64

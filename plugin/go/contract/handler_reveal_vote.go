@@ -127,5 +127,10 @@ Sets: []*PluginSetOp{
 if pe := errCheckWrite(wr, werr); pe != nil {
 return &PluginDeliverResponse{Error: pe}
 }
+if patchV3Active(now) {
+if pe := c.chargeAndRoute(msg.VoterAddr, fee); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
+}
 return &PluginDeliverResponse{}
 }

@@ -18,7 +18,13 @@ if now == 0 {
 return &PluginDeliverResponse{Error: ErrHeightNotSet()}
 }
 if resolverFixActive(now) {
-return c.tallyVotesFixed(msg, now)
+r := c.tallyVotesFixed(msg, now)
+if r.Error == nil && patchV3Active(now) {
+if pe := c.chargeAndRoute(msg.CallerAddr, fee); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
+}
+return r
 }
 
 marketQId  := nextQueryId()

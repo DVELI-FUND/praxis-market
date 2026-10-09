@@ -156,7 +156,7 @@ func (c *Contract) tallyVotesFixed(msg *MessageTallyVotes, now uint64) *PluginDe
 	rewards := splitByWeight(voterPool, weights)
 
 	// second read: everything the outcome touches
-	rq, oq, cfq, rfq, tq, prq := nextQueryId(), nextQueryId(), nextQueryId(), nextQueryId(), nextQueryId(), nextQueryId()
+	rq, oq, cfq, rfq, tq, prq, mpq := nextQueryId(), nextQueryId(), nextQueryId(), nextQueryId(), nextQueryId(), nextQueryId(), nextQueryId()
 	v2, err := c.readKeys(map[uint64][]byte{
 		rq:  KeyForTreasuryReserve(msg.MarketId),
 		oq:  KeyForCreatorOpenCount(market.Creator),
@@ -164,13 +164,15 @@ func (c *Contract) tallyVotesFixed(msg *MessageTallyVotes, now uint64) *PluginDe
 		rfq: KeyForResolverFeePool(msg.MarketId),
 		tq:  KeyForTreasuryPool(),
 		prq: KeyForResolverRecord(proposal.ResolverAddr),
+		mpq: KeyForMarketPool(msg.MarketId),
 	})
 	if err != nil {
 		return &PluginDeliverResponse{Error: err}
 	}
 	reserve, openCount, creatorFee, resolverFee, treasury := &TreasuryReserve{}, &Pool{}, &Pool{}, &Pool{}, &Pool{}
 	proposerRec := &ResolverRecord{}
-	for ptr, q := range map[any]uint64{reserve: rq, openCount: oq, creatorFee: cfq, resolverFee: rfq, treasury: tq, proposerRec: prq} {
+	marketPool := &Pool{}
+	for ptr, q := range map[any]uint64{reserve: rq, openCount: oq, creatorFee: cfq, resolverFee: rfq, treasury: tq, proposerRec: prq, marketPool: mpq} {
 		if pe := unmarshalIf(v2[q], ptr); pe != nil {
 			return &PluginDeliverResponse{Error: pe}
 		}
@@ -214,6 +216,18 @@ func (c *Contract) tallyVotesFixed(msg *MessageTallyVotes, now uint64) *PluginDe
 		creatorFee.Amount, resolverFee.Amount = 0, 0
 		proposerRec.RrsScore = subOrZero(proposerRec.RrsScore, LOSING_PROPOSER_RRS_PENALTY)
 		lockAddrs = append(lockAddrs, proposal.ResolverAddr)
+		// PATCH V3: voided market nobody traded: no claimant will ever sweep the seed.
+		if patchV3Active(now) && market.TotalPositions == 0 && marketPool.Amount > 0 {
+			if pe := book.credit(market.Creator, marketPool.Amount); pe != nil {
+				return &PluginDeliverResponse{Error: pe}
+			}
+			marketPool.Amount = 0
+			rawMP, mpe := SafeMarshal(marketPool)
+			if mpe != nil {
+				return &PluginDeliverResponse{Error: mpe}
+			}
+			sets = append(sets, &PluginSetOp{Key: KeyForMarketPool(msg.MarketId), Value: rawMP})
+		}
 
 		for _, kv := range []struct {
 			key []byte

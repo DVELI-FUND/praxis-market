@@ -27,6 +27,14 @@ func validateCreateExtras(msg *MessageCreateMarket) *PluginError {
 		if msg.PayoutMode != 0 {
 			return ErrInvalidParam()
 		}
+		if patchV3Active(GetGlobalHeight()) {
+			if len(msg.Question) > MAX_BINARY_QUESTION {
+				return ErrInvalidQuestion()
+			}
+			if len(msg.Rules) > MAX_BINARY_RULES {
+				return ErrInvalidParam()
+			}
+		}
 		return nil
 	}
 	if msg.PayoutMode != PAYOUT_MODE_STANDARD {

@@ -115,7 +115,7 @@ withCancelFix(t, 10)
 if !cancelFixActive(10) || cancelFixActive(9) {
 t.Fatal("gate boundary wrong")
 }
-if auditFixActive(1 << 62) {
-t.Fatal("cancel gate must not enable the entropy/audit gate")
+if auditFixActive(AUDIT_FIX_HEIGHT - 1) {
+t.Fatal("cancel gate must not enable the entropy/audit gate below its own height")
 }
 }

@@ -76,5 +76,10 @@ Sets: []*PluginSetOp{
 if pe := errCheckWrite(wr, werr); pe != nil {
 return &PluginDeliverResponse{Error: pe}
 }
+if patchV3Active(height) {
+if pe := c.routeFee(fee); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
+}
 return &PluginDeliverResponse{}
 }

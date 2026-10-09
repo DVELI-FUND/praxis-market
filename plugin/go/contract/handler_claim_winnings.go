@@ -87,6 +87,24 @@ return &PluginDeliverResponse{Error: ErrMarketNotFound()}
 if cancelledMarket != nil {
 market = cancelledMarket
 }
+g := patchV3Active(now)
+if g && market.Status == STATUS_FINALIZED {
+// PATCH V3: after the claim window nobody is paid; the pool is swept (see patch_v3.go).
+oq := nextQueryId()
+ov, oerr := c.readKeys(map[uint64][]byte{oq: KeyForOutcome(msg.MarketId)})
+if oerr != nil {
+return &PluginDeliverResponse{Error: oerr}
+}
+if len(ov[oq]) > 0 {
+oc := &OutcomeState{}
+if pe := Unmarshal(ov[oq], oc); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
+if oc.ResolvedAt > 0 && now > oc.ResolvedAt+CLAIM_GRACE_PERIOD_V2 {
+return c.sweepClosedMarket(msg.MarketId, msg.ClaimantAddress, fee)
+}
+}
+}
 if positionIsEmpty(position) {
 return &PluginDeliverResponse{Error: ErrNoPosition()}
 }
@@ -155,7 +173,11 @@ poolForPayout := marketPool.Amount
 if market.FinalizedPoolAmount > 0 {
 poolForPayout = market.FinalizedPoolAmount
 }
+if g {
+payout = binaryPayoutV3(market, winnerShares, outcome.WinningOutcome, poolForPayout)
+} else {
 payout = ComputePayout(poolForPayout, winnerShares, totalWinShares)
+}
 }
 }
 
@@ -250,6 +272,7 @@ sets := []*PluginSetOp{
 }
 
 // Fold creator bond slash into sets if this was a cancel.
+var bondTPool *Pool // PATCH V3: carried into the sweep below so the slash is not overwritten
 if market.Status == STATUS_CANCELLED && cancelTreasury.CreatorBond > 0 {
 cancelTPool := &Pool{}
 tpQId := nextQueryId()
@@ -272,6 +295,7 @@ return &PluginDeliverResponse{Error: pe}
 }
 }
 cancelTPool.Amount      += cancelTreasury.CreatorBond
+bondTPool = cancelTPool
 cancelTreasury.CreatorBond = 0
 rawCT, pe := SafeMarshal(cancelTreasury)
 if pe != nil { return &PluginDeliverResponse{Error: pe} }
@@ -306,6 +330,11 @@ return &PluginDeliverResponse{Error: pe}
 }
 }
 
+if g && bondTPool != nil {
+// PATCH V3: the bond slash and this sweep write the same key in one tx; the sweep
+// used to overwrite the slash, burning the creator bond.
+treasuryPool = bondTPool
+}
 // Overflow guard.
 if treasuryPool.Amount > ^uint64(0)-marketPool.Amount {
 return &PluginDeliverResponse{Error: ErrInvalidAmount()}
@@ -339,6 +368,22 @@ wr, werr := c.plugin.StateWrite(c, &PluginStateWriteRequest{Sets: sets})
 if pe := errCheckWrite(wr, werr); pe != nil {
 return &PluginDeliverResponse{Error: pe}
 }
-
+if g {
+// PATCH V3 post-write hooks: route the (previously burned) fee, free the creator's
+// open-market slot on auto-cancel, and sweep value stranded by cancelled markets.
+if pe := c.routeFee(fee); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
+if cancelledMarket != nil {
+if pe := c.decOpenCount(market.Creator); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
+}
+if market.Status == STATUS_CANCELLED {
+if pe := c.sweepCancelledExtras(msg.MarketId); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
+}
+}
 return &PluginDeliverResponse{}
 }

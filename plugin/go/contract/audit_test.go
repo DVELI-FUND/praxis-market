@@ -243,11 +243,10 @@ func TestAuditLateFSMResponseDoesNotCrash(t *testing.T) {
 }
 
 func TestAuditEntropyDisabledByDefaultAndPure(t *testing.T) {
-	if AUDIT_FIX_HEIGHT != ^uint64(0) {
-		t.Fatal("audit fixes must ship disabled until a height is chosen")
-	}
-	if auditFixActive(1<<62) {
-		t.Fatal("gate must be off by default")
+	// AUDIT_FIX_HEIGHT is now a live activation height (set in entropy.go); the gate is
+	// monotonic: off below it, on at/after it.
+	if auditFixActive(AUDIT_FIX_HEIGHT-1) || !auditFixActive(AUDIT_FIX_HEIGHT) {
+		t.Fatal("audit gate boundary wrong")
 	}
 	a, b := nextEntropy(0, 5), nextEntropy(0, 5)
 	if a != b || a == 0 || nextEntropy(a, 6) == nextEntropy(a, 7) {

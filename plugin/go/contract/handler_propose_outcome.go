@@ -167,6 +167,18 @@ return &PluginDeliverResponse{Error: ErrAlreadyProposed()}
 
 // ── Bond sufficiency check ────────────────────────────────────────────────
 minBond := ComputeMinBond(market)
+g := patchV3Active(now)
+if g {
+// PATCH V3: no proposals once the cancel window has passed (bettors can cancel).
+if now > addSat(market.ExpiryTime, PROPOSAL_WINDOW_V2) {
+return &PluginDeliverResponse{Error: ErrMarketCancelled()}
+}
+livePool, ppe := c.marketPoolAmount(msg.MarketId)
+if ppe != nil {
+return &PluginDeliverResponse{Error: ppe}
+}
+minBond = minBondV3(market, livePool)
+}
 if msg.ProposalBond < minBond {
 return &PluginDeliverResponse{Error: ErrInsufficientBond()}
 }
@@ -244,6 +256,11 @@ txLogOp,
 })
 if pe := errCheckWrite(wr, werr); pe != nil {
 return &PluginDeliverResponse{Error: pe}
+}
+if g {
+if pe := c.chargeAndRoute(msg.ResolverAddress, fee); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
 }
 return &PluginDeliverResponse{}
 }

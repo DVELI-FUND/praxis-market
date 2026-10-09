@@ -48,7 +48,13 @@ return &PluginDeliverResponse{Error: ErrInvalidParam()}
 
 // Epochs at/after RESOLVER_REWARD_FIX_HEIGHT use per-epoch accounting.
 if resolverEpochFixed(claimEpoch) {
-return c.claimResolverRewardEpoch(msg, fee, claimEpoch)
+r := c.claimResolverRewardEpoch(msg, fee, claimEpoch)
+if r.Error == nil && patchV3Active(height) {
+if pe := c.routeFee(fee); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
+}
+return r
 }
 
 recQId      := nextQueryId()
@@ -155,6 +161,11 @@ Sets: []*PluginSetOp{
 })
 if pe := errCheckWrite(wr, werr); pe != nil {
 return &PluginDeliverResponse{Error: pe}
+}
+if patchV3Active(height) {
+if pe := c.routeFee(fee); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
 }
 return &PluginDeliverResponse{}
 }

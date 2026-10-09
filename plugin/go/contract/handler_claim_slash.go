@@ -268,5 +268,10 @@ wr, werr := c.plugin.StateWrite(c, &PluginStateWriteRequest{Sets: sets})
 if pe := errCheckWrite(wr, werr); pe != nil {
 return &PluginDeliverResponse{Error: pe}
 }
+if patchV3Active(now) {
+if pe := c.chargeAndRoute(msg.ClaimantAddress, fee); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
+}
 return &PluginDeliverResponse{}
 }

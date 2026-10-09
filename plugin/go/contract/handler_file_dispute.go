@@ -96,6 +96,14 @@ if pe := Unmarshal(r.Entries[0].Value, feePool); pe != nil {
 return &PluginDeliverResponse{Error: pe}
 }
 }
+case treasyQId:
+// PATCH V3: the treasury pool was read but never loaded, so every dispute
+// overwrote the global treasury with just this tx's fee share.
+if patchV3Active(now) && len(r.Entries) > 0 && len(r.Entries[0].Value) > 0 {
+if pe := Unmarshal(r.Entries[0].Value, treasyPool); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
+}
 }
 }
 
@@ -109,7 +117,15 @@ if proposal == nil {
 return &PluginDeliverResponse{Error: ErrInternal()}
 }
 
-if resolverFixActive(now) && msg.DisputeBond < ComputeMinBond(market) {
+if patchV3Active(now) {
+livePool, ppe := c.marketPoolAmount(msg.MarketId)
+if ppe != nil {
+return &PluginDeliverResponse{Error: ppe}
+}
+if msg.DisputeBond < minBondV3(market, livePool) {
+return &PluginDeliverResponse{Error: ErrInsufficientBond()}
+}
+} else if resolverFixActive(now) && msg.DisputeBond < ComputeMinBond(market) {
 return &PluginDeliverResponse{Error: ErrInsufficientBond()}
 }
 disputeWindow   := ComputeDisputeBlocksAt(now, market.OpenTime, market.ExpiryTime)
@@ -233,7 +249,16 @@ seed := entropyVal ^ (now * FIBONACCI_HASH_CONSTANT)
 if resolverFixActive(now) {
 seed = panelSeedV2(entropyVal, msg.MarketId, proposal, msg.DisputerAddress, txHash, now)
 }
-panel := derivePanel(candidates, int(panelSize), seed)
+var panel [][]byte
+if patchV3Active(now) {
+// PATCH V3: seed excludes disputer/txHash; high-bit draw; minimum panel enforced.
+panel = derivePanelV3(candidates, int(panelSize), panelSeedV3(entropyVal, msg.MarketId, proposal, now))
+if uint32(len(panel)) < MIN_PANEL_SIZE {
+return &PluginDeliverResponse{Error: ErrInsufficientPanelCandidates()}
+}
+} else {
+panel = derivePanel(candidates, int(panelSize), seed)
+}
 if len(panel) == 0 {
 return &PluginDeliverResponse{Error: ErrInsufficientPanelCandidates()}
 }

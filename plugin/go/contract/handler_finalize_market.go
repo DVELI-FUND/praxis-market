@@ -254,6 +254,20 @@ creatorAcc.Amount += treasury.CreatorBond
 treasury.CreatorBond = 0
 }
 
+// PATCH V3: a market nobody traded has no claimant to ever trigger a sweep, so its
+// seed was locked forever. Return it to the creator who funded it.
+var poolOps []*PluginSetOp
+gV3 := patchV3Active(now)
+if gV3 && market.TotalPositions == 0 && marketPool.Amount > 0 {
+if creatorAcc.Amount > ^uint64(0)-marketPool.Amount {
+return &PluginDeliverResponse{Error: ErrInvalidAmount()}
+}
+creatorAcc.Amount += marketPool.Amount
+marketPool.Amount = 0
+rawZP, zpe := SafeMarshal(marketPool)
+if zpe != nil { return &PluginDeliverResponse{Error: zpe} }
+poolOps = append(poolOps, &PluginSetOp{Key: KeyForMarketPool(msg.MarketId), Value: rawZP})
+}
 // C-1 fix: record pool at finalization so claim_winnings uses immutable amount.
 market.FinalizedPoolAmount = marketPool.Amount
 market.Status = STATUS_FINALIZED
@@ -388,9 +402,15 @@ return &PluginDeliverResponse{Error: lerr}
 }
 sets = append(sets, lops...)
 }
+sets = append(sets, poolOps...)
 wr, werr := c.plugin.StateWrite(c, &PluginStateWriteRequest{Sets: sets})
 if pe := errCheckWrite(wr, werr); pe != nil {
 return &PluginDeliverResponse{Error: pe}
+}
+if gV3 {
+if pe := c.chargeAndRoute(msg.CallerAddr, fee); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
 }
 return &PluginDeliverResponse{}
 }
