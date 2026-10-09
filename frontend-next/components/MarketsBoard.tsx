@@ -58,7 +58,7 @@ export default function MarketsBoard() {
   };
 
   const visible = useMemo(() => {
-    let list = filterByTab(markets, tab);
+    let list = filterByTab(markets, tab).filter((m) => m.status !== 1);
     if (cat !== "all") list = list.filter((m) => extractCat(m.rules) === cat && (!sub || parseSub(m.rules) === sub));
     return sortMarkets(list, sort);
   }, [markets, tab, cat, sub, sort]);

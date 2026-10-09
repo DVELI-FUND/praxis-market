@@ -39,7 +39,7 @@ export default function SearchPage() {
 
   const results = useMemo(() => {
     const ql = q.trim().toLowerCase();
-    return markets.filter((m) => {
+    return markets.filter((m) => m.status !== 1).filter((m) => {
       const catOk = cat === "all" || extractCat(m.rules) === cat;
       const textOk =
         !ql ||

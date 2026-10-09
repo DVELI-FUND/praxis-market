@@ -82,7 +82,7 @@ export async function fetchMarkets(): Promise<Market[]> {
     const expiry = BigInt(mk.expiry_time || 0);
     let status = mk.status !== undefined && mk.status !== null ? Number(mk.status) : 0;
     if (status === 0 && expiry && currentHeight > Number(expiry)) status = STATUS.AWAITING;
-    return {
+    return ({
       marketId: id,
       question: mk.question || "(no question)",
       rules: mk.rules || "",
@@ -96,7 +96,7 @@ export async function fetchMarkets(): Promise<Market[]> {
       q,
       openTime: Number(mk.open_time || 0),
       txCount: Number(mk.tx_count || 0),
-    };
+    });
   });
 }
 
