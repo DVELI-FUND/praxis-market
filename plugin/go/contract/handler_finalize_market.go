@@ -254,6 +254,11 @@ creatorAcc.Amount += treasury.CreatorBond
 treasury.CreatorBond = 0
 }
 
+// PATCH V4: resolution only earns RRS / epoch weight on a market with real volume.
+rewardOK := true
+if patchV4Active(now) {
+rewardOK = marketVolumeProxy(market, marketPool.Amount) >= MIN_REWARD_VOLUME
+}
 // PATCH V3: a market nobody traded has no claimant to ever trigger a sweep, so its
 // seed was locked forever. Return it to the creator who funded it.
 var poolOps []*PluginSetOp
@@ -268,6 +273,26 @@ rawZP, zpe := SafeMarshal(marketPool)
 if zpe != nil { return &PluginDeliverResponse{Error: zpe} }
 poolOps = append(poolOps, &PluginSetOp{Key: KeyForMarketPool(msg.MarketId), Value: rawZP})
 }
+// PATCH V4: standard market-maker economics. Winners are owed exactly
+// totalWinnerPayout; everything above it is the creator's (liquidity provider's)
+// surplus and is paid to them now. Claims then pay winners from the reduced pool.
+if patchV4Active(now) && marketPool.Amount > 0 && proposal != nil {
+owed := totalWinnerPayout(market, proposal.ProposedOutcome, proposal.ProposedIndex, marketPool.Amount)
+if owed < marketPool.Amount {
+surplus := marketPool.Amount - owed
+if CREATOR_SURPLUS_CAP_TO_SEED {
+surplus = minU64(surplus, seedEstimate(market))
+}
+if creatorAcc.Amount > ^uint64(0)-surplus {
+return &PluginDeliverResponse{Error: ErrInvalidAmount()}
+}
+creatorAcc.Amount += surplus
+marketPool.Amount -= surplus
+rawSP, spe := SafeMarshal(marketPool)
+if spe != nil { return &PluginDeliverResponse{Error: spe} }
+poolOps = append(poolOps, &PluginSetOp{Key: KeyForMarketPool(msg.MarketId), Value: rawSP})
+}
+}
 // C-1 fix: record pool at finalization so claim_winnings uses immutable amount.
 market.FinalizedPoolAmount = marketPool.Amount
 market.Status = STATUS_FINALIZED
@@ -275,16 +300,20 @@ market.Status = STATUS_FINALIZED
 var epochOps []*PluginSetOp
 // PRIS v1.0-r3: RRS increment and resolver fee payout on correct finalization (pathB).
 if (pathB || pathQ) && proposal != nil {
+if rewardOK {
 resolverRec.RrsScore += 10
 resolverRec.SuccessfulResolutions++
+}
 weight := uint64(1)
 if resolverRec.RrsScore >= RRS_GOLD_THRESHOLD {
 weight = uint64(VOTE_WEIGHT_GOLD)
 } else if resolverRec.RrsScore >= RRS_SILVER_THRESHOLD {
 weight = uint64(VOTE_WEIGHT_SILVER)
 }
+if rewardOK {
 globalStats.TotalWeightedResolutions += weight
-if ep := now / PRIS_EPOCH_BLOCKS; resolverEpochFixed(ep) {
+}
+if ep := now / PRIS_EPOCH_BLOCKS; rewardOK && resolverEpochFixed(ep) {
 ops, epe := c.epochWeightOps(ep, proposal.ResolverAddr, weight)
 if epe != nil { return &PluginDeliverResponse{Error: epe} }
 epochOps = append(epochOps, ops...)

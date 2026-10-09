@@ -188,6 +188,9 @@ msg, err := FromAny(req.Tx.Msg)
 if err != nil {
 return &PluginCheckResponse{Error: err}
 }
+if pe := c.v4FeeGate(req.Tx.Fee); pe != nil {
+return &PluginCheckResponse{Error: pe}
+}
 switch m := msg.(type) {
 case *MessageCreateMarket:
 return c.CheckMessageCreateMarket(m)
@@ -245,6 +248,17 @@ return &PluginCheckResponse{Error: ErrInvalidMessageCast()}
 }
 
 func (c *Contract) DeliverTx(req *PluginDeliverRequest) *PluginDeliverResponse {
+	resp := c.deliverTxInner(req)
+	if resp != nil && resp.Error == nil && patchV4Active(GetGlobalHeight()) {
+		// PATCH V4: fold every successful tx into the panel entropy (after it ran).
+		if pe := c.mixTxEntropy(req.TxHash); pe != nil {
+			return &PluginDeliverResponse{Error: pe}
+		}
+	}
+	return resp
+}
+
+func (c *Contract) deliverTxInner(req *PluginDeliverRequest) *PluginDeliverResponse {
 	if req.Tx != nil && req.Tx.ChainId != 0 {
 		c.Config.ChainId = req.Tx.ChainId
 	}
@@ -253,6 +267,9 @@ if err != nil {
 return &PluginDeliverResponse{Error: err}
 }
 fee := req.Tx.Fee
+if pe := c.v4FeeGate(fee); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
 switch m := msg.(type) {
 case *MessageCreateMarket:
 return c.DeliverMessageCreateMarket(m, fee, req.TxHash)

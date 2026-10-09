@@ -1356,7 +1356,7 @@ log.Printf("plugin RPC server listening on %s (routes: /v1/query/markets, /v1/qu
 // RPC should not be reachable directly.
 srv := &http.Server{
 Addr:              addr,
-Handler:           mux,
+Handler:           limitRPC(mux, 32),
 ReadHeaderTimeout: 10 * time.Second,
 ReadTimeout:       20 * time.Second,
 WriteTimeout:      60 * time.Second,
@@ -1366,4 +1366,23 @@ MaxHeaderBytes:    1 << 16,
 if err := srv.ListenAndServe(); err != nil {
 log.Printf("plugin RPC server error: %v", err)
 }
+}
+
+
+// limitRPC caps concurrent in-flight requests (each can trigger a full FSM range scan)
+// and request-body size, so a flood of cheap requests cannot starve the node. Excess
+// requests get 503 immediately instead of queueing. Read-only; no consensus impact.
+func limitRPC(next http.Handler, maxInFlight int) http.Handler {
+	sem := make(chan struct{}, maxInFlight)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		select {
+		case sem <- struct{}{}:
+			defer func() { <-sem }()
+		default:
+			http.Error(w, "server busy", http.StatusServiceUnavailable)
+			return
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, 1<<16)
+		next.ServeHTTP(w, r)
+	})
 }

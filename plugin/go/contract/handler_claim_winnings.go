@@ -87,7 +87,14 @@ return &PluginDeliverResponse{Error: ErrMarketNotFound()}
 if cancelledMarket != nil {
 market = cancelledMarket
 }
+// PATCH V4: the creator's seed is paid out in the tx that flips the market to CANCELLED.
+var v4SeedPay uint64
+if patchV4Active(now) && cancelledMarket != nil && cancelledMarket.TotalPositions > 0 && marketPool != nil {
+v4SeedPay = minU64(seedEstimate(cancelledMarket), marketPool.Amount)
+marketPool.Amount -= v4SeedPay
+}
 g := patchV3Active(now)
+g4 := patchV4Active(now)
 if g && market.Status == STATUS_FINALIZED {
 // PATCH V3: after the claim window nobody is paid; the pool is swept (see patch_v3.go).
 oq := nextQueryId()
@@ -271,6 +278,16 @@ sets := []*PluginSetOp{
 {Key: claimKey,  Value: rawAcc},
 }
 
+// PATCH V4: once every position is refunded, the leftover is the creator's seed.
+var creatorSweep uint64
+if g4 && shouldSweep && marketPool.Amount > 0 && (market.Status == STATUS_CANCELLED || market.Status == STATUS_VOIDED) {
+creatorSweep = marketPool.Amount
+marketPool.Amount = 0
+rawMPv4, pev4 := SafeMarshal(marketPool)
+if pev4 != nil { return &PluginDeliverResponse{Error: pev4} }
+sets[2] = &PluginSetOp{Key: poolKey, Value: rawMPv4}
+shouldSweep = false
+}
 // Fold creator bond slash into sets if this was a cancel.
 var bondTPool *Pool // PATCH V3: carried into the sweep below so the slash is not overwritten
 if market.Status == STATUS_CANCELLED && cancelTreasury.CreatorBond > 0 {
@@ -380,7 +397,26 @@ return &PluginDeliverResponse{Error: pe}
 }
 }
 if market.Status == STATUS_CANCELLED {
-if pe := c.sweepCancelledExtras(msg.MarketId); pe != nil {
+if g4 {
+// PATCH V4: unspent reserve goes back to the creator; fee pools stay for refunds.
+if pe := c.reserveToCreatorV4(msg.MarketId, market.Creator); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
+} else if pe := c.sweepCancelledExtras(msg.MarketId); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
+}
+if v4SeedPay > 0 {
+if pe := c.creditAccount(market.Creator, v4SeedPay); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
+}
+if g4 && (market.Status == STATUS_CANCELLED || market.Status == STATUS_VOIDED) {
+last := market.TotalPositions > 0 && market.ClaimedCount == market.TotalPositions
+if pe := c.refundFeesV4(msg.MarketId, msg.ClaimantAddress, position.CostPaid, last); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
+if pe := c.creditAccount(market.Creator, creatorSweep); pe != nil {
 return &PluginDeliverResponse{Error: pe}
 }
 }

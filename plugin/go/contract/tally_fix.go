@@ -212,10 +212,27 @@ func (c *Contract) tallyVotesFixed(msg *MessageTallyVotes, now uint64) *PluginDe
 		if openCount.Amount > 0 {
 			openCount.Amount--
 		}
-		treasury.Amount = addSat(treasury.Amount, addSat(creatorFee.Amount, resolverFee.Amount))
-		creatorFee.Amount, resolverFee.Amount = 0, 0
+		if !patchV4Active(now) {
+			treasury.Amount = addSat(treasury.Amount, addSat(creatorFee.Amount, resolverFee.Amount))
+			creatorFee.Amount, resolverFee.Amount = 0, 0
+		} // PATCH V4: pools stay so claim_winnings can refund each bettor's fees
 		proposerRec.RrsScore = subOrZero(proposerRec.RrsScore, LOSING_PROPOSER_RRS_PENALTY)
 		lockAddrs = append(lockAddrs, proposal.ResolverAddr)
+		// PATCH V4: voided market WITH positions: seed goes back to the creator now, so the
+		// pool holds exactly the traders' refunds (claimable forever).
+		if patchV4Active(now) && market.TotalPositions > 0 && marketPool.Amount > 0 {
+			if pay := minU64(seedEstimate(market), marketPool.Amount); pay > 0 {
+				if pe := book.credit(market.Creator, pay); pe != nil {
+					return &PluginDeliverResponse{Error: pe}
+				}
+				marketPool.Amount -= pay
+				rawV4, v4e := SafeMarshal(marketPool)
+				if v4e != nil {
+					return &PluginDeliverResponse{Error: v4e}
+				}
+				sets = append(sets, &PluginSetOp{Key: KeyForMarketPool(msg.MarketId), Value: rawV4})
+			}
+		}
 		// PATCH V3: voided market nobody traded: no claimant will ever sweep the seed.
 		if patchV3Active(now) && market.TotalPositions == 0 && marketPool.Amount > 0 {
 			if pe := book.credit(market.Creator, marketPool.Amount); pe != nil {

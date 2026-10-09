@@ -20,10 +20,10 @@ func patchV3Active(h uint64) bool {
 const (
 	// Bond scales with the live pool: 2% of the pool, floored by the old minimum and
 	// capped so a resolver with the minimum stake can always still propose.
-	BOND_POOL_BPS      uint64 = 200
-	MAX_BOND_V3        uint64 = MIN_RESOLVER_STAKE / 2
-	MAX_BINARY_QUESTION       = 280
-	MAX_BINARY_RULES          = 4096
+	BOND_POOL_BPS       uint64 = 200
+	MAX_BOND_V3         uint64 = MIN_RESOLVER_STAKE / 2
+	MAX_BINARY_QUESTION        = 280
+	MAX_BINARY_RULES           = 4096
 )
 
 func ErrClaimsClosed() *PluginError {
@@ -139,6 +139,9 @@ func (c *Contract) chargeAndRoute(addr []byte, fee uint64) *PluginError {
 		return pe
 	}
 	if acc.Amount < fee {
+		if patchV4Active(GetGlobalHeight()) {
+			return ErrInsufficientFunds() // V4: the whole tx reverts (FSM TxnWrap)
+		}
 		return nil
 	}
 	acc.Amount -= fee

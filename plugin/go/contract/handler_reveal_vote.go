@@ -21,6 +21,9 @@ if now == 0 {
 return &PluginDeliverResponse{Error: ErrHeightNotSet()}
 }
 
+if patchV4Active(now) && len(msg.Nonce) < MIN_VOTE_NONCE_BYTES {
+return &PluginDeliverResponse{Error: ErrInvalidParam()}
+}
 marketQId  := nextQueryId()
 disputeQId := nextQueryId()
 commitQId  := nextQueryId()

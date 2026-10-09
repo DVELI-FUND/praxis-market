@@ -95,6 +95,29 @@ if position == nil || (position.SharesYes == 0 && position.SharesNo == 0) {
 		return &PluginDeliverResponse{Error: ErrInsufficientFunds()}
 	}
 	refund         := position.CostPaid
+	if patchV4Active(now) && fixMarket != nil {
+		// PATCH V4: standard LMSR exit — proceeds are what the shares are worth now,
+		// capped at cost. A resolver can no longer bet, learn the outcome, and take a
+		// free full refund; the cost they cannot recover stays in the pool.
+		qy := subOrZero(fixMarket.QYes, position.SharesYes)
+		qn := subOrZero(fixMarket.QNo, position.SharesNo)
+		var sale uint64
+		if position.SharesYes > 0 {
+			v, ce := ComputeTradeCost(qy, fixMarket.QNo, fixMarket.BEff, position.SharesYes, true)
+			if ce != nil {
+				return &PluginDeliverResponse{Error: ce}
+			}
+			sale = addSat(sale, v)
+		}
+		if position.SharesNo > 0 {
+			v, ce := ComputeTradeCost(qy, qn, fixMarket.BEff, position.SharesNo, false)
+			if ce != nil {
+				return &PluginDeliverResponse{Error: ce}
+			}
+			sale = addSat(sale, v)
+		}
+		refund = minU64(refund, sale)
+	}
 	account.Amount += refund
 	pool.Amount    -= refund
 	if fixMarket != nil {

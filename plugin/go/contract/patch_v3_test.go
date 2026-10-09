@@ -29,11 +29,12 @@ func totalValue(fc *fakeChain, accts ...[]byte) uint64 {
 }
 
 func TestV3_GateOffByDefault(t *testing.T) {
-	if PATCH_V3_HEIGHT != ^uint64(0) {
-		t.Fatal("PATCH_V3_HEIGHT must ship disabled")
+	// V3 is live on the chain (height set); the gate must flip exactly at its height.
+	if PATCH_V3_HEIGHT == ^uint64(0) {
+		t.Skip("V3 gate disabled in this build")
 	}
-	if patchV3Active(1 << 62) {
-		t.Fatal("gate must be off")
+	if patchV3Active(PATCH_V3_HEIGHT-1) || !patchV3Active(PATCH_V3_HEIGHT) {
+		t.Fatal("V3 gate boundary wrong")
 	}
 }
 

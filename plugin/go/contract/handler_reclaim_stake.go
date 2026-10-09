@@ -189,6 +189,10 @@ sets := []*PluginSetOp{
 if resolverFixActive(now) {
 // Flip to CANCELLED atomically so a late proposal can never dilute the winners.
 market.Status = STATUS_CANCELLED
+if patchV4Active(now) && posRefund > 0 {
+// PATCH V4: a reclaimed position counts as claimed, so the final sweep can fire.
+market.ClaimedCount++
+}
 rawMk, peMk := SafeMarshal(market)
 if peMk != nil { return &PluginDeliverResponse{Error: peMk} }
 sets = append(sets, &PluginSetOp{Key: KeyForMarket(msg.MarketId), Value: rawMk})
@@ -224,6 +228,22 @@ return &PluginDeliverResponse{Error: pe}
 }
 if pe := c.chargeAndRoute(msg.ClaimantAddress, fee); pe != nil {
 return &PluginDeliverResponse{Error: pe}
+}
+}
+if patchV4Active(now) && resolverFixActive(now) {
+if pe := c.payCreatorSeedOnClose(msg.MarketId, market); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
+}
+if patchV4Active(now) && posRefund > 0 {
+last := market.TotalPositions > 0 && market.ClaimedCount == market.TotalPositions
+if pe := c.refundFeesV4(msg.MarketId, msg.ClaimantAddress, posRefund, last); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
+if last {
+if pe := c.sweepPoolToCreatorV4(msg.MarketId, market.Creator); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
 }
 }
 return &PluginDeliverResponse{}

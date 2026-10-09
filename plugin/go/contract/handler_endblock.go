@@ -27,6 +27,12 @@ if height%PRIS_EPOCH_BLOCKS == 0 {
 if pe := c.processEpochBoundary(height); pe != nil {
 log.Printf("EndBlock: processEpochBoundary error at height %d: %v", height, pe)
 }
+if patchV4Active(height) {
+// PATCH V4: empty/stale resolver epochs no longer lock their share forever.
+if pe := c.rolloverEpochs(height / PRIS_EPOCH_BLOCKS); pe != nil {
+log.Printf("EndBlock: rolloverEpochs error at height %d: %v", height, pe)
+}
+}
 }
 return &PluginEndResponse{}
 }
