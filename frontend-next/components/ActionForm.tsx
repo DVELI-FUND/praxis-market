@@ -27,6 +27,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryHeight, getPluginRPC } from "@/lib/rpc";
 import { normalizeBanner } from "@/lib/img";
 import ResolutionPlanner from "./ResolutionPlanner";
+import { ReclaimPicker, CreatorFeePicker, VoteHelper } from "./MarketPickers";
 
 const CATS = CATS_TREE.map((c) => ({ key: c.key, label: c.label, icon: c.icon }));
 
@@ -76,6 +77,13 @@ export default function ActionForm({ def }: { def: ActionDef }) {
     return init;
   });
   const [pending, setPending] = useState(false);
+  // Deep link from the market page: /action/<key>?mid=<40 hex> pre-fills the market id.
+  useEffect(() => {
+    if (!def.fields.some((f) => f.id === "mid")) return;
+    const q = new URLSearchParams(window.location.search).get("mid")?.trim().toLowerCase().replace(/^0x/, "");
+    if (q && /^[0-9a-f]{40}$/.test(q)) setVals((prev) => ({ ...prev, mid: q }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [def.key]);
   // Create Market: silently store banner in Vercel Blob → permanent URL
   useEffect(() => {
     if (def.key !== "create") return;
@@ -107,7 +115,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
   const { data: myPositions = [] } = usePositions();
   const positionsForClaim = myPositions;
 
-  type ClaimMarket = { marketId: string; question: string; rules: string; status: number; outcome: boolean | null; options: string[]; winningIndex: number | null; finalizedPoolAmount: bigint };
+  type ClaimMarket = { marketId: string; question: string; rules: string; status: number; winningOutcome: boolean | null; options: string[]; winningIndex: number | null; resolvedAt: number; finalizedPoolAmount: bigint };
   const { data: finalizedMarkets = [] as ClaimMarket[] } = useQuery({
     queryKey: ["markets-finalized"],
     queryFn: async (): Promise<ClaimMarket[]> => {
@@ -119,15 +127,25 @@ export default function ActionForm({ def }: { def: ActionDef }) {
         claimable.map(async (m: any): Promise<ClaimMarket> => {
           const options: string[] = Array.isArray(m.market?.options) ? m.market.options : [];
           let winningIndex: number | null = null;
-          if (options.length > 0 && Number(m.market?.status) === STATUS.FINALIZED) {
+          let winningOutcome: boolean | null = null;
+          let resolvedAt = 0;
+          if (Number(m.market?.status) === STATUS.FINALIZED) {
+            // The winner lives in OutcomeState (/v1/query/outcomes), NOT in MarketState. Binary AND N-outcome
+            // markets both need it. proto3 JSON omits zero values, so a missing winning_outcome means NO / index 0.
             try {
               const o = await fetch(getPluginRPC() + `/v1/query/outcomes?market=${encodeURIComponent(m.id)}`);
               if (o.ok) {
                 const j = await o.json();
-                winningIndex = Number(j?.outcome?.winning_index ?? j?.outcome?.winningIndex ?? 0);
+                const oc = j?.outcome;
+                if (oc) {
+                  resolvedAt = Number(oc.resolved_at ?? oc.resolvedAt ?? 0);
+                  if (options.length > 0) winningIndex = Number(oc.winning_index ?? oc.winningIndex ?? 0);
+                  else winningOutcome = Boolean(oc.winning_outcome ?? oc.winningOutcome);
+                }
               }
             } catch {
               winningIndex = null;
+              winningOutcome = null;
             }
           }
           return {
@@ -135,9 +153,10 @@ export default function ActionForm({ def }: { def: ActionDef }) {
             question: m.market?.question || "",
             rules: m.market?.rules || "",
             status: Number(m.market?.status || 0),
-            outcome: m.market?.outcome ?? null,
+            winningOutcome,
             options,
             winningIndex,
+            resolvedAt,
             finalizedPoolAmount: BigInt(m.market?.finalized_pool_amount || 0),
           };
         })
@@ -152,10 +171,12 @@ export default function ActionForm({ def }: { def: ActionDef }) {
     for (const pos of positionsForClaim) {
       const mkt = finalizedMarkets.find((fm) => fm.marketId === pos.marketId);
       if (!mkt || pos.claimed) continue;
+      // Finalized markets can only be claimed for 30 days (CLAIM_GRACE_PERIOD_V2 = 259,200 blocks) after resolution.
+      if (mkt.status === STATUS.FINALIZED && mkt.resolvedAt > 0 && (chain?.height ?? 0) > mkt.resolvedAt + 259200) continue;
       const isN = mkt.options.length > 0;
       if (mkt.status !== STATUS.FINALIZED) {
         // voided / cancelled: every position refunds its cost
-        if (pos.costPaid > 0n) items.push({ marketId: pos.marketId, market: mkt, held: "REFUND", shares: pos.costPaid, winning: null, payout: pos.costPaid });
+        if (pos.costPaid > 0n) items.push({ marketId: pos.marketId, market: mkt, held: "REFUND + FEES", shares: pos.costPaid, winning: null, payout: pos.costPaid });
         continue;
       }
       if (isN) {
@@ -164,29 +185,19 @@ export default function ActionForm({ def }: { def: ActionDef }) {
         if (wi !== null && sh > 0n) items.push({ marketId: pos.marketId, market: mkt, held: mkt.options[wi] ?? `#${wi + 1}`, shares: sh, winning: mkt.options[wi] ?? `#${wi + 1}`, payout: sh });
         continue;
       }
-      const held = pos.sharesYes >= pos.sharesNo ? "YES" : "NO";
-      const shares = pos.sharesYes >= pos.sharesNo ? pos.sharesYes : pos.sharesNo;
-      const winning = mkt.outcome === true ? "YES" : mkt.outcome === false ? "NO" : null;
-      if (winning && held === winning && shares > 0n) items.push({ marketId: pos.marketId, market: mkt, held, shares, winning, payout: shares });
+      const winning = mkt.winningOutcome === true ? "YES" : mkt.winningOutcome === false ? "NO" : null;
+      const shares = winning === "YES" ? pos.sharesYes : winning === "NO" ? pos.sharesNo : 0n; // winning side only, even if the wallet also holds the losing side
+      if (winning && shares > 0n) items.push({ marketId: pos.marketId, market: mkt, held: winning, shares, winning, payout: shares });
     }
     return items;
-  }, [positionsForClaim, finalizedMarkets]);
-  const { data: rawMarkets = [] } = useQuery({
-    queryKey: ["markets-raw-cancel"],
-    queryFn: async () => { const r = await fetch(getPluginRPC() + "/v1/query/markets"); if (!r.ok) return []; return r.json(); },
-    staleTime: 15000,
-    refetchOnMount: "always",
-  });
-  const txById = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const r of rawMarkets as Array<{ id?: string; market?: { tx_count?: number } }>) m.set(String(r?.id || ""), Number(r?.market?.tx_count ?? 1));
-    return m;
-  }, [rawMarkets]);
+  }, [positionsForClaim, finalizedMarkets, chain?.height]);
   const { data: chChain } = useHeight();
+  // Chain rule (handler_cancel_market, CANCEL_FIX_HEIGHT): creator only, status still OPEN, no positions.
+  // Expiry no longer blocks it, so an empty market that expired unresolved is cancellable too.
   const mine = useMemo(() => (cancelList || []).filter((mm) => {
-    const cr = String((mm as unknown as { creator?: string }).creator || "").toLowerCase();
-    return cr === String(praxisAddress || "").toLowerCase() && mm.status === STATUS.LIVE && Number(mm.expiry) > (chChain?.height ?? 0) && (txById.get(mm.marketId) ?? 1) <= 1;
-  }), [cancelList, praxisAddress, chChain?.height]);
+    const cr = String(mm.creator || "").toLowerCase();
+    return cr === String(praxisAddress || "").toLowerCase() && mm.rawStatus === STATUS.LIVE && mm.totalPositions === 0;
+  }), [cancelList, praxisAddress]);
 
   useEffect(() => {
     if (!praxisAddress) return;
@@ -237,7 +248,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
         toast("Resolver not active", true);
         return;
       }
-      const amtU = BigInt(Math.floor(Number(vals.amount) || 0));
+      const amtU = planAmtU; // uPRX (the old code compared whole PRX against uPRX)
       if (amtU > 0n && amtU < myResolver.stake && myResolver.stake - amtU < MIN_RESOLVER_STAKE) {
         toast(`Partial unstake must leave ≥ ${fmtPRX(MIN_RESOLVER_STAKE)} PRX staked`, true);
         return;
@@ -474,9 +485,9 @@ export default function ActionForm({ def }: { def: ActionDef }) {
           </div>
           <ul className="space-y-1.5 font-mono text-[12px] leading-relaxed text-ink-2">
             <li className="flex gap-2"><span className="text-ink-3">•</span>Only the wallet that created the market can cancel it.</li>
-            <li className="flex gap-2"><span className="text-ink-3">•</span>Only while live and before expiry.</li>
+            <li className="flex gap-2"><span className="text-ink-3">•</span>Only while the market is still open (never resolved) — it can be cancelled even after expiry if nobody bet.</li>
             <li className="flex gap-2"><span className="text-ink-3">•</span>No predictions placed yet — traded markets must resolve normally.</li>
-            <li className="flex gap-2"><span className="text-ink-3">•</span>Creator bond (5,000 PRX) is returned on cancel.</li>
+            <li className="flex gap-2"><span className="text-ink-3">•</span>You get back your creator bond (5,000 PRX), your liquidity seed and the finalization reserve.</li>
             <li className="flex gap-2"><span className="text-ink-3">•</span>Cancellation is final — the market is voided.</li>
           </ul>
         </div>
@@ -793,8 +804,8 @@ export default function ActionForm({ def }: { def: ActionDef }) {
           <div className="mb-1 font-bold text-ink">Cancellation rules</div>
           <ul className="list-disc space-y-1 pl-4">
             <li>Only the wallet that created the market can cancel it.</li>
-            <li>Only while live and before expiry.</li>
-            <li>Creator bond (5,000 PRX) is returned on cancel.</li>
+            <li>Only while still open (never resolved) — allowed after expiry if nobody bet.</li>
+            <li>Bond (5,000 PRX), liquidity seed and finalization reserve are returned.</li>
             <li>Cancellation is final — the market is voided.</li>
           </ul>
         </div>
@@ -822,6 +833,10 @@ export default function ActionForm({ def }: { def: ActionDef }) {
           )}
         </div>
       )}
+
+      {def.key === "reclaim" && <ReclaimPicker selected={String(vals.mid || "")} onPick={(id) => set("mid", id)} />}
+      {def.key === "claimcreator" && <CreatorFeePicker selected={String(vals.mid || "")} onPick={(id) => set("mid", id)} />}
+      {(def.key === "commit" || def.key === "reveal") && <VoteHelper mode={def.key} vals={vals} set={set} />}
 
       <div className="mt-2 flex gap-1.5">
         <button

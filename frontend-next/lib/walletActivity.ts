@@ -66,7 +66,7 @@ export function useWalletActivity() {
           if (actor !== addr) continue;
           const type: string = t.messageType || t.txType || t.type || "unknown";
           const cost = BigInt(t.cost ?? t.Cost ?? 0);
-          const shares = BigInt(t.shares ?? t.Shares ?? 0);
+          const shares = BigInt(t.shares ?? t.Shares ?? t.transaction?.msg?.shares ?? 0); // plugin logs shares inside transaction.msg
           // TRUTH ONLY: amount comes from the on-chain log's cost field.
           // Entries written before the amount-logging upgrade have cost=0 → null → "—".
           let amount: bigint | null = null;

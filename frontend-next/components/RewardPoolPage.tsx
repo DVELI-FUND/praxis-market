@@ -28,7 +28,7 @@ export const POOL_META: Record<PoolKey, { title: string; sub: string; claimKey: 
   },
   investor: {
     title: "Investor Rewards",
-    sub: "Liquidity provision rewards — 241,920 block vesting window",
+    sub: "Liquidity provision rewards — claimable once per 120,960 blocks (~14 days)",
     claimKey: "claim_investor",
   },
   protocol: {

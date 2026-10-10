@@ -41,7 +41,9 @@ export default function ProfilePage() {
     refetchInterval: 15000,
   });
 
-  const { data: positions = [] } = usePositions();
+  const { data: allPositions = [] } = usePositions();
+  // Claimed positions are settled (value 0); counting them would show a bogus loss equal to their cost.
+  const positions = useMemo(() => allPositions.filter((p) => !p.claimed), [allPositions]);
   const enriched = useMemo(() => {
     return positions.map((pos) => {
       const market = markets.find((m) => m.marketId === pos.marketId);
@@ -214,7 +216,7 @@ export default function ProfilePage() {
                 const topIdx = isN ? topShareIndex(pos.shares) : -1;
                 const held = isN ? (pos.market.options[topIdx] ?? "—") : pos.sharesYes >= pos.sharesNo ? "YES" : "NO";
                 const shares = isN ? (topIdx >= 0 ? pos.shares[topIdx] : 0n) : pos.sharesYes >= pos.sharesNo ? pos.sharesYes : pos.sharesNo;
-                const status = pos.market.status === STATUS.LIVE ? "LIVE" : "ENDED";
+                const status = pos.market.status === STATUS.LIVE ? "LIVE" : pos.market.status === STATUS.CANCELLED || pos.market.status === STATUS.VOIDED ? "REFUND" : pos.market.status === STATUS.FINALIZED ? "CLAIM" : "ENDED";
                 const fmtNum = (big: bigint) => {
                   const str = fmtPRX(big);
                   if (!/^-?\d+(\.\d+)?$/.test(str)) return str;

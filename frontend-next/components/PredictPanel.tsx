@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { useWallet } from "@/store/wallet";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useHeight } from "@/hooks/useHeight";
 import { useToast } from "@/store/toast";
 import { showConfirm } from "@/store/confirm";
@@ -11,7 +11,7 @@ import { submitTxRPC } from "@/lib/rpc";
 import { extractOutcomes, yesPct, nPrices, binTradeCost, marketLiquidity } from "@/lib/markets";
 import { nTradeCost } from "@/lib/nOutcome";
 import { fmtPRX } from "@/lib/format";
-import type { MarketDetail } from "@/lib/detail";
+import { fetchPositionFull, type MarketDetail } from "@/lib/detail";
 
 interface Props {
   market: MarketDetail;
@@ -41,6 +41,21 @@ export default function PredictPanel({ market, outcome, onOutcome, selectedOptio
   const [pending, setPending] = useState(false);
 
   const connected = status === "connected" || status === "drift";
+  // Trading is only possible while the market is OPEN on-chain, started, and not expired.
+  const h = chain?.height ?? 0;
+  const closedReason =
+    market.rawStatus !== 0 ? "This market is closed — no more trading."
+    : h > 0 && Number(market.expiry) > 0 && h > Number(market.expiry) ? "This market has expired — trading is closed."
+    : h > 0 && market.openTime > 0 && h < market.openTime ? "Trading has not opened yet for this market."
+    : "";
+  const tradable = closedReason === "";
+  // Existing holdings count toward the on-chain 20% cap, so fetch the wallet's own position.
+  const posQ = useQuery({
+    queryKey: ["position", market.marketId, praxisAddress],
+    queryFn: () => fetchPositionFull(market.marketId, praxisAddress as string),
+    enabled: !!praxisAddress,
+    staleTime: 10000,
+  });
   const canSign = !!privKey && !!pubKey;
   const pct = isNOutcome ? 0 : yesPct(market);
   const nPricesArr = isNOutcome ? nPrices(market.q, market.b0) : [];
@@ -82,26 +97,31 @@ export default function PredictPanel({ market, outcome, onOutcome, selectedOptio
     const resolverFee = Math.ceil(tradeCost * 0.01);
     // chain checks tradeCost + txFee + creatorFee + resolverFee <= maxCost
     const maxCost = Math.ceil((tradeCost + creatorFee + resolverFee) * (1 + slip / 100)) + fee;
-    let toWin = Number(sharesU); // N-outcome: 1 uPRX per winning share
-    if (!isNOutcome) {
-      // binary pays pro-rata from the pool: pool_after * mine / (side shares after)
+    // Standard LMSR: each winning share pays 1 PRX (capped pro-rata only if the pool were ever short,
+    // which a funded LMSR pool never is). Binary real winner shares exclude the b/2 phantom stake.
+    let toWin = Number(sharesU);
+    if (!isNOutcome && sharesU > 0n) {
       const side = outcome ? market.qYes : market.qNo;
+      const real = Number(side) + Number(sharesU) - Number(market.b0) / 2;
       const poolAfter = Number(marketLiquidity(market)) + tradeCost;
-      const denom = Number(side) + Number(sharesU);
-      toWin = denom > 0 ? (poolAfter * Number(sharesU)) / denom : 0;
+      if (real > 0) toWin = Math.min(toWin, (poolAfter * Number(sharesU)) / real);
     }
     return { tradeCost, creatorFee, resolverFee, maxCost, toWin };
   }, [sharesU, slip, outcome, isNOutcome, selectedOption, market.q, market.b0, market.qYes, market.qNo, fee]);
 
   // Chain cap (checkPositionCapN / exceedsPositionCap): per-address shares <= 20% of the side's shares AFTER the trade
-  // (N-outcome floor: b/2). Existing holdings add to the numerator on-chain; they are not known here.
+  // (N-outcome floor: b/2). Existing holdings add to the numerator on-chain (fetched above).
   const sideAfter = isNOutcome
     ? (() => { const base = (market.q[selectedOption] ?? 0n) + sharesU; const floor = market.b0 / 2n; return base < floor ? floor : base; })()
     : (outcome ? market.qYes : market.qNo) + sharesU;
   const cap = (sideAfter * 2000n) / 10000n;
-  const over = sharesU > 0n && sharesU > cap;
+  const pos = posQ.data;
+  const held = pos ? (isNOutcome ? (pos.shares[selectedOption] ?? 0n) : outcome ? pos.yes : pos.no) : 0n;
+  const room = cap > held ? cap - held : 0n;
+  const over = sharesU > 0n && held + sharesU > cap;
 
   const submit = async () => {
+    if (!tradable) { toast(closedReason, true); return; }
     if (!connected) { toast("Connect wallet first", true); return; }
     if (!privKey || !pubKey || !praxisAddress) { toast("Read-only connection — unlock the Manual Keystore to sign this trade", true); return; }
     if (!chain?.height) { toast("Node not connected", true); return; }
@@ -134,6 +154,8 @@ export default function PredictPanel({ market, outcome, onOutcome, selectedOptio
         queryClient.invalidateQueries({ queryKey: ["market-txs", market.marketId] });
         queryClient.invalidateQueries({ queryKey: ["market", market.marketId] });
         queryClient.invalidateQueries({ queryKey: ["position", market.marketId, praxisAddress] });
+        queryClient.invalidateQueries({ queryKey: ["market-detail", market.marketId] });
+        queryClient.invalidateQueries({ queryKey: ["market-holders", market.marketId] });
         toast(`✓ Position confirmed: +${effShares.toLocaleString()} shares ${selectedLabel}`);
       } else {
         toast(res.message, true);
@@ -151,12 +173,15 @@ export default function PredictPanel({ market, outcome, onOutcome, selectedOptio
     <div className="overflow-hidden rounded-card border border-line bg-surface-grad shadow-card">
       <div className="flex items-center justify-between border-b border-line bg-surface-2 px-4 py-2.5">
         <span className="font-mono text-[11px] uppercase tracking-[2px] text-ink-3">// submit_prediction</span>
-        <span className="flex items-center gap-1.5 font-mono text-[11px] text-up">
-          <span className="h-1 w-1 rounded-full bg-up animate-pulseDot" /> live
+        <span className={`flex items-center gap-1.5 font-mono text-[11px] ${tradable ? "text-up" : "text-ink-3"}`}>
+          <span className={`h-1 w-1 rounded-full ${tradable ? "bg-up animate-pulseDot" : "bg-ink-3"}`} /> {tradable ? "live" : "closed"}
         </span>
       </div>
 
       <div className="p-4">
+        {!tradable && (
+          <div className="mb-3 rounded-card border border-amberx/30 bg-amberx/10 px-3 py-2 font-mono text-[11px] leading-relaxed text-amberx">{closedReason}</div>
+        )}
         {isNOutcome ? (
           // N-outcome: show all options as radio buttons
           <div className="mb-3 space-y-2">
@@ -256,11 +281,11 @@ export default function PredictPanel({ market, outcome, onOutcome, selectedOptio
 
         {sharesU > 0n && (
           <div className={`mb-3 rounded-card border p-2 font-mono text-[11px] ${over ? "border-down/40 bg-down-dim text-down" : "border-up/20 bg-up-dim text-ink-2"}`}>
-            {over ? `⚠ Exceeds 20% cap — max ${fmtPRX(cap)} shares` : `20% position cap: ${fmtPRX(cap)} shares`}
+            {over ? `⚠ Exceeds 20% cap — you can add at most ${fmtPRX(room)} more shares` : `20% position cap: ${fmtPRX(cap)} shares${held > 0n ? ` (you hold ${fmtPRX(held)}, room for ${fmtPRX(room)} more)` : ""}`}
           </div>
         )}
 
-        <button id="praxis-buy-btn" onClick={() => void submit()} disabled={pending || over || !connected || !canSign} className="w-full rounded-card bg-up py-3 font-sans text-[15px] font-extrabold text-black shadow-glowUp transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40">
+        <button id="praxis-buy-btn" onClick={() => void submit()} disabled={pending || over || !connected || !canSign || !tradable} className="w-full rounded-card bg-up py-3 font-sans text-[15px] font-extrabold text-black shadow-glowUp transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40">
           {pending ? "▪▪▪ broadcasting…" : !connected ? "Connect wallet to trade" : !canSign ? "🔒 Unlock signing key to trade" : `⚡ Buy ${isNOutcome ? market.options[selectedOption] : (outcome ? outLbl.yes : outLbl.no)} · ${fmtPRX(bd.maxCost)} PRX max`}
         </button>
         {!connected && <div className="mt-2 text-center font-mono text-[11px] text-ink-3">connect wallet to trade</div>}

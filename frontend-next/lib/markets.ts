@@ -31,6 +31,8 @@ export interface Market {
   q: bigint[]; // shares outstanding per option (N-outcome only)
   openTime: number;
   txCount: number;
+  totalPositions: number; // chain-side position count (0 = never traded)
+  rawStatus: number; // status as stored on-chain (OPEN stays 0 even after expiry)
 }
 
 interface RawMarketEntry {
@@ -48,11 +50,21 @@ interface RawMarketEntry {
     b_eff?: string | number;
     open_time?: string | number;
     tx_count?: string | number;
+    total_positions?: string | number;
   };
 }
 
 // Ported from Frontend/markets.js loadMarkets (same endpoints, same mapping).
 export async function fetchMarkets(): Promise<Market[]> {
+  return loadMarkets(false);
+}
+
+/** Same as fetchMarkets but keeps frontend-hidden markets (needed for recovery pickers). */
+export async function fetchMarketsIncludingHidden(): Promise<Market[]> {
+  return loadMarkets(true);
+}
+
+async function loadMarkets(includeHidden: boolean): Promise<Market[]> {
   const heightResp = await queryHeight();
   const currentHeight = heightResp.height || 1;
 
@@ -72,7 +84,7 @@ export async function fetchMarkets(): Promise<Market[]> {
   if (!resp.ok) throw new Error("plugin RPC returned " + resp.status);
   const raw = (await resp.json()) as RawMarketEntry[];
 
-  return (raw || []).filter((entry) => !isHiddenMarket(entry.id)).map((entry) => {
+  return (raw || []).filter((entry) => includeHidden || !isHiddenMarket(entry.id)).map((entry) => {
     const id = entry.id || "";
     const mk = entry.market || {};
     const qYes = BigInt(mk.q_yes || 0);
@@ -81,6 +93,7 @@ export async function fetchMarkets(): Promise<Market[]> {
     const q = (mk.q || []).map((v) => BigInt(v || 0));
     const expiry = BigInt(mk.expiry_time || 0);
     let status = mk.status !== undefined && mk.status !== null ? Number(mk.status) : 0;
+    const rawStatus = status;
     if (status === 0 && expiry && currentHeight > Number(expiry)) status = STATUS.AWAITING;
     return ({
       marketId: id,
@@ -96,6 +109,8 @@ export async function fetchMarkets(): Promise<Market[]> {
       q,
       openTime: Number(mk.open_time || 0),
       txCount: Number(mk.tx_count || 0),
+      totalPositions: Number(mk.total_positions || 0),
+      rawStatus,
     });
   });
 }

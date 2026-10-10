@@ -5,21 +5,29 @@ import { useMarkets } from "@/hooks/useMarkets";
 import { useHeight } from "@/hooks/useHeight";
 import { STATUS, stripCatPrefix } from "@/lib/markets";
 import { fmtCountdown } from "@/lib/format";
+import StatusPill from "@/components/StatusPill";
 
-type Stage = "proposed" | "review" | "finalized";
+type Stage = "awaiting" | "proposed" | "review" | "finalized";
+
+const PROPOSAL_WINDOW = 8640; // blocks after expiry resolvers have to propose (24h)
 
 export default function ResolutionPage() {
   const { data: markets = [] } = useMarkets();
   const { data: chain } = useHeight();
-  const [stage, setStage] = useState<Stage>("proposed");
+  const [stage, setStage] = useState<Stage>("awaiting");
+  const height = chain?.height ?? 0;
 
-  const proposed = markets.filter((m) => m.status === STATUS.PROPOSED || m.status === STATUS.EXPIRED);
+  // AWAITING (8) = still OPEN on-chain but past expiry; nobody has proposed an outcome yet.
+  const awaiting = markets.filter((m) => m.status === STATUS.AWAITING || m.status === STATUS.EXPIRED);
+  const proposed = markets.filter((m) => m.status === STATUS.PROPOSED);
   const review = markets.filter((m) => m.status === STATUS.DISPUTED);
   const finalized = markets.filter((m) => m.status === STATUS.FINALIZED);
 
-  const rows = stage === "proposed" ? proposed : stage === "review" ? review : finalized;
+  const rows = stage === "awaiting" ? awaiting : stage === "proposed" ? proposed : stage === "review" ? review : finalized;
+  const actionLabel: Record<Stage, string> = { awaiting: "Propose", proposed: "Dispute", review: "Vote", finalized: "Claim" };
 
   const STAGES: { id: Stage; label: string; count: number; desc: string; accent: string }[] = [
+    { id: "awaiting", label: "Awaiting", count: awaiting.length, desc: "Trading is closed and no outcome has been proposed. Bonded resolvers have 24h after expiry to propose; after that the market can be reclaimed.", accent: "border-amberx/40 text-amberx" },
     { id: "proposed", label: "Proposed", count: proposed.length, desc: "Outcome isn't final yet. Post a bond to challenge it if incorrect or resolved too early.", accent: "border-amberx/40 text-amberx" },
     { id: "review", label: "In Review", count: review.length, desc: "A bond was posted to challenge the outcome. A random resolver panel is voting (commit, then reveal).", accent: "border-bluex/40 text-bluex" },
     { id: "finalized", label: "Finalized", count: finalized.length, desc: "No dispute was filed, or the panel upheld the proposed outcome. The outcome is final.", accent: "border-up/40 text-up" },
@@ -33,7 +41,7 @@ export default function ResolutionPage() {
       </p>
 
       {/* stage cards */}
-      <div className="mb-8 grid grid-cols-1 gap-3 md:grid-cols-3">
+      <div className="mb-8 grid grid-cols-1 gap-3 md:grid-cols-4">
         {STAGES.map((s) => (
           <button
             key={s.id}
@@ -56,8 +64,8 @@ export default function ResolutionPage() {
         <div className="grid grid-cols-[1fr_auto_auto_auto] gap-3 border-b border-line px-4 py-2.5 font-mono text-[11px] uppercase tracking-[1.5px] text-ink-3">
           <span>Market</span>
           <span className="w-[90px] text-right">Status</span>
-          <span className="w-[90px] text-right">Window</span>
-          <span className="w-[80px] text-right">Action</span>
+          <span className="w-[90px] text-right">{stage === "awaiting" ? "Propose by" : "Window"}</span>
+          <span className="w-[80px] text-right">Next</span>
         </div>
         {rows.length === 0 ? (
           <div className="px-4 py-8 text-center font-mono text-[12px] text-ink-3">No markets in this stage.</div>
@@ -67,13 +75,13 @@ export default function ResolutionPage() {
               <span className="line-clamp-1 font-sans text-[14px] font-semibold text-ink">
                 {stripCatPrefix(m.question || m.rules || "")}
               </span>
-              <span className="w-[90px] text-right font-mono text-[11px] text-ink-2">{m.status}</span>
+              <span className="w-[90px] text-right"><StatusPill status={m.status} /></span>
               <span className="w-[90px] text-right font-mono text-[11px] text-amberx tabular-nums">
-                {fmtCountdown(Number(m.expiry), chain?.height ?? 0)}
+                {stage === "awaiting" ? (height > Number(m.expiry) + PROPOSAL_WINDOW ? "reclaimable" : fmtCountdown(Number(m.expiry) + PROPOSAL_WINDOW, height)) : "—"}
               </span>
               <span className="w-[80px] text-right">
                 <Link href={`/market/${m.marketId}`} className="rounded-card border border-line-2 px-2.5 py-1 font-mono text-[11px] text-ink-2 transition-colors hover:border-up hover:text-up">
-                  View
+                  {actionLabel[stage]}
                 </Link>
               </span>
             </div>

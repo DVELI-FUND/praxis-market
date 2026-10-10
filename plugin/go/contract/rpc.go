@@ -243,6 +243,12 @@ msg["proposedOutcome"] = e.Outcome
 msg["proposedIndex"] = e.OutcomeIndex
 case "finalize_market":
 }
+// Amount-bearing entries other than submit_prediction (create_market seed+bond, cancel_market
+// refund, claim_winnings payout, ...) also carry a logged amount; expose it so wallet activity
+// can show real figures instead of "—". Zero stays omitted (old entries / no amount).
+if cost == "" && e.Cost > 0 {
+cost = strconv.FormatUint(e.Cost, 10)
+}
 txs = append(txs, txEntry{
 Sender:      hex.EncodeToString(e.Actor),
 MessageType: e.TxType,

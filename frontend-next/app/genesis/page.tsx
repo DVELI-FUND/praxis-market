@@ -25,8 +25,8 @@ type PoolState = { status: "loading" } | { status: "ok"; alloc: Alloc } | { stat
 
 const POOLS = [
   { key: "community",  label: "Community Pool",  color: "text-amberx", desc: "5M PRX — liquid, no vesting", action: "claim_genesis_community" },
-  { key: "investor",   label: "Investor Pool",   color: "text-up",     desc: "6.5M PRX — 24-month vesting with 91-day cliff",   action: "claim_genesis_investor" },
-  { key: "foundation", label: "Foundation Pool", color: "text-ink",    desc: "6.5M PRX — 24-month vesting with 91-day cliff",   action: "claim_genesis_foundation" },
+  { key: "investor",   label: "Investor Pool",   color: "text-up",     desc: "6.5M PRX — 6-month cliff, then linear vesting over 18 months (24 months total)",   action: "claim_genesis_investor" },
+  { key: "foundation", label: "Foundation Pool", color: "text-ink",    desc: "6.5M PRX — 6-month cliff, then linear vesting over 18 months (24 months total)",   action: "claim_genesis_foundation" },
 ];
 
 async function loadPool(pool: string, addr: string): Promise<PoolState> {
@@ -215,8 +215,8 @@ export default function GenesisPage() {
             <div className="mb-2 font-mono text-[12px] uppercase tracking-wider text-ink-3">How genesis claims work</div>
             <ul className="space-y-1.5 font-mono text-[13px] text-ink-2">
               <li>• <span className="font-bold text-amberx">Community:</span> 5M PRX liquid from genesis, claim anytime</li>
-              <li>• <span className="font-bold text-up">Investor:</span> 6.5M PRX vesting over 24 months with 91-day cliff</li>
-              <li>• <span className="font-bold">Foundation:</span> 6.5M PRX vesting over 24 months with 91-day cliff</li>
+              <li>• <span className="font-bold text-up">Investor:</span> 6.5M PRX — nothing unlocks for ~6 months (1,576,800-block cliff), then linear over ~18 months</li>
+              <li>• <span className="font-bold">Foundation:</span> 6.5M PRX — nothing unlocks for ~6 months (1,576,800-block cliff), then linear over ~18 months</li>
               <li>• Vesting is enforced on-chain; cliff must pass before any claims</li>
               <li>• After cliff, claimable amount increases linearly until fully vested</li>
             </ul>

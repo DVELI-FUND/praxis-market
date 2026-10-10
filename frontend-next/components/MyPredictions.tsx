@@ -62,7 +62,7 @@ export default function MyPredictions() {
       case "submit_prediction": {
         const mid = b64ToHex(String(msg.marketId || msg.market_id || ""));
         const m = markets.find((x) => x.marketId === mid);
-        const side = msg.outcome === true ? "YES" : "NO";
+        const side = m && m.options.length > 0 ? (m.options[Number(msg.outcomeIndex ?? 0)] ?? `#${Number(msg.outcomeIndex ?? 0) + 1}`) : msg.outcome === true ? "YES" : "NO";
         const q = m
           ? m.question.slice(0, 32) + (m.question.length > 32 ? "…" : "")
           : mid.slice(0, 12) + "…";
