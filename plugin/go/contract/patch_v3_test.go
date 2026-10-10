@@ -156,17 +156,20 @@ func TestV3_BinaryArbLoses(t *testing.T) {
 }
 
 func TestV3_BinaryCostMatchesFloatWithinOneUnit(t *testing.T) {
+	oP, oR, oA := PATCH_V3_HEIGHT, RESOLVER_FIX_HEIGHT, AUDIT_FIX_HEIGHT
+	defer func() { PATCH_V3_HEIGHT, RESOLVER_FIX_HEIGHT, AUDIT_FIX_HEIGHT = oP, oR, oA }()
 	rng := rand.New(rand.NewSource(11))
 	for i := 0; i < 300; i++ {
 		b := uint64(10_000_000 + rng.Int63n(5_000_000_000))
 		qy, qn := uint64(rng.Int63n(int64(b)*3)), uint64(rng.Int63n(int64(b)*3))
 		sh := uint64(1_000_000 + rng.Int63n(int64(b)))
 		out := rng.Intn(2) == 0
+		PATCH_V3_HEIGHT = ^uint64(0)
+		SetGlobalHeight(100)
 		fl, _ := ComputeTradeCost(qy, qn, b, sh, out) // gate off -> float
 		PATCH_V3_HEIGHT, RESOLVER_FIX_HEIGHT, AUDIT_FIX_HEIGHT = 1, 1, 1
 		SetGlobalHeight(100)
 		fx, err := ComputeTradeCost(qy, qn, b, sh, out)
-		PATCH_V3_HEIGHT, RESOLVER_FIX_HEIGHT, AUDIT_FIX_HEIGHT = ^uint64(0), 64483, 64483
 		if err != nil {
 			t.Fatal(err)
 		}

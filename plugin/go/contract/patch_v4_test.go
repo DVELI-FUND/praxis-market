@@ -13,12 +13,13 @@ func v4On(t *testing.T, fc *fakeChain) {
 	t.Cleanup(func() { PATCH_V4_HEIGHT = o })
 }
 
-func TestV4_GateOffByDefault(t *testing.T) {
-	if PATCH_V4_HEIGHT != ^uint64(0) {
-		t.Fatal("PATCH_V4_HEIGHT must ship disabled")
+func TestV4_GateBoundary(t *testing.T) {
+	// V4 is live on the chain (height set); the gate must flip exactly at its height.
+	if PATCH_V4_HEIGHT == ^uint64(0) {
+		t.Skip("V4 gate disabled in this build")
 	}
-	if patchV4Active(1 << 62) {
-		t.Fatal("v4 gate must be off")
+	if patchV4Active(PATCH_V4_HEIGHT-1) || !patchV4Active(PATCH_V4_HEIGHT) {
+		t.Fatalf("V4 gate boundary wrong: v4=%d v3=%d audit=%d resolver=%d", PATCH_V4_HEIGHT, PATCH_V3_HEIGHT, AUDIT_FIX_HEIGHT, RESOLVER_FIX_HEIGHT)
 	}
 }
 

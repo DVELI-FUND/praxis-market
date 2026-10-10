@@ -318,6 +318,7 @@ var legacyLmsrGolden = []struct {
 }
 
 func TestLegacyLmsrGolden(t *testing.T) {
+	SetGlobalHeight(1) // float path: pin below every gate so test order cannot change the engine
 	for i, g := range legacyLmsrGolden {
 		got, pe := ComputeTradeCost(g.qYes, g.qNo, g.bEff, g.shares, g.outcome)
 		if pe != nil {
