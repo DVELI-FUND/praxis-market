@@ -19,7 +19,7 @@ interface Props {
 
 export default function DisputePanel({ market, dispute, currentHeight = 0 }: Props) {
   // Only show if market is actually disputed (Status 5 in constants.go)
-  if (market.status !== 5 || !dispute) return null;
+  if ((market.status !== 4 && market.status !== 5) || !dispute) return null;
 
   const phase = dispute.status || 0;
   const totalVotes = dispute.votesRevealed || 0;
@@ -83,16 +83,27 @@ export default function DisputePanel({ market, dispute, currentHeight = 0 }: Pro
         </div>
       </div>
 
-      {/* Action Area for Panel Members (Mockup for now) */}
+      {/* Resolver Restriction Notice */}
+      <div className="border-t border-line bg-surface-grad p-3 text-center">
+        <div className="inline-flex items-center gap-2 rounded-full border border-amberx/30 bg-amberx/5 px-3 py-1">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-amberx" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+          <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-amberx">Resolver Voting Access Only</span>
+        </div>
+        <p className="mt-2 font-mono text-[11px] text-ink-3">Only registered resolvers on the selected panel may cast votes.</p>
+      </div>
+
+      {/* Action Area for Panel Members */}
       {phase === 2 && (
         <div className="border-t border-line bg-surface-grad p-4 text-center">
-          <p className="mb-2 font-mono text-[12px] text-ink-2">
+          <p className="mb-3 font-mono text-[12px] text-ink-2">
             {currentHeight < (dispute.commitDeadline || 0) 
               ? "Commit Phase Active: Submit your hashed vote." 
               : "Reveal Phase Active: Reveal your vote to the chain."}
           </p>
-          <button className="rounded-card border border-amberx bg-amberx/10 px-4 py-2 font-mono text-[12px] font-bold text-amberx transition-colors hover:bg-amberx/20">
-            Open Voting Interface
+          <button className="w-full rounded-card border-2 border-amberx bg-amberx px-4 py-3 font-mono text-[13px] font-bold text-black transition-all hover:bg-amberx/90">
+            Open Resolver Voting Interface
           </button>
         </div>
       )}
