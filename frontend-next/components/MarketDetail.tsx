@@ -1,4 +1,5 @@
 "use client";
+import DisputePanel from "@/components/DisputePanel";
 import { useEffect, useState , useMemo, useRef} from "react";
 import Link from "next/link";
 import { useMarketDetail } from "@/hooks/useMarketDetail";
@@ -225,6 +226,9 @@ export default function MarketDetail({ mid }: Props) {
 
           {/* position card */}
           <PositionCard market={market} />
+
+          {/* Dispute Resolution UI */}
+          <DisputePanel market={market} dispute={disputeContext} currentHeight={chain?.height} />
 
           {/* price chart */}
           {!isNOutcome && (
