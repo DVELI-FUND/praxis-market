@@ -48,7 +48,7 @@ export default function PredictPanel({ market, outcome, onOutcome, selectedOptio
     : h > 0 && Number(market.expiry) > 0 && h > Number(market.expiry) ? "This market has expired — trading is closed."
     : h > 0 && market.openTime > 0 && h < market.openTime ? "Trading has not opened yet for this market."
     : "";
-  const tradable = closedReason === "";
+  const tradable = closedReason === "" && market.status === 0;
   // Existing holdings count toward the on-chain 20% cap, so fetch the wallet's own position.
   const posQ = useQuery({
     queryKey: ["position", market.marketId, praxisAddress],
