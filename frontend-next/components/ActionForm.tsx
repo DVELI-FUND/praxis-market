@@ -192,6 +192,8 @@ export default function ActionForm({ def }: { def: ActionDef }) {
     return items;
   }, [positionsForClaim, finalizedMarkets, chain?.height]);
   const { data: chChain } = useHeight();
+  const v5Height = Number(process.env.NEXT_PUBLIC_V5_HEIGHT || 0);
+  const creatorBondPRX = v5Height > 0 && (chChain?.height ?? 0) >= v5Height ? 0 : 5000; // bond is removed for NEW markets once V5 is active
   // Chain rule (handler_cancel_market, CANCEL_FIX_HEIGHT): creator only, status still OPEN, no positions.
   // Expiry no longer blocks it, so an empty market that expired unresolved is cancellable too.
   const mine = useMemo(() => (cancelList || []).filter((mm) => {
@@ -786,7 +788,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
           </div>
           <div className="flex justify-between border-t border-line py-1">
             <span>Creator bond (locked)</span>
-            <span>5,000 PRX</span>
+            <span>{creatorBondPRX.toLocaleString()} PRX</span>
           </div>
           <div className="flex justify-between border-t border-line py-1">
             <span>TX fee</span>
@@ -794,7 +796,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
           </div>
           <div className="mt-1 flex justify-between border-t border-line pt-2">
             <span>Total deducted</span>
-            <span className="text-up">{((Number(vals.b0) || 0) + 5000).toLocaleString()} PRX</span>
+            <span className="text-up">{((Number(vals.b0) || 0) + creatorBondPRX).toLocaleString()} PRX</span>
           </div>
         </div>
       )}

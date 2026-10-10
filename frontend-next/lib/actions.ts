@@ -210,7 +210,7 @@ export const ACTIONS: Record<string, ActionDef> = {
       { id: "out_no", label: "Custom NO label (optional)", type: "text" },
       { id: "options", label: "Outcome options", type: "text" },
       { id: "creator", label: "Creator Address", type: "wallet" },
-      { id: "b0", label: "B0 Liquidity (PRX)", type: "number", def: 60, scale: W },
+      { id: "b0", label: "B0 Liquidity (PRX)", type: "number", def: 2050, scale: W, hint: "Seed = B0 − 50 PRX = LMSR depth b. Worst-case creator loss ≈ 0.69 × b (binary); a wallet's first trade is capped near b ÷ 8 shares. 2,050 → b = 2,000." },
       { id: "expiry", label: "Expiry (UTC)", type: "datetime", hint: "All times are UTC" },
       { id: "rules", label: "Rules / Resolution criteria", type: "text" },
       { id: "img", label: "Banner Image URL (optional)", type: "text", hint: "imgur album/page, i.imgur.com direct, or ipfs:// — auto-resolved" },
@@ -234,6 +234,10 @@ export const ACTIONS: Record<string, ActionDef> = {
       const isNMarket = String(v.options ?? "").trim() !== "";
       const minB0 = isNMarket ? 75 : 60; // MIN_B0 (binary) / MIN_B0_N
       if (!(Number(v.b0) >= minB0)) return `B0 liquidity must be at least ${minB0} PRX${isNMarket ? " for multi-option markets" : ""}`;
+      // Creator-loss guard: trading must close at kickoff, otherwise in-play traders can buy the winning side at stale prices
+      const koMs = parseUTC(String(v.ko ?? "").trim());
+      const exMs = parseUTC(String(v.expiry ?? "").trim());
+      if (String(v.ko ?? "").trim() && !isNaN(koMs) && !isNaN(exMs) && exMs > koMs) return "Expiry is after kickoff — traders could bet in-play. Set expiry at or before kickoff (UTC), or clear Kickoff for non-event markets.";
       // expiry is converted to a block height; refuse to guess seconds/block (the chain is ~20s, not 5s)
       if (!blockSecsReady()) return "Still measuring block time — wait a few seconds and try again";
       const rawOpts = String(v.options ?? "").trim();

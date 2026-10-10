@@ -31,6 +31,14 @@ export default function SportsPage() {
   const [liveOnly, setLiveOnly] = useState(false);
   const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
   const router = useRouter();
+  
+  const { data: scoresData } = useQuery({ 
+    queryKey: ["live-scores"], 
+    queryFn: () => fetch("/api/scores").then(r => r.json()), 
+    refetchInterval: 30000,
+    staleTime: 25000
+  });
+
   const { data: ms = [] } = useQuery({ queryKey: ["markets-" + CAT_KEY], queryFn: fetchMarkets, staleTime: 15000 });
   const now = Date.now();
 
@@ -85,6 +93,11 @@ export default function SportsPage() {
   }, [upcoming, liveOnly]);
 
   const GameCard = ({ g, i }: { g: Game; i: number }) => {
+    const matchScore = scoresData?.matches?.find((m: any) =>
+      m.league === g.lg &&
+      (a.toLowerCase().includes(m.home.toLowerCase()) || a.toLowerCase().includes(m.away.toLowerCase()) ||
+       b.toLowerCase().includes(m.home.toLowerCase()) || b.toLowerCase().includes(m.away.toLowerCase()))
+    );
     const pct = yesPct(g.m);
     const { a, b } = outs(g.m);
     const [cA, cB] = PAIRS[i % PAIRS.length];
@@ -95,7 +108,10 @@ export default function SportsPage() {
         <div className="mb-2 flex items-center justify-between">
           <div className="flex items-center gap-2 font-mono text-[12px] text-ink-3">
             {isLive ? (
-              <span className="flex items-center gap-1 font-bold text-down"><span className="h-1.5 w-1.5 animate-pulseDot rounded-full bg-down" />LIVE</span>
+              <span className="flex items-center gap-1.5 font-bold text-down">
+                <span className="h-1.5 w-1.5 animate-pulseDot rounded-full bg-down" />
+                {matchScore ? `${matchScore.minute}' · ${matchScore.scoreHome}-${matchScore.scoreAway}` : 'LIVE'}
+              </span>
             ) : (
               <span>{fmtUTCTime(g.ko)}</span>
             )}
