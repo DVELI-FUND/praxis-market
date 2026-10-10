@@ -189,7 +189,7 @@ openCount.Amount--
 
 // ── Marshal ───────────────────────────────────────────────────────────
 	logAmt := uint64(0)
-	if amountLogActive(now) {
+	if amountLogCancelActive(now) {
 		logAmt = refund
 	}
 	txLogOp, pe := buildMarketTxLogOp(market, msg.MarketId, "cancel_market", msg.CreatorAddress, now, false, 0, logAmt, txHash)

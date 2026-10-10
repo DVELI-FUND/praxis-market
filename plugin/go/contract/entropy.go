@@ -34,12 +34,26 @@ var AUDIT_FIX_HEIGHT uint64 = 64483
 // PANEL_ENTROPY_KEY_V2 is the real accumulator key (KeyForPanelEntropy was never called before).
 var PANEL_ENTROPY_KEY_V2 = KeyForPanelEntropy()
 
-// AMOUNT_LOG_HEIGHT: from this height, market tx-log entries carry the real
-// PRX amount in the Cost field (cancel = full refund). Additive field only —
-// old entries unmarshal with Cost=0, and the gate keeps replay deterministic.
-const AMOUNT_LOG_HEIGHT uint64 = 33_000
+// AMOUNT_LOG_CANCEL_HEIGHT: from this height cancel_market tx-log entries carry the real
+// PRX amount (Cost field). cancel_market was wired to amount logging first, in
+// plugin-go-v2026.277 (commit 56a55810, which introduced this gate).
+const AMOUNT_LOG_CANCEL_HEIGHT uint64 = 33_000
 
-func amountLogActive(height uint64) bool { return height >= AMOUNT_LOG_HEIGHT }
+func amountLogCancelActive(height uint64) bool { return height >= AMOUNT_LOG_CANCEL_HEIGHT }
+
+// AMOUNT_LOG_MARKET_CLAIM_HEIGHT: same for create_market/claim_winnings, which were wired
+// one release later (commit 01336d73). Reusing 33000 is wrong — the chain had passed it by
+// then, so canonical logged Cost=0 while a HEAD replay logs the amount and diverges (first
+// seen at height 33196). Consensus-critical; anchored to the 01336d73 build (≈ height 33450),
+// confirm against the real deploy height.
+var AMOUNT_LOG_MARKET_CLAIM_HEIGHT uint64 = 33450
+
+func amountLogMarketClaimActive(height uint64) bool {
+	if AMOUNT_LOG_MARKET_CLAIM_HEIGHT == ^uint64(0) {
+		return false
+	}
+	return height >= AMOUNT_LOG_MARKET_CLAIM_HEIGHT
+}
 
 func auditFixActive(height uint64) bool { return height >= AUDIT_FIX_HEIGHT }
 
@@ -109,6 +123,22 @@ func (c *Contract) advancePanelEntropyV2(height uint64) *PluginError {
 	return errCheckWrite(wr, werr)
 }
 
+
+// CREATE_MARKET_FIX_HEIGHT: first height whose create_market uses the repaired treasury
+// read. Before plugin-go-v2026.276 the treasury Pool was unmarshalled from the market-index
+// bytes (wire-type mismatch), so create_market errored and FAILED whenever the index was
+// non-empty; the fix (v2026.276, un-gated) made it SUCCEED, so a HEAD replay diverges at the
+// first affected create_market (height 5698). Below the gate the original erroring read is
+// reproduced. Consensus-critical; anchored to the v2026.276 build (≈ height 26000), confirm
+// against the real deploy height.
+var CREATE_MARKET_FIX_HEIGHT uint64 = 26000
+
+func createMarketFixActive(height uint64) bool {
+	if CREATE_MARKET_FIX_HEIGHT == ^uint64(0) {
+		return false
+	}
+	return height >= CREATE_MARKET_FIX_HEIGHT
+}
 
 // RESOLVER_REWARD_FIX_HEIGHT: first height whose EPOCHS use per-epoch resolver
 // reward accounting (see resolver_epoch.go). Before it, claim_resolver_reward keeps the

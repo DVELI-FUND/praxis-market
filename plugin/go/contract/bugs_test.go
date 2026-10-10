@@ -14,6 +14,8 @@ func mustMarshal(t *testing.T, m interface{}) []byte {
 // Bug 1: create_market must ADD its fee share to the global treasury, never overwrite it.
 func TestCreateMarketAccumulatesTreasury(t *testing.T) {
 	c, fc := newTestChain(t)
+	// treasury accumulation is gated (CREATE_MARKET_FIX_HEIGHT); run at/after the cutover
+	SetGlobalHeight(CREATE_MARKET_FIX_HEIGHT)
 	creator := addr(0xA1)
 	fc.putAccount(t, creator, 100_000_000_000)
 	fc.putPool(t, KeyForTreasuryPool(), 1_000_000)
