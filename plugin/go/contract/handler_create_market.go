@@ -4,17 +4,11 @@ func (c *Contract) CheckMessageCreateMarket(msg *MessageCreateMarket) *PluginChe
 if len(msg.CreatorAddress) != 20 {
 return ErrCheckResp(ErrInvalidAddress())
 }
-
 // PATCH V5: only allowlisted creators (no-op until the gate height)
 if pe := v5CreateGate(msg.CreatorAddress, GetGlobalHeight()); pe != nil {
 return ErrCheckResp(pe)
 }
 if msg.B0 < MIN_B0 {
-
-// PATCH V5: only allowlisted creators (no-op until the gate height)
-if pe := v5CreateGate(msg.CreatorAddress, GetGlobalHeight()); pe != nil {
-return ErrCheckResp(pe)
-}
 return ErrCheckResp(ErrInvalidB0())
 }
 if msg.ExpiryTime == 0 {
@@ -42,22 +36,17 @@ now := GetGlobalHeight()
 if now == 0 {
 return &PluginDeliverResponse{Error: ErrHeightNotSet()}
 }
-
-// PATCH V5: only allowlisted creators (no-op until the gate height)
-if pe := v5CreateGate(msg.CreatorAddress, now); pe != nil {
-return &PluginDeliverResponse{Error: pe}
-}
 if msg.ExpiryTime > MAX_EXPIRY_TIME {
 return &PluginDeliverResponse{Error: ErrExpiryTooLarge()}
 }
 
 if pe := validateCreateExtras(msg); pe != nil {
 return &PluginDeliverResponse{Error: pe}
+}
 
 // PATCH V5: only allowlisted creators (no-op until the gate height)
 if pe := v5CreateGate(msg.CreatorAddress, now); pe != nil {
 return &PluginDeliverResponse{Error: pe}
-}
 }
 
 marketId := DeriveMarketId(msg.CreatorAddress, msg.Nonce)
@@ -146,6 +135,7 @@ return &PluginDeliverResponse{Error: pe}
 	if fee > 0 && msg.B0 > ^uint64(0)-fee {
 return &PluginDeliverResponse{Error: ErrInvalidAmount()}
 }
+// PATCH V5: new markets carry no creator bond (CREATOR_BOND until the gate height)
 bond := v5CreateBond(now)
 if msg.B0 > ^uint64(0)-fee-bond {
 return &PluginDeliverResponse{Error: ErrInvalidAmount()}
