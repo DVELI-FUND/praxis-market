@@ -35,7 +35,7 @@ export default function SportsPage() {
   const { data: ms = [] } = useQuery({ queryKey: ["markets-" + CAT_KEY], queryFn: fetchMarkets, staleTime: 15000 });
   const now = Date.now();
 
-  const all = useMemo(() => ms.filter((m) => extractCat(m.rules) === CAT_KEY && !isCancelled(m)), [ms]);
+  const all = useMemo(() => ms.filter((m) => extractCat(m.rules) === CAT_KEY && m.status === 0), [ms]);
   const counts = useMemo(() => {
     const c: Record<string, number> = {};
     all.forEach((m) => { const s = parseSub(m.rules) || ""; c[s] = (c[s] || 0) + 1; });
