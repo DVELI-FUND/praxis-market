@@ -1,11 +1,10 @@
 "use client";
-import { marketVol } from "@/lib/markets";
+import { marketLiquidity } from "@/lib/markets";
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchMarket, fetchDisputeContext, fetchPosition } from "@/lib/detail";
 import { useHeight } from "@/hooks/useHeight";
 import { fmtPRX } from "@/lib/format";
-import { nPrices } from "@/lib/nOutcome";
 
 const ELEVATED = 25000000000n; // 25,000 PRX in uPRX
 
@@ -35,17 +34,22 @@ export default function ResolutionPlanner({ mid, mode, wallet, bondValue = 0, on
   });
 
   const m = marketQ.data;
-  const isNOutcome = m && m.options && m.options.length > 0;
-  const nPricesArr = isNOutcome && m && m.q && m.b0 ? nPrices(m.q, m.b0) : [];
-  const pool = m ? (isNOutcome ? m.q.reduce((a, b) => a + b, 0n) : marketVol(m)) : 0n;
-  const poolNum = Number(pool / 1000000n);
-  // Contract: ComputeMinBond = max(b_eff / 100, MIN_B0 = 60 PRX)
-  const minBond = Math.max(m ? Number(m.b0 / 1000000n) / 100 : 0, 60);
+  // Real pool = creator seed + net traded volume (the chain's livePool).
+  const pool = m ? marketLiquidity(m) : 0n;
+  // Chain (patch_v3 minBondV3, used by propose AND dispute): max(b_eff/100, 60 PRX, 2% of live pool),
+  // capped at 250,000 PRX. The pool part gets +1% headroom because trades can land before the tx does.
+  const minBondUprx = (() => {
+    if (!m) return 60_000_000;
+    const floor = Math.max(Number(m.b0) / 100, 60_000_000);
+    const poolPart = Number(pool) * 0.02 * 1.01;
+    return Math.min(Math.max(floor, poolPart), 250_000_000_000);
+  })();
+  const minBond = minBondUprx / 1_000_000;
   const elevated = pool >= ELEVATED;
 
   // auto-raise propose bond to protocol minimum
   useEffect(() => {
-    if (mode === "propose" && onBond && valid && m && bondValue < Math.ceil(minBond)) {
+    if (onBond && valid && m && bondValue < Math.ceil(minBond)) {
       onBond(Math.ceil(minBond));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -74,6 +78,8 @@ export default function ResolutionPlanner({ mid, mode, wallet, bondValue = 0, on
   }
 
   const expired = height > 0 && Number(m.expiry) < height;
+  const proposalDeadline = Number(m.expiry) + 8640; // PROPOSAL_WINDOW_V2
+  const inProposalWindow = expired && height <= proposalDeadline;
   const isCreator = !!wallet && m.creator.toLowerCase() === wallet.toLowerCase();
   const pos = posQ.data;
   const hasPos = !!pos && (pos.yes > 0n || pos.no > 0n);
@@ -90,6 +96,7 @@ export default function ResolutionPlanner({ mid, mode, wallet, bondValue = 0, on
     mode === "propose"
       ? [
           { ok: expired, label: expired ? "Market expired — propose unlocked" : "Not expired yet — propose locked until expiry" },
+          { ok: inProposalWindow, label: inProposalWindow ? `Proposal window open until block #${proposalDeadline.toLocaleString()} (24h after expiry)` : `Proposal window closed at block #${proposalDeadline.toLocaleString()} — the market can now be reclaimed/auto-cancelled` },
           { ok: !isCreator, label: isCreator ? "Creator cannot propose own market (COI)" : "Not the market creator" },
           { ok: !hasPos, label: hasPos ? "Hold a position — forfeit before proposing" : "No open position in this market" },
         ]
@@ -115,12 +122,10 @@ export default function ResolutionPlanner({ mid, mode, wallet, bondValue = 0, on
       </div>
 
       <div className="space-y-1 text-ink-2">
-        {mode === "propose" && (
-          <div className="flex justify-between">
-            <span className="text-ink-3">Min bond (1% of b_eff, floor 60)</span>
-            <span className="text-up tabular-nums">{Math.ceil(minBond)} PRX</span>
-          </div>
-        )}
+        <div className="flex justify-between">
+          <span className="text-ink-3">Min bond (max of 1% of b_eff, 60 PRX, 2% of pool)</span>
+          <span className="text-up tabular-nums">{Math.ceil(minBond).toLocaleString()} PRX</span>
+        </div>
         <div className="flex justify-between">
           <span className="text-ink-3">Expiry block</span>
           <span className="tabular-nums">#{Number(m.expiry).toLocaleString()}</span>

@@ -1,39 +1,15 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
 import { useWallet } from "@/store/wallet";
-import { usePositions } from "@/lib/positions";
+import { usePositions, positionValue } from "@/lib/positions";
 import { useMarkets } from "@/hooks/useMarkets";
-import { getPluginRPC, queryAccount } from "@/lib/rpc";
+import { queryAccount } from "@/lib/rpc";
 import LogoMark from "@/components/LogoMark";
 import WalletPill from "@/components/WalletPill";
-import { b64ToHex, fmtPRX } from "@/lib/format";
-import { yesPct, stripCatPrefix } from "@/lib/markets";
-import { nPositionValue, topShareIndex } from "@/lib/nOutcome";
-
-interface Position {
-  marketId: string;
-  bettorAddress: string;
-  sharesYes: bigint;
-  sharesNo: bigint;
-}
-
-async function fetchPositions(addr: string): Promise<Position[]> {
-  try {
-    const url = getPluginRPC() + `/v1/query/positions?address=${encodeURIComponent(addr)}`;
-    const res = await fetch(url);
-    if (!res.ok) return [];
-    const raw = (await res.json()) as { positions?: Record<string, unknown>[] };
-    if (!raw.positions) return [];
-    return raw.positions.map((p: Record<string, unknown>) => ({
-      marketId: b64ToHex(String(p.marketId || p.market_id || "")),
-      bettorAddress: b64ToHex(String(p.bettorAddress || p.bettor_address || "")),
-      sharesYes: BigInt((p.sharesYes || p.shares_yes || 0) as number | string),
-      sharesNo: BigInt((p.sharesNo || p.shares_no || 0) as number | string),
-    }));
-  } catch {
-    return [];
-  }
-}
+import { fmtPRX } from "@/lib/format";
+import StatusPill from "@/components/StatusPill";
+import { yesPct, stripCatPrefix, STATUS } from "@/lib/markets";
+import { topShareIndex } from "@/lib/nOutcome";
 
 async function fetchBalance(addr: string): Promise<bigint> {
   try {
@@ -74,16 +50,11 @@ const { data: positions = [] } = usePositions();const { data: balance = 0n } = u
     );
   }
 
-  const enriched = positions.map((pos) => {
+  // Claimed positions are settled (value 0) — keep them out of the open-position list and totals.
+  const enriched = positions.filter((p) => !p.claimed).map((pos) => {
     const market = markets.find((m) => m.marketId === pos.marketId);
     if (!market) return { ...pos, market: null, value: 0n };
-    if (market.options.length > 0) {
-      return { ...pos, market, value: nPositionValue(pos.shares, market.q, market.b0) };
-    }
-    const pct = yesPct(market);
-    const yesValue = (pos.sharesYes * BigInt(pct)) / 100n;
-    const noValue = (pos.sharesNo * BigInt(100 - pct)) / 100n;
-    return { ...pos, market, value: yesValue + noValue };
+    return { ...pos, market, value: positionValue(pos, market) };
   });
 
   const positionsValue = enriched.reduce((s, p) => s + p.value, 0n);
@@ -175,7 +146,10 @@ const { data: positions = [] } = usePositions();const { data: balance = 0n } = u
                   </div>
                 </div>
                 <div className="mt-1 flex items-center justify-between font-mono text-[11px] text-ink-3">
-                  <span>{pos.market.status}</span>
+                  <span className="flex items-center gap-2">
+                    <StatusPill status={pos.market.status} />
+                    {([STATUS.FINALIZED, STATUS.CANCELLED, STATUS.VOIDED] as number[]).includes(pos.market.status) && <span className="text-amberx">claim →</span>}
+                  </span>
                   <span className="tabular-nums">{isN ? `${pos.market.options.length} options` : `YES ${pct}%`}</span>
                 </div>
               </a>

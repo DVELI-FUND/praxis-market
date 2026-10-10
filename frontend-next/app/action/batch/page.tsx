@@ -103,7 +103,7 @@ export default function BatchSeederPage() {
         
         const inner = def.build(vals, { wallet: praxisAddress, height: freshChain.height });
         
-        await signAndBroadcast({
+        const ok = await signAndBroadcast({
           privKey,
           pubKey,
           address: praxisAddress,
@@ -116,6 +116,11 @@ export default function BatchSeederPage() {
           fee: 10000,
         });
         
+        if (!ok) {
+          // signAndBroadcast already toasted the reason; don't report a failed tx as created
+          setMarkets((prev) => prev.map((x, idx) => idx === i ? { ...x, status: "error", error: "broadcast or on-chain failure (see toast)" } : x));
+          continue;
+        }
         setMarkets((prev) => prev.map((x, idx) => idx === i ? { ...x, status: "success" } : x));
         toast(`✓ Market ${i + 1}/${markets.length} created`);
         
@@ -208,7 +213,7 @@ export default function BatchSeederPage() {
                 Batch Status: {successCount}/{markets.length} success, {errorCount} errors
               </div>
               <div className="font-mono text-[13px] text-ink-2">
-                Cost: {fmtPRX(BigInt(markets.length * 5060 * 1000000))} PRX (bonds return at finalize)
+                Cost: {fmtPRX(markets.reduce((sum, m) => sum + BigInt(Math.round(((m.b0 || 60) + 5000) * 1_000_000)), 0n))} PRX (liquidity seed + 5,000 PRX bond per market; bond returns at finalize)
               </div>
             </div>
             <div className="space-y-2">

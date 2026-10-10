@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { fetchMarketActivity, type Holder, type MarketActivity } from "@/lib/detail";
 import { fmtPRX } from "@/lib/format";
 
@@ -12,6 +12,7 @@ const TYPE_ICON: Record<string, string> = {
   claim_winnings: "◈",
   forfeit_position: "↩",
   resolve_market: "⚑",
+  file_dispute: "⚠",
 };
 
 const TYPE_COLOR: Record<string, string> = {
@@ -23,6 +24,7 @@ const TYPE_COLOR: Record<string, string> = {
   claim_winnings: "text-up",
   forfeit_position: "text-down",
   resolve_market: "text-bluex",
+  file_dispute: "text-down",
 };
 
 interface Props {
@@ -36,13 +38,14 @@ export default function ActivityTab({ mid, holders, options = [] }: Props) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!holders.length) return;
+    // The activity log is per-market (market-txs); it does not depend on there being holders.
     setLoading(true);
     fetchMarketActivity(mid, holders)
       .then(setActivities)
       .catch(() => setActivities([]))
       .finally(() => setLoading(false));
-  }, [mid, holders]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mid, holders.length]);
 
   if (loading) {
     return (
@@ -63,7 +66,7 @@ export default function ActivityTab({ mid, holders, options = [] }: Props) {
         const color = TYPE_COLOR[tx.messageType] || "text-ink-3";
         const shortSender = tx.sender ? tx.sender.slice(0, 8) + "…" + tx.sender.slice(-6) : "";
 
-        let detail = "";
+        let detail: ReactNode = "";
         if (tx.messageType === "submit_prediction") {
           const shares = tx.shares || 0n;
           const cost = tx.cost || 0n;
@@ -75,9 +78,12 @@ export default function ActivityTab({ mid, holders, options = [] }: Props) {
           detail = `${label} · ${fmtPRX(shares)} shares`;
           if (cost > 0n) detail += ` · cost ${fmtPRX(cost)} PRX`;
         } else if (tx.messageType === "propose_outcome") {
-          const side = tx.proposedOutcome ? "text-up" : "text-down";
-          const label = tx.proposedOutcome ? "YES" : "NO";
-          detail = `Proposed <span class="${side}">${label}</span>`;
+          const isN = options.length > 0;
+          const label = isN ? (options[tx.proposedIndex ?? 0] ?? `Option ${(tx.proposedIndex ?? 0) + 1}`) : tx.proposedOutcome ? "YES" : "NO";
+          const side = isN || tx.proposedOutcome ? "text-up" : "text-down";
+          detail = <>Proposed <span className={side}>{label}</span></>;
+        } else if (tx.messageType === "file_dispute") {
+          detail = "Proposal disputed";
         } else if (tx.messageType === "create_market") {
           detail = "Market created";
         } else if (tx.messageType === "finalize_market") {
@@ -102,7 +108,7 @@ export default function ActivityTab({ mid, holders, options = [] }: Props) {
               </div>
               {shortSender && <div className="mb-0.5 font-mono text-[11px] text-ink-3">{shortSender}</div>}
               {detail && (
-                <div className="font-mono text-[13px] text-ink-2" dangerouslySetInnerHTML={{ __html: detail }} />
+                <div className="font-mono text-[13px] text-ink-2">{detail}</div>
               )}
             </div>
           </div>

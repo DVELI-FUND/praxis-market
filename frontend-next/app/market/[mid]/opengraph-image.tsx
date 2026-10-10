@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
-import { b64ToHex } from "@/lib/format";
 import { isHiddenMarket } from "@/lib/hiddenMarkets";
+import { DEFAULT_PLUGIN_RPC } from "@/lib/rpc";
+import { leadOption, marketVol, yesPct } from "@/lib/markets";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
@@ -18,19 +19,31 @@ export default async function Image({ params }: { params: { mid: string } }) {
   let question = "Prediction market on Praxis";
   let pct: number | null = null;
   let vol = "";
+  let lead = "YES";
   try {
-    const r = await fetch("https://prax.val-a.grad.dev.app.canopynetwork.org/plugin/v1/query/markets", { next: { revalidate: 60 } });
+    // Single-market query on our own plugin host (the old hardcoded grad-node host is no longer the RPC).
+    const r = await fetch(`${DEFAULT_PLUGIN_RPC}/v1/query/markets?id=${encodeURIComponent(params.mid)}`, { next: { revalidate: 60 } });
     const raw = await r.json();
-    const arr: any[] = Array.isArray(raw) ? raw : raw.markets || [];
-    const m = arr.find((x) => b64ToHex(String(x.id || x.market_id || "")) === params.mid);
-    if (m && !isHiddenMarket(params.mid)) {
-      const q = String(m.question || m.rules || "").replace(/^\[.*?\]\s*/, "");
+    const mk = raw?.market;
+    if (mk && !isHiddenMarket(params.mid)) {
+      const q = String(mk.question || mk.rules || "").replace(/^\[.*?\]\s*/, "").replace(/\[(?:SUB|LG|KO|IMG|OUT):[^\]]*\]\s*/g, "");
       if (q) question = q;
-      const qy = Number(m.q_yes || 0), qn = Number(m.q_no || 0);
-      if (qy + qn > 0) {
-        pct = Math.round((qy * 100) / (qy + qn));
-        vol = fmt((qy + qn) / 1e6) + " PRX";
+      const m = {
+        qYes: BigInt(mk.q_yes || 0),
+        qNo: BigInt(mk.q_no || 0),
+        b0: BigInt(mk.b_eff || 0),
+        options: Array.isArray(mk.options) ? (mk.options as string[]) : [],
+        q: (mk.q || []).map((v: string | number) => BigInt(v || 0)),
+      };
+      const l = leadOption(m);
+      if (l.pct >= 0) {
+        pct = l.pct;
+        lead = l.label;
+      } else if (m.b0 > 0n) {
+        pct = yesPct(m);
       }
+      const v = marketVol(m);
+      if (v > 0n) vol = fmt(Number(v) / 1e6) + " PRX";
     }
   } catch {}
 
@@ -49,7 +62,7 @@ export default async function Image({ params }: { params: { mid: string } }) {
         </div>
         <div style={{ display: "flex", alignItems: "baseline", gap: 24 }}>
           {pct !== null && (
-            <div style={{ color: "#00e88a", fontSize: 64, fontWeight: 800 }}>{pct}% YES</div>
+            <div style={{ color: "#00e88a", fontSize: 64, fontWeight: 800 }}>{pct}% {lead.length > 24 ? lead.slice(0, 24) + "…" : lead}</div>
           )}
           {vol && <div style={{ color: "#22d3ee", fontSize: 28 }}>Vol {vol}</div>}
           <div style={{ color: "#737373", fontSize: 22, marginLeft: "auto" }}>trade on praxis →</div>

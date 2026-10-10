@@ -16,6 +16,7 @@ import { fetchMarkets, type Market } from "@/lib/markets";
 import { useQuery } from "@tanstack/react-query";
 import PredictPanel from "./PredictPanel";
 import PositionCard from "./PositionCard";
+import ResolutionBanner from "./ResolutionBanner";
 import LogoMark from "./LogoMark";
 
 export default function MarketDetail({ mid }: Props) {
@@ -219,22 +220,11 @@ export default function MarketDetail({ mid }: Props) {
             )}
           </div>
 
-          {/* status banners */}
-          {market.status === STATUS.CANCELLED && (
-            <div className="mb-4 rounded-card border border-down/40 bg-down-dim p-4 font-mono text-[13px] text-down">✕ This market has been cancelled.</div>
-          )}
-          {market.status === STATUS.EXPIRED && (
-            <div className="mb-4 rounded-card border border-amberx/40 bg-amberx/5 p-4 font-mono text-[13px] text-amberx">⏱ Expired and awaiting resolution.</div>
-          )}
-          {market.status === STATUS.FINALIZED && (
-            <div className="mb-4 rounded-card border border-bluex/40 bg-bluex/5 p-4 font-mono text-[13px] text-bluex">✓ Finalized.</div>
-          )}
-          {market.status === STATUS.VOIDED && (
-            <div className="mb-4 rounded-card border border-ink-3/40 bg-ink-3/5 p-4 font-mono text-[13px] text-ink-2">✕ Voided.</div>
-          )}
+          {/* lifecycle banner + next-step actions */}
+          <ResolutionBanner market={market} ctx={disputeContext} height={chain?.height ?? 0} />
 
           {/* position card */}
-          {holders && <PositionCard market={market} holders={holders} />}
+          <PositionCard market={market} />
 
           {/* price chart */}
           {!isNOutcome && (
@@ -253,7 +243,7 @@ export default function MarketDetail({ mid }: Props) {
               <div className="flex justify-between gap-3"><span>Trading opened</span><span className="text-right text-ink-3">{(() => { const ob = market.openTime; return ob > 0 ? `blk ${ob.toLocaleString()} · ${blkDate(ob)}` : "—"; })()}</span></div>
               <div className="flex justify-between gap-3"><span>Trading closes</span><span className="text-right text-amberx">blk {Number(market.expiry).toLocaleString()} · {blkDate(Number(market.expiry))}</span></div>
               <div className="flex justify-between gap-3"><span>Resolution</span><span className="text-right text-ink-3">bonded propose → dispute window → finalize</span></div>
-              <div className="flex justify-between gap-3"><span>Payout</span><span className="text-right text-up">{isNOutcome ? "1 PRX per winning share · losers forfeit" : "Winners split the pool pro-rata · losers forfeit"}</span></div>
+              <div className="flex justify-between gap-3"><span>Payout</span><span className="text-right text-up">1 PRX per winning share · losers forfeit</span></div>
             </div>
           </div>
 
@@ -300,7 +290,7 @@ function FaqSection({ pct, ends, isNOutcome }: { pct: number; ends: string; isNO
     { q: "How is resolution decided?", a: "Bonded resolvers stake PRX to propose the winning option. Anyone can dispute by staking; a correct challenge is rewarded, a rejected one is forfeited." },
   ] : [
     { q: "What are the current odds?", a: `YES is priced at ${pct}% and NO at ${100 - pct}%. Prices move as traders buy each side.` },
-    { q: `What does a YES price of ${pct}¢ mean?`, a: "It means the market currently assigns a " + pct + "% probability to the outcome resolving YES. If YES wins, YES holders split the pool pro-rata by shares held; a lower price means a bigger share of it per PRX paid." },
+    { q: `What does a YES price of ${pct}¢ mean?`, a: "It means the market currently assigns a " + pct + "% probability to the outcome resolving YES. If YES wins, each YES share pays 1 PRX; a lower price means a bigger profit per PRX paid if you are right." },
     { q: "When does this market resolve?", a: `Trading ends in ${ends}. After expiry, a resolver proposes the outcome and it finalizes unless disputed.` },
     { q: "How is resolution decided?", a: "Bonded resolvers stake PRX to propose the outcome. Anyone can dispute by staking; a correct challenge is rewarded, a rejected one is forfeited." },
   ];

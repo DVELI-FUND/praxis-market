@@ -8,6 +8,15 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 export async function GET(req: Request) {
+  // Only our own pages may use this endpoint (it writes to Vercel Blob on the project's quota).
+  const site = req.headers.get("sec-fetch-site");
+  const ref = req.headers.get("referer");
+  const host = req.headers.get("host");
+  let refHost = "";
+  try { refHost = ref ? new URL(ref).host : ""; } catch {}
+  if (!(site === "same-origin" || (host && refHost === host))) {
+    return new Response("forbidden", { status: 403 });
+  }
   const url = new URL(req.url).searchParams.get("url") || "";
   if (!url) return new Response("missing url", { status: 400 });
   try {

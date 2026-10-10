@@ -73,7 +73,7 @@ export interface ActionDef {
   validate?: (v: Vals) => string | null;
 }
 
-const FEE: FieldDef = { id: "fee", label: "Fee (uPRX)", type: "number", def: 10000 };
+const FEE: FieldDef = { id: "fee", label: "Fee (uPRX)", type: "number", def: 10000, min: 10000, hint: "Minimum 10,000 uPRX (0.01 PRX) — lower fees are rejected on-chain" };
 const WALLET: FieldDef = { id: "addr", label: "Address", type: "wallet" };
 const MID: FieldDef = { id: "mid", label: "Market ID (40 hex)", type: "mid" };
 
@@ -82,6 +82,14 @@ const u = (v: Vals, k: string, scale: bigint = W): bigint =>
   BigInt(Math.floor(Number(v[k]) || 0)) * scale;
 const b = (v: Vals, k: string): boolean => Boolean(v[k]);
 
+// Final rules string the chain stores: user rules wrapped in the [CAT]/[SUB]/[LG|KO]/[IMG]/[OUT] tags.
+const composeCreateRules = (v: Vals): string =>
+  buildRulesWithOutcomes(
+    buildRulesWithImg(buildRulesWithMeta(String(v.ko || ""), String(v.lg || ""), buildRulesWithSub(s(v, "sub") || "", buildRulesWithCat(s(v, "cat") || "other", s(v, "rules")))), s(v, "img")),
+    String(v.out_yes ?? ""),
+    String(v.out_no ?? "")
+  );
+
 export const ACTIONS: Record<string, ActionDef> = {
   send: {
     key: "send", msgType: "send", title: "Send $PRX", eye: "Account", sub: "Transfer PRX to another address",
@@ -89,12 +97,12 @@ export const ACTIONS: Record<string, ActionDef> = {
     build: (v) => encSend(s(v, "from"), s(v, "to"), u(v, "amount")),
   },
   claim: {
-    key: "claim", msgType: "claim_winnings", title: "Claim Winnings", eye: "Collect Payout", sub: "Proportional payout from losing pool after finalization",
+    key: "claim", msgType: "claim_winnings", title: "Claim Winnings", eye: "Collect Payout", sub: "Winners receive 1 PRX per winning share (claim within 30 days of finalization). Cancelled or voided markets refund what you paid, including fees",
     fields: [ MID, WALLET, FEE ],
     build: (v) => encClaim(s(v, "mid"), s(v, "addr")),
   },
   reclaim: {
-    key: "reclaim", msgType: "reclaim_stake", title: "Reclaim Stake", eye: "Recover Funds", sub: "Recover funds from expired markets with no resolver",
+    key: "reclaim", msgType: "reclaim_stake", title: "Reclaim Stake", eye: "Recover Funds", sub: "Recover funds from expired markets nobody resolved — opens 24h (8,640 blocks) after expiry. Creators also recover their liquidity seed from cancelled markets",
     fields: [ MID, WALLET, FEE ],
     build: (v) => encReclaim(s(v, "mid"), s(v, "addr")),
   },
@@ -104,7 +112,7 @@ export const ACTIONS: Record<string, ActionDef> = {
     build: (v) => encClaimCreatorFee(s(v, "mid"), s(v, "addr")),
   },
   cancel: {
-    key: "cancel", msgType: "cancel_market", title: "Cancel Market", eye: "Admin", sub: "Cancel an open market with no predictions — bond and liquidity returned", gate: "creator",
+    key: "cancel", msgType: "cancel_market", title: "Cancel Market", eye: "Admin", sub: "Cancel an open market with no predictions — your bond, liquidity seed and finalization reserve are returned", gate: "creator",
     fields: [ MID, WALLET, FEE ],
     build: (v) => encCancelMarket(s(v, "mid"), s(v, "addr")),
   },
@@ -114,7 +122,7 @@ export const ACTIONS: Record<string, ActionDef> = {
     build: (v) => encFinalize(s(v, "mid"), s(v, "addr")),
   },
   forfeit: {
-    key: "forfeit", msgType: "forfeit_position", title: "Forfeit Position", eye: "Resolver", sub: "Exit your position before proposing — required for COI-1", gate: "resolver",
+    key: "forfeit", msgType: "forfeit_position", title: "Forfeit Position", eye: "Resolver", sub: "Exit your position before proposing (COI-1). You get back at most what the shares are worth now, capped at what you paid", gate: "resolver",
     fields: [ MID, { id: "addr", label: "Resolver Address", type: "wallet" }, FEE ],
     build: (v) => encForfeit(s(v, "mid"), s(v, "addr")),
   },
@@ -130,17 +138,17 @@ export const ACTIONS: Record<string, ActionDef> = {
   },
   dispute: {
     key: "dispute", msgType: "file_dispute", planner: "dispute",  title: "File Dispute", eye: "Dispute", sub: "Challenge a proposed outcome during the dispute window — anyone can dispute; bond is forfeited if rejected",
-    fields: [ MID, WALLET, { id: "bond", label: "Bond Amount (PRX)", type: "number", def: 60, scale: W, min: 1, hint: "Forfeited if your dispute is rejected" }, FEE ],
+    fields: [ MID, WALLET, { id: "bond", label: "Bond Amount (PRX)", type: "number", def: 60, scale: W, min: 1, hint: "Forfeited if your dispute is rejected. Minimum grows with pool size — see the planner" }, FEE ],
     build: (v) => encDispute(s(v, "mid"), s(v, "addr"), u(v, "bond")),
   },
   commit: {
     key: "commit", msgType: "commit_vote", title: "Commit Vote", eye: "Resolver", sub: "Submit a blinded commitment during the voting phase", gate: "resolver",
-    fields: [ MID, WALLET, { id: "hash", label: "Commitment Hash (hex)", type: "hash64" }, FEE ],
+    fields: [ MID, WALLET, { id: "out", label: "Your vote (used to build the hash)", type: "outcome" }, { id: "hash", label: "Commitment Hash (hex)", type: "hash64", hint: "Use “Generate commitment” below — it creates a 32-byte salt and stores it on this device for the reveal" }, FEE ],
     build: (v) => encCommit(s(v, "mid"), s(v, "addr"), s(v, "hash")),
   },
   reveal: {
     key: "reveal", msgType: "reveal_vote", title: "Reveal Vote", eye: "Resolver", sub: "Reveal your committed vote during the reveal phase", gate: "resolver",
-    fields: [ MID, WALLET, { id: "out", label: "Vote", type: "outcome" }, { id: "salt", label: "Salt (hex)", type: "hash64" }, FEE ],
+    fields: [ MID, WALLET, { id: "out", label: "Vote", type: "outcome" }, { id: "salt", label: "Salt (hex, 32 bytes)", type: "hash64", hint: "Use “Load saved vote” below if you committed from this device" }, FEE ],
     build: (v) => encReveal(s(v, "mid"), s(v, "addr"), b(v, "out"), s(v, "salt")),
   },
   tally: {
@@ -209,11 +217,7 @@ export const ACTIONS: Record<string, ActionDef> = {
       FEE,
     ],
     build: (v, ctx) => {
-      const rules = buildRulesWithOutcomes(
-        buildRulesWithImg(buildRulesWithMeta(String(v.ko || ""), String(v.lg || ""), buildRulesWithSub(s(v, "sub") || "", buildRulesWithCat(s(v, "cat") || "other", s(v, "rules")))), s(v, "img")),
-        String(v.out_yes ?? ""),
-        String(v.out_no ?? "")
-      );
+      const rules = composeCreateRules(v);
       const exp = datetimeToBlock(String(v.expiry || ""), ctx.height);
       const nonce = BigInt(Date.now()) * 1000n;
       const optionsRaw = String(v.options ?? "").trim();
@@ -223,6 +227,13 @@ export const ACTIONS: Record<string, ActionDef> = {
     },
     validate: (v) => {
       if (!String(v.question ?? "").trim()) return "Question required";
+      // Chain limits (patch_v3 MAX_BINARY_QUESTION/RULES, n_outcome MAX_*_N): 280 bytes / 4096 bytes (rules incl. tags)
+      const enc = new TextEncoder();
+      if (enc.encode(String(v.question)).length > 280) return "Question too long — max 280 bytes";
+      if (enc.encode(composeCreateRules(v)).length > 4096) return "Rules too long — max 4,096 bytes (category/image/label tags count too)";
+      const isNMarket = String(v.options ?? "").trim() !== "";
+      const minB0 = isNMarket ? 75 : 60; // MIN_B0 (binary) / MIN_B0_N
+      if (!(Number(v.b0) >= minB0)) return `B0 liquidity must be at least ${minB0} PRX${isNMarket ? " for multi-option markets" : ""}`;
       // expiry is converted to a block height; refuse to guess seconds/block (the chain is ~20s, not 5s)
       if (!blockSecsReady()) return "Still measuring block time — wait a few seconds and try again";
       const rawOpts = String(v.options ?? "").trim();

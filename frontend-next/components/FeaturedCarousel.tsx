@@ -1,4 +1,5 @@
 "use client";
+import { normalizeBanner } from "@/lib/img";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useMarkets } from "@/hooks/useMarkets";
@@ -34,7 +35,7 @@ export default function FeaturedCarousel() {
   const pct = isN ? lead.pct : yesPct(m);
   const total = marketVol(m);
   const vol = total > 0n ? fmtPRX(total) : "—";
-  const imgUrl = extractImg(m.rules);
+  const imgUrl = normalizeBanner(extractImg(m.rules));
   const catKey = extractCat(m.rules);
   const outLbl = extractOutcomes(m.rules);
   const question = stripCatPrefix(m.question || m.rules || "");

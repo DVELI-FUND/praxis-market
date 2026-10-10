@@ -21,11 +21,12 @@ async function proxyImage(imgUrl: string, cache: Record<string, string>): Promis
       });
       if (!ir.ok) continue;
       const ct = (ir.headers.get("content-type") || "").split(";")[0];
-      if (!ct.startsWith("image/")) continue;
+      // SVG is excluded: served from our own origin it could run script if opened directly.
+      if (!ct.startsWith("image/") || ct.includes("svg")) continue;
       const buf = await ir.arrayBuffer();
       if (buf.byteLength === 0 || buf.byteLength > 4_500_000) continue;
       return new Response(buf, {
-        headers: { ...cache, "Content-Type": ct, "X-Content-Type-Options": "nosniff" },
+        headers: { ...cache, "Content-Type": ct, "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "default-src 'none'; sandbox" },
       });
     } catch {
       // try next attempt
