@@ -58,7 +58,7 @@ export default function ResolutionBanner({ market, ctx, height }: { market: Mark
         open
           ? `Dispute window open until block #${deadline.toLocaleString()} (${fmtCountdown(deadline, height)} left). If you think the proposal is wrong you can dispute it with a bond.`
           : "The dispute window has closed — the market can be finalized.",
-        open ? link("dispute", "Dispute this outcome") : link("finalize", "Finalize market"));
+        open ? `<div class="mt-2 rounded-card border border-amberx/30 bg-amberx/5 p-2 text-center"><span class="font-mono text-[11px] font-bold uppercase tracking-wider text-amberx">🔒 Resolver Access Only</span><p class="mt-1 font-mono text-[10px] text-ink-3">Only registered resolvers may file a dispute.</p></div>` : link("finalize", "Finalize market"));
     }
     case STATUS.DISPUTED:
       return box("border-down/40 bg-down-dim text-down", "⚠ Outcome disputed",
