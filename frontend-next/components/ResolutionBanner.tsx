@@ -58,7 +58,19 @@ export default function ResolutionBanner({ market, ctx, height }: { market: Mark
         open
           ? `Dispute window open until block #${deadline.toLocaleString()} (${fmtCountdown(deadline, height)} left). If you think the proposal is wrong you can dispute it with a bond.`
           : "The dispute window has closed — the market can be finalized.",
-        open ? `<div class="mt-2 rounded-card border border-amberx/30 bg-amberx/5 p-2 text-center"><span class="font-mono text-[11px] font-bold uppercase tracking-wider text-amberx">🔒 Resolver Access Only</span><p class="mt-1 font-mono text-[10px] text-ink-3">Only registered resolvers may file a dispute.</p></div>` : link("finalize", "Finalize market"));
+        open ? (
+        <div className="mt-2 rounded-card border border-amberx/30 bg-amberx/5 p-2 text-center">
+          <div className="flex items-center justify-center gap-1.5 text-amberx">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <span className="font-mono text-[11px] font-bold uppercase tracking-wider">Resolver Access Only</span>
+          </div>
+          <p className="mt-1 font-mono text-[10px] leading-relaxed text-ink-3">
+            Only registered resolvers may file a dispute.
+          </p>
+        </div>
+      ) : link("finalize", "Finalize market"));
     }
     case STATUS.DISPUTED:
       return box("border-down/40 bg-down-dim text-down", "⚠ Outcome disputed",
