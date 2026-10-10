@@ -4,7 +4,17 @@ func (c *Contract) CheckMessageCreateMarket(msg *MessageCreateMarket) *PluginChe
 if len(msg.CreatorAddress) != 20 {
 return ErrCheckResp(ErrInvalidAddress())
 }
+
+// PATCH V5: only allowlisted creators (no-op until the gate height)
+if pe := v5CreateGate(msg.CreatorAddress, GetGlobalHeight()); pe != nil {
+return ErrCheckResp(pe)
+}
 if msg.B0 < MIN_B0 {
+
+// PATCH V5: only allowlisted creators (no-op until the gate height)
+if pe := v5CreateGate(msg.CreatorAddress, GetGlobalHeight()); pe != nil {
+return ErrCheckResp(pe)
+}
 return ErrCheckResp(ErrInvalidB0())
 }
 if msg.ExpiryTime == 0 {
@@ -32,12 +42,22 @@ now := GetGlobalHeight()
 if now == 0 {
 return &PluginDeliverResponse{Error: ErrHeightNotSet()}
 }
+
+// PATCH V5: only allowlisted creators (no-op until the gate height)
+if pe := v5CreateGate(msg.CreatorAddress, now); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
 if msg.ExpiryTime > MAX_EXPIRY_TIME {
 return &PluginDeliverResponse{Error: ErrExpiryTooLarge()}
 }
 
 if pe := validateCreateExtras(msg); pe != nil {
 return &PluginDeliverResponse{Error: pe}
+
+// PATCH V5: only allowlisted creators (no-op until the gate height)
+if pe := v5CreateGate(msg.CreatorAddress, now); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
 }
 
 marketId := DeriveMarketId(msg.CreatorAddress, msg.Nonce)
@@ -126,10 +146,11 @@ return &PluginDeliverResponse{Error: pe}
 	if fee > 0 && msg.B0 > ^uint64(0)-fee {
 return &PluginDeliverResponse{Error: ErrInvalidAmount()}
 }
-if msg.B0 > ^uint64(0)-fee-CREATOR_BOND {
+bond := v5CreateBond(now)
+if msg.B0 > ^uint64(0)-fee-bond {
 return &PluginDeliverResponse{Error: ErrInvalidAmount()}
 }
-totalCost := msg.B0 + fee + CREATOR_BOND
+totalCost := msg.B0 + fee + bond
 if creator.Amount < totalCost {
 return &PluginDeliverResponse{Error: ErrInsufficientFunds()}
 }
@@ -180,7 +201,7 @@ market.PayoutMode = PAYOUT_MODE_STANDARD
 market.BEff = nb
 market.QYes, market.QNo = 0, 0
 }
-treasury := &TreasuryReserve{LockedReserve: FINALIZATION_BOUNTY, CreatorBond: CREATOR_BOND}
+treasury := &TreasuryReserve{LockedReserve: FINALIZATION_BOUNTY, CreatorBond: bond}
 
 logAmt := uint64(0)
 if amountLogMarketClaimActive(now) {
