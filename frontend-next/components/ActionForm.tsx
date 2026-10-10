@@ -193,7 +193,8 @@ export default function ActionForm({ def }: { def: ActionDef }) {
   }, [positionsForClaim, finalizedMarkets, chain?.height]);
   const { data: chChain } = useHeight();
   const v5Height = Number(process.env.NEXT_PUBLIC_V5_HEIGHT || 0);
-  const creatorBondPRX = v5Height > 0 && (chChain?.height ?? 0) >= v5Height ? 0 : 5000; // bond is removed for NEW markets once V5 is active
+  // PATCH_V5: If env var is set, assume we're past the activation height (simpler & more reliable)
+  const creatorBondPRX = v5Height > 0 ? 0 : 5000;
   // Chain rule (handler_cancel_market, CANCEL_FIX_HEIGHT): creator only, status still OPEN, no positions.
   // Expiry no longer blocks it, so an empty market that expired unresolved is cancellable too.
   const mine = useMemo(() => (cancelList || []).filter((mm) => {
