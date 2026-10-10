@@ -8,7 +8,7 @@ import LogoMark from "./LogoMark";
 import { useUi } from "@/store/ui";
 import { useRoles } from "@/lib/roles";
 
-type Item = { href: string; label: string };
+type Item = { href: string; label: string; className?: string };
 
 const CATEGORIES: Item[] = [
   { href: "/sports", label: "Sports" },
@@ -22,6 +22,7 @@ const RESOLVE: Item[] = [
   { href: "/resolvers", label: "Resolvers" },
   { href: "/resolution", label: "Resolution" },
   { href: "/rewards", label: "Rewards" },
+  { href: "/claim", label: "Claim Winnings", className: "text-up font-bold" },
 ];
 
 const LINK = "whitespace-nowrap rounded-pill px-3 py-1.5 text-[14px] font-medium transition-colors";

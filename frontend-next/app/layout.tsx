@@ -3,16 +3,16 @@ import ThemeSync from "@/components/ThemeSync";
 import Hotkeys from "@/components/Hotkeys";
 import Footer from "@/components/Footer";
 import type { Metadata } from "next";
-import { Syne, DM_Mono, DM_Sans } from "next/font/google";
+import { Inter, DM_Sans, DM_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 import Providers from "./providers";
 import Chrome from "@/components/Chrome";
 import "./globals.css";
 import { initChainContext } from "@/lib/rpc";
 
-const syne = Syne({ subsets: ["latin"], weight: ["400", "600", "700", "800"], variable: "--font-display" });
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
+const dmSans = DM_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-display" });
 const dmMono = DM_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-mono" });
-const dmSans = DM_Sans({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://praxis-market-ieel-one.vercel.app"),
@@ -30,7 +30,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 
   return (
     <html lang="en" data-theme="dark">
-      <body className={`${syne.variable} ${dmMono.variable} ${dmSans.variable} bg-bg text-ink font-sans`}>
+      <body className={`${inter.variable} ${dmSans.variable} ${dmMono.variable} bg-bg text-ink font-sans`}>
         <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
         <meta httpEquiv="Pragma" content="no-cache" />
         <meta httpEquiv="Expires" content="0" />

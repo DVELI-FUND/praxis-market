@@ -5,6 +5,9 @@ import { useWallet } from "@/store/wallet";
 import { usePositions } from "@/lib/positions";
 import { useMarkets } from "@/hooks/useMarkets";
 import { queryAccount } from "@/lib/rpc";
+import { signAndBroadcast } from "@/lib/broadcast";
+import { encClaim } from "@/lib/proto";
+import { TYPE_URLS } from "@/lib/tx";
 import LogoMark from "@/components/LogoMark";
 import WalletPill from "@/components/WalletPill";
 import { fmtPRX } from "@/lib/format";
@@ -90,11 +93,32 @@ export default function ClaimWinningsPage() {
   const handleClaim = async (marketId: string) => {
     setClaiming(marketId);
     try {
-      // TODO: Integrate with actual claimWinnings RPC call
-      alert("Claim functionality will be connected to the blockchain RPC. Market: " + marketId.slice(0, 8) + "...");
+      const wallet = useWallet.getState();
+      if (!wallet.privKey || !wallet.pubKey || !wallet.praxisAddress) {
+        alert("Please unlock your wallet keystore to sign transactions.");
+        setClaiming(null);
+        return;
+      }
+
+      const inner = encClaim(marketId, wallet.praxisAddress);
+      const success = await signAndBroadcast({
+        privKey: wallet.privKey,
+        pubKey: wallet.pubKey,
+        address: wallet.praxisAddress,
+        height: 0, // Will be fetched automatically
+        msgType: "claim_winnings",
+        typeUrl: TYPE_URLS.claim_winnings,
+        inner,
+        fee: 10000, // 0.01 PRX minimum
+      });
+
+      if (success) {
+        // Refetch positions to update UI
+        window.location.reload(); 
+      }
     } catch (error) {
       console.error("Claim failed:", error);
-      alert("Claim failed. Please try again.");
+      alert("Claim failed. Please check your balance and try again.");
     } finally {
       setClaiming(null);
     }
