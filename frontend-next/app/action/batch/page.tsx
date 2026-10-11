@@ -213,7 +213,7 @@ export default function BatchSeederPage() {
                 Batch Status: {successCount}/{markets.length} success, {errorCount} errors
               </div>
               <div className="font-mono text-[13px] text-ink-2">
-                Cost: {fmtPRX(markets.reduce((sum, m) => sum + BigInt(Math.round(((m.b0 || 60) + 5000) * 1_000_000)), 0n))} PRX (liquidity seed + 5,000 PRX bond per market; bond returns at finalize)
+                Cost: {fmtPRX(markets.reduce((sum, m) => sum + BigInt(Math.round(((m.b0 || 60) + 5000) * 1_000_000)), 0n))} PRX (liquidity seed + 0 PRX bond for allowlisted creators, else 5,000 PRX; bond returns at finalize)
               </div>
             </div>
             <div className="space-y-2">

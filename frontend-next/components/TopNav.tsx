@@ -116,6 +116,9 @@ export default function TopNav() {
           <Link href="/profile" className={`${LINK} ${pathname === "/profile" ? ON : OFF}`}>
             Portfolio
           </Link>
+          <Link href="/quests" className={`${LINK} ${pathname === "/quests" ? ON : OFF}`}>
+            Quests
+          </Link>
           <NavMenu label="Resolve" items={resolveItems} pathname={pathname} />
         </nav>
 

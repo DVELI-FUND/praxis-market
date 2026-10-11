@@ -18,6 +18,7 @@ const SECTIONS: NavSection[] = [
     name: "Markets",
     items: [
       { href: "/", label: "Browse Markets", icon: "◈" },
+      { href: "/quests", label: "Quests & XP", icon: "★" },
       { href: "/action/claim", label: "Claim Winnings", icon: "◎" , gate: "connected"},
       { href: "/action/reclaim", label: "Reclaim Stake", icon: "◍" , gate: "connected"},
       { href: "/sports", label: "Sports", icon: "football" },
