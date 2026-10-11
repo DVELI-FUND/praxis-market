@@ -2,7 +2,7 @@
 import { useWallet } from "@/store/wallet";
 import { useXpBoard, useXpMe } from "@/hooks/useXp";
 
-const fmt = (n: number) => n.toLocaleString("en-US");
+const fmt = (n?: number) => (n ?? 0).toLocaleString("en-US");
 const short = (a: string) => a.slice(0, 6) + "…" + a.slice(-4);
 const units = (n: number) => n / 1_000_000;
 
@@ -49,7 +49,7 @@ export default function QuestsPage() {
           </div>
           <ul className="mt-2 space-y-0.5 font-mono text-[11px] text-ink-3">
             <li>• Add CNPY + PRX in the terminal&apos;s Liquidity tab</li>
-            {rules && <li>• {fmt(rules.xpPerLPBlock)} XP per block while your position stays above {fmt(minLp)} CNPY</li>}
+            {rules?.lpBlocksPerXP ? <li>• 1 XP per {fmt(rules.lpBlocksPerXP)} blocks while your position stays above {fmt(minLp)} CNPY</li> : null}
             <li>• Withdrawing below the minimum stops your XP</li>
           </ul>
         </div>

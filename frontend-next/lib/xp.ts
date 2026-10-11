@@ -13,7 +13,7 @@ export interface XpRow {
 export interface XpRules {
   xpPerBetUnit: number;
   maxBetXPPerMarket: number;
-  xpPerLPBlock: number;
+  lpBlocksPerXP: number; // 1 XP per this many qualifying blocks
   startHeight: number;
   endHeight: number; // 0 = open ended
 }
