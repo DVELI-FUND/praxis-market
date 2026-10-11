@@ -5,7 +5,7 @@ import { fetchXpBoard, fetchXpMe } from "@/lib/xp";
 export function useXpBoard() {
   return useQuery({
     queryKey: ["xp-board"],
-    queryFn: () => fetchXpBoard(100),
+    queryFn: () => fetchXpBoard(500),
     refetchInterval: 30000,
     staleTime: 15000,
     retry: 1,

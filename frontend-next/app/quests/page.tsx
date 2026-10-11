@@ -1,146 +1,296 @@
 "use client";
+import { useState } from "react";
 import { useWallet } from "@/store/wallet";
-import { useXpBoard, useXpMe } from "@/hooks/useXp";
+import { useXpBoard } from "@/hooks/useXp";
 
 const fmt = (n?: number) => (n ?? 0).toLocaleString("en-US");
-const short = (a: string) => a.slice(0, 6) + "…" + a.slice(-4);
+const short = (a: string) => `${a.slice(0, 8)}…${a.slice(-6)}`;
 const units = (n: number) => n / 1_000_000;
+
+type Entry = { address: string; xp: number; rank: number };
+
+const MEDAL: Record<number, string> = {
+  1: "bg-[#F5C451]/15 text-[#F5C451] ring-1 ring-[#F5C451]/50",
+  2: "bg-[#C0C7D1]/15 text-[#C0C7D1] ring-1 ring-[#C0C7D1]/50",
+  3: "bg-[#D08A54]/15 text-[#D08A54] ring-1 ring-[#D08A54]/50",
+};
+
+const ACCENT = {
+  up: {
+    bar: "bg-up",
+    text: "text-up",
+    chip: "border-up/30 bg-up/10 text-up",
+    iconBg: "bg-up/10 text-up",
+    fill: "bg-up",
+    mine: "bg-up/[0.06]",
+    youChip: "border-up/40 bg-up/10 text-up",
+  },
+  blue: {
+    bar: "bg-bluex",
+    text: "text-bluex",
+    chip: "border-bluex/30 bg-bluex/10 text-bluex",
+    iconBg: "bg-bluex/10 text-bluex",
+    fill: "bg-bluex",
+    mine: "bg-bluex/[0.06]",
+    youChip: "border-bluex/40 bg-bluex/10 text-bluex",
+  },
+} as const;
+
+const IconBet = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6" aria-hidden="true">
+    <path d="M3 17l6-6 4 4 8-8" />
+    <path d="M14 7h7v7" />
+  </svg>
+);
+const IconLiquidity = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6" aria-hidden="true">
+    <path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z" />
+  </svg>
+);
+const Check = ({ cls }: { cls: string }) => (
+  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={`mt-[3px] h-4 w-4 shrink-0 ${cls}`} aria-hidden="true">
+    <path d="M4 10.5l4 4 8-9" />
+  </svg>
+);
+
+function Rank({ rank }: { rank: number }) {
+  return (
+    <span
+      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-display text-[14px] font-bold tabular-nums ${
+        MEDAL[rank] ?? "bg-surface-2 text-ink-2"
+      }`}
+    >
+      {rank}
+    </span>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-card border border-line bg-surface-grad px-4 py-3">
+      <div className="font-display text-[26px] font-bold leading-none tabular-nums text-ink">{value}</div>
+      <div className="mt-1.5 text-[13px] font-medium text-ink-2">{label}</div>
+    </div>
+  );
+}
+
+function Track(props: {
+  accent: keyof typeof ACCENT;
+  icon: React.ReactNode;
+  title: string;
+  tagline: string;
+  requirement: string;
+  how: string[];
+  entries: Entry[];
+  me: Entry | null;
+  connected: boolean;
+  loading: boolean;
+  failed: boolean;
+  emptyText: string;
+}) {
+  const a = ACCENT[props.accent];
+  const [all, setAll] = useState(false);
+  const shown = all ? props.entries : props.entries.slice(0, 10);
+  const top = props.entries[0]?.xp || 1;
+
+  return (
+    <section className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
+      <div className={`h-1 w-full ${a.bar}`} />
+      <div className="p-5">
+        <div className="flex items-start gap-3">
+          <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${a.iconBg}`}>{props.icon}</div>
+          <div className="min-w-0 flex-1">
+            <h2 className="font-display text-[20px] font-bold leading-tight text-ink">{props.title}</h2>
+            <p className="mt-0.5 text-[14px] text-ink-2">{props.tagline}</p>
+          </div>
+        </div>
+
+        <div className={`mt-4 inline-flex items-center rounded-pill border px-3 py-1 text-[13px] font-semibold ${a.chip}`}>{props.requirement}</div>
+
+        <ul className="mt-4 space-y-2">
+          {props.how.map((t) => (
+            <li key={t} className="flex gap-2.5 text-[14px] leading-snug text-ink-2">
+              <Check cls={a.text} />
+              <span>{t}</span>
+            </li>
+          ))}
+        </ul>
+
+        {/* your position */}
+        <div className="mt-5 flex items-center justify-between rounded-xl border border-line bg-bg-2 px-4 py-3">
+          <span className="text-[13px] font-semibold uppercase tracking-wide text-ink-3">Your position</span>
+          {!props.connected ? (
+            <span className="text-[14px] text-ink-2">Connect wallet</span>
+          ) : props.me ? (
+            <span className="font-display text-[16px] font-bold tabular-nums text-ink">
+              #{props.me.rank} <span className="mx-1 text-ink-3">·</span> <span className={a.text}>{fmt(props.me.xp)} XP</span>
+            </span>
+          ) : (
+            <span className="text-[14px] text-ink-2">Not ranked yet</span>
+          )}
+        </div>
+      </div>
+
+      {/* leaderboard */}
+      <div className="border-t border-line">
+        <div className="flex items-center justify-between px-5 py-3">
+          <h3 className="text-[15px] font-bold text-ink">Leaderboard</h3>
+          <span className="text-[13px] text-ink-3">{props.entries.length} ranked</span>
+        </div>
+
+        {props.loading ? (
+          <div className="space-y-2 px-5 pb-5">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="h-12 animate-pulse rounded-xl bg-surface-2" />
+            ))}
+          </div>
+        ) : props.failed ? (
+          <div className="px-5 pb-6 pt-2 text-center text-[14px] text-ink-2">Leaderboard temporarily unavailable. Try again in a moment.</div>
+        ) : props.entries.length === 0 ? (
+          <div className="px-5 pb-6 pt-2 text-center text-[14px] text-ink-2">{props.emptyText}</div>
+        ) : (
+          <div className="pb-2">
+            {shown.map((e) => {
+              const mine = props.me?.address === e.address;
+              return (
+                <div key={e.address} className={`px-5 py-3 ${mine ? a.mine : ""} border-t border-line/60 first:border-t-0`}>
+                  <div className="flex items-center gap-3">
+                    <Rank rank={e.rank} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate font-mono text-[14px] font-medium text-ink">{short(e.address)}</span>
+                        {mine && <span className={`rounded border px-1.5 py-px text-[11px] font-bold ${a.youChip}`}>YOU</span>}
+                      </div>
+                      <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-pill bg-surface-2">
+                        <div className={`h-full rounded-pill ${a.fill}`} style={{ width: `${Math.max(4, (e.xp / top) * 100)}%` }} />
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-display text-[18px] font-bold leading-none tabular-nums text-ink">{fmt(e.xp)}</div>
+                      <div className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-ink-3">XP</div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            {props.entries.length > 10 && (
+              <button
+                onClick={() => setAll((v) => !v)}
+                className={`mx-5 mb-3 mt-2 w-[calc(100%-2.5rem)] rounded-xl border border-line py-2.5 text-[14px] font-semibold transition-colors hover:bg-surface-2 ${a.text}`}
+              >
+                {all ? "Show top 10" : `Show all ${props.entries.length}`}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
 
 export default function QuestsPage() {
   const { praxisAddress, status, connect } = useWallet();
   const connected = (status === "connected" || status === "drift") && !!praxisAddress;
   const board = useXpBoard();
-  const me = useXpMe(connected ? praxisAddress : null);
+
+  const rows = board.data?.rows ?? [];
+  const rank = (key: "betXP" | "lpXP"): Entry[] =>
+    rows
+      .filter((r) => r[key] > 0)
+      .sort((x, y) => y[key] - x[key] || x.address.localeCompare(y.address))
+      .map((r, i) => ({ address: r.address, xp: r[key], rank: i + 1 }));
+  const bettors = rank("betXP");
+  const lps = rank("lpXP");
+  const meAddr = praxisAddress?.toLowerCase() ?? "";
+  const meBet = bettors.find((e) => e.address === meAddr) ?? null;
+  const meLp = lps.find((e) => e.address === meAddr) ?? null;
 
   const minBet = board.data ? units(board.data.minBetCostPRX) : 100;
   const minLp = board.data ? units(board.data.minLPValueCNPY) : 50;
   const rules = board.data?.rules;
-  const myRow = me.data?.row ?? null;
+
+  const betHow = [
+    `Every bet of ${fmt(minBet)} PRX or more counts`,
+    ...(rules ? [`Earn ${fmt(rules.xpPerBetUnit)} XP for each ${fmt(minBet)} PRX you bet`, `Up to ${fmt(rules.maxBetXPPerMarket)} XP per market`] : []),
+  ];
+  const lpHow = [
+    "Add CNPY and PRX in the terminal's Liquidity tab",
+    ...(rules?.lpBlocksPerXP ? [`Earn 1 XP for every ${fmt(rules.lpBlocksPerXP)} blocks your position stays at ${fmt(minLp)} CNPY or more`] : []),
+    "Withdrawing below the minimum pauses your XP",
+  ];
 
   return (
-    <main className="relative z-10 mx-auto min-h-screen max-w-[980px] px-4 py-6 pb-24 md:px-8">
-      <div className="mb-6">
-        <div className="mb-2 flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-[3px] text-up">
-          <span className="inline-block h-px w-5 bg-up" /> Earn
+    <main className="relative z-10 mx-auto min-h-screen max-w-[1100px] px-4 py-8 pb-28 md:px-8">
+      {/* hero */}
+      <header className="mb-6">
+        <div className="mb-3 inline-flex items-center gap-2 rounded-pill border border-line bg-surface px-3 py-1 text-[13px] font-semibold text-ink-2">
+          <span className="h-2 w-2 animate-pulseDot rounded-full bg-up" /> Live from the chain
         </div>
-        <h1 className="font-display text-[22px] font-extrabold tracking-[-0.3px]">Quests &amp; XP</h1>
-        <p className="mt-1 text-[15px] text-ink-2">Trade and provide liquidity to earn XP. Counted straight from the chain.</p>
+        <h1 className="font-display text-[34px] font-bold leading-[1.1] tracking-tight text-ink md:text-[42px]">
+          Quests <span className="bg-grad-brand bg-clip-text text-transparent">&amp; XP</span>
+        </h1>
+        <p className="mt-2 max-w-[640px] text-[16px] leading-relaxed text-ink-2">
+          Two ways to earn. Bet on markets, or provide liquidity. Each has its own leaderboard.
+        </p>
+      </header>
+
+      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+        <Stat label="Participants" value={board.data ? fmt(rows.length) : "—"} />
+        <Stat label="Bettors" value={board.data ? fmt(bettors.length) : "—"} />
+        <Stat label="Liquidity providers" value={board.data ? fmt(lps.length) : "—"} />
+        <Stat label="Indexed block" value={board.data ? `#${fmt(board.data.indexedHeight)}` : "—"} />
       </div>
 
-      {/* quests */}
-      <div className="mb-4 grid grid-cols-1 gap-2.5 md:grid-cols-2">
-        <div className="rounded-card border border-up/30 bg-surface p-3">
-          <div className="flex items-center gap-2">
-            <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full border border-line bg-bg-2 text-[16px] text-up">◈</div>
-            <div className="font-display text-[15px] font-bold text-ink">Place a bet</div>
-            <span className="ml-auto rounded border border-line bg-bg-2 px-1.5 py-0.5 font-mono text-[11px] text-ink-3">min {fmt(minBet)} PRX</span>
-          </div>
-          <ul className="mt-2 space-y-0.5 font-mono text-[11px] text-ink-3">
-            <li>• Every bet of at least {fmt(minBet)} PRX counts</li>
-            {rules && <li>• {fmt(rules.xpPerBetUnit)} XP per {fmt(minBet)} PRX of trade cost</li>}
-            {rules && <li>• Capped at {fmt(rules.maxBetXPPerMarket)} XP per market</li>}
-          </ul>
-        </div>
-        <div className="rounded-card border border-bluex/30 bg-surface p-3">
-          <div className="flex items-center gap-2">
-            <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full border border-line bg-bg-2 text-[16px] text-bluex">◎</div>
-            <div className="font-display text-[15px] font-bold text-ink">Provide liquidity</div>
-            <span className="ml-auto rounded border border-line bg-bg-2 px-1.5 py-0.5 font-mono text-[11px] text-ink-3">min {fmt(minLp)} CNPY</span>
-          </div>
-          <ul className="mt-2 space-y-0.5 font-mono text-[11px] text-ink-3">
-            <li>• Add CNPY + PRX in the terminal&apos;s Liquidity tab</li>
-            {rules?.lpBlocksPerXP ? <li>• 1 XP per {fmt(rules.lpBlocksPerXP)} blocks while your position stays above {fmt(minLp)} CNPY</li> : null}
-            <li>• Withdrawing below the minimum stops your XP</li>
-          </ul>
-        </div>
-      </div>
-
-      {/* my XP */}
-      <div className="mb-4 rounded-card border border-line bg-surface p-3">
-        <div className="mb-2 font-mono text-[11px] uppercase tracking-[2px] text-ink-3">Your XP</div>
-        {!connected ? (
-          <div className="flex items-center justify-between gap-3">
-            <span className="font-mono text-[13px] text-ink-3">Connect your wallet to see your XP</span>
-            <button onClick={() => void connect()} className="rounded-pill border border-up/40 px-3 py-1.5 font-mono text-[12px] text-up transition-colors hover:bg-up/10">
-              Connect
-            </button>
-          </div>
-        ) : me.isLoading ? (
-          <div className="font-mono text-[13px] text-ink-3">Loading…</div>
-        ) : me.isError ? (
-          <div className="font-mono text-[13px] text-ink-3">XP service unavailable right now</div>
-        ) : myRow ? (
-          <div className="grid grid-cols-4 gap-2 text-center">
-            {[
-              ["Rank", `#${myRow.rank}`],
-              ["Bet XP", fmt(myRow.betXP)],
-              ["Liquidity XP", fmt(myRow.lpXP)],
-              ["Total", fmt(myRow.total)],
-            ].map(([k, v]) => (
-              <div key={k}>
-                <div className="font-display text-[18px] font-bold tabular-nums text-ink">{v}</div>
-                <div className="font-mono text-[10px] uppercase tracking-[1px] text-ink-3">{k}</div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="font-mono text-[13px] text-ink-3">
-            No XP yet. Place a bet of at least {fmt(minBet)} PRX or add {fmt(minLp)}+ CNPY of liquidity.
-          </div>
-        )}
-      </div>
-
-      {/* leaderboard */}
-      <div className="rounded-card border border-line bg-surface">
-        <div className="flex items-center justify-between border-b border-line px-3 py-2">
-          <div className="font-mono text-[11px] uppercase tracking-[2px] text-ink-3">Leaderboard</div>
-          {board.data && <div className="font-mono text-[11px] text-ink-3">block #{fmt(board.data.indexedHeight)}</div>}
-        </div>
-        {board.isLoading ? (
-          <div className="p-6 text-center font-mono text-[13px] text-ink-3">Loading…</div>
-        ) : board.isError ? (
-          <div className="p-6 text-center font-mono text-[13px] text-ink-3">Leaderboard temporarily unavailable</div>
-        ) : board.data && board.data.rows.length === 0 ? (
-          <div className="p-6 text-center font-mono text-[13px] text-ink-3">No qualifying activity yet. Be the first.</div>
-        ) : (
+      {!connected && (
+        <div className="mb-6 flex flex-col items-start justify-between gap-3 rounded-card border border-line bg-surface-grad p-4 sm:flex-row sm:items-center">
           <div>
-            <div className="grid grid-cols-[2.5rem_1fr_4.5rem_4.5rem_4.5rem] gap-2 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[1px] text-ink-3">
-              <span>#</span>
-              <span>Address</span>
-              <span className="text-right">Bets</span>
-              <span className="text-right">Liq.</span>
-              <span className="text-right">Total</span>
-            </div>
-            {board.data?.rows.map((r) => {
-              const mine = connected && r.address === praxisAddress?.toLowerCase();
-              return (
-                <div
-                  key={r.address}
-                  className={`grid grid-cols-[2.5rem_1fr_4.5rem_4.5rem_4.5rem] items-center gap-2 border-t border-line/60 px-3 py-2 font-mono text-[12px] ${mine ? "bg-up/5" : ""}`}
-                >
-                  <span className="text-ink-3 tabular-nums">{r.rank}</span>
-                  <span className="truncate text-ink">
-                    {short(r.address)}
-                    {mine && <span className="ml-1.5 rounded border border-up/40 px-1 text-[9px] text-up">YOU</span>}
-                  </span>
-                  <span className="text-right tabular-nums text-ink-2">{fmt(r.betXP)}</span>
-                  <span className="text-right tabular-nums text-ink-2">{fmt(r.lpXP)}</span>
-                  <span className="text-right font-bold tabular-nums text-ink">{fmt(r.total)}</span>
-                </div>
-              );
-            })}
+            <div className="text-[16px] font-bold text-ink">See where you stand</div>
+            <div className="text-[14px] text-ink-2">Connect your wallet to find your rank on both leaderboards.</div>
           </div>
-        )}
+          <button
+            onClick={() => void connect()}
+            className="shrink-0 rounded-pill bg-grad-up px-5 py-2.5 text-[14px] font-bold text-black transition-opacity hover:opacity-90"
+          >
+            Connect wallet
+          </button>
+        </div>
+      )}
+
+      {/* two separate tracks */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <Track
+          accent="up"
+          icon={<IconBet />}
+          title="Bettors"
+          tagline="Ranked by XP earned from your bets."
+          requirement={`Minimum bet ${fmt(minBet)} PRX`}
+          how={betHow}
+          entries={bettors}
+          me={meBet}
+          connected={connected}
+          loading={board.isLoading}
+          failed={board.isError}
+          emptyText={`No qualifying bets yet. Place a bet of ${fmt(minBet)} PRX or more to take the first spot.`}
+        />
+        <Track
+          accent="blue"
+          icon={<IconLiquidity />}
+          title="Liquidity providers"
+          tagline="Ranked by XP earned from time in the pool."
+          requirement={`Minimum position ${fmt(minLp)} CNPY`}
+          how={lpHow}
+          entries={lps}
+          me={meLp}
+          connected={connected}
+          loading={board.isLoading}
+          failed={board.isError}
+          emptyText={`No qualifying liquidity yet. Add ${fmt(minLp)} CNPY or more to take the first spot.`}
+        />
       </div>
 
-      <div className="mt-4 rounded-card border border-line bg-bg-2 p-3 font-mono text-[11px] text-ink-3">
-        <div className="mb-1 text-ink-2">How it works:</div>
-        <ul className="space-y-0.5">
-          <li>• XP is computed from on-chain bets and the liquidity pool, so anyone can re-check it</li>
-          <li>• Liquidity XP is sampled from pool snapshots, so it updates every few minutes</li>
-          <li>• Addresses are shown shortened; the leaderboard refreshes every 30 seconds</li>
-        </ul>
-      </div>
+      <p className="mt-6 text-center text-[13px] leading-relaxed text-ink-3">
+        XP is computed from on-chain bets and the liquidity pool, so anyone can verify it. Liquidity XP updates every few minutes. The page refreshes every 30 seconds.
+      </p>
     </main>
   );
 }
