@@ -177,7 +177,7 @@ export const PRAXIS_ERRORS: Record<number, string> = {
   218: "You already have the maximum of 50 open markets. Wait for some to resolve or cancel an empty one.",
   219: "Nothing vested yet — the cliff hasn't passed, or everything vested has already been claimed.",
   220: "This resolver still has open proposals or dispute panels — finish them before unstaking.",
-  230: "Claim window closed (30 days after finalization). Unclaimed winnings were swept.",
+  230: "Claim window closed (24 hours after finalization on v2 markets, 30 days on older ones). Unclaimed winnings were swept.",
   231: "Fee below the minimum — use at least 10,000 uPRX (0.01 PRX).",
 };
 

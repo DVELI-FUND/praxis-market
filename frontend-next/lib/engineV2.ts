@@ -6,3 +6,10 @@ export const ENGINE_V2_HEIGHT = 88441;
 export function engineV2Active(height: number): boolean {
   return ENGINE_V2_HEIGHT !== Number.MAX_SAFE_INTEGER && height >= ENGINE_V2_HEIGHT;
 }
+
+/** Blocks winners have to claim after finalization: 24h (8,640) for v2 markets, 30 days for older ones. */
+export const V2_CLAIM_WINDOW = 8640;
+export const LEGACY_CLAIM_WINDOW = 259200;
+export function claimWindowFor(engineV2?: boolean): number {
+  return engineV2 ? V2_CLAIM_WINDOW : LEGACY_CLAIM_WINDOW;
+}

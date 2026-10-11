@@ -5,6 +5,7 @@
 import Link from "next/link";
 import { STATUS, extractOutcomes } from "@/lib/markets";
 import { fmtCountdown } from "@/lib/format";
+import { claimWindowFor } from "@/lib/engineV2";
 import type { DisputeContext, MarketDetail } from "@/lib/detail";
 
 const PROPOSAL_WINDOW = 8640; // blocks after expiry resolvers have to propose (24h)
@@ -79,9 +80,9 @@ export default function ResolutionBanner({ market, ctx, height }: { market: Mark
     case STATUS.FINALIZED: {
       const oc = ctx?.outcome;
       const winner = oc ? outcomeLabel(market, oc.winningOutcome, oc.winningIndex) : "";
-      const left = oc && oc.resolvedAt > 0 ? oc.resolvedAt + CLAIM_WINDOW - height : 0;
+      const left = oc && oc.resolvedAt > 0 ? oc.resolvedAt + claimWindowFor(market.engineV2) - height : 0;
       return box("border-bluex/40 bg-bluex/5 text-bluex", `✓ Finalized${winner ? ` — ${winner} won` : ""}`,
-        `Winning shares pay 1 PRX each. Claim within 30 days of finalization${left > 0 ? ` (${fmtCountdown(height + left, height)} left)` : ""}; unclaimed funds are swept afterwards.`,
+        `Winning shares pay 1 PRX each. Claim within ${market.engineV2 ? "24 hours" : "30 days"} of finalization${left > 0 ? ` (${fmtCountdown(height + left, height)} left)` : ""}; unclaimed funds are swept afterwards.`,
         <>{link("claim", "Claim winnings")}{link("claimcreator", "Claim creator fee")}</>);
     }
     case STATUS.VOIDED:

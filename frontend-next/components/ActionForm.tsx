@@ -5,6 +5,7 @@ import { useEffect, useState , useMemo} from "react";
 import type { ActionDef, Vals } from "@/lib/actions";
 import { datetimeToBlock } from "@/lib/actions";
 import { blockSecsReady } from "@/lib/rpc";
+import { claimWindowFor } from "@/lib/engineV2";
 import { useWallet } from "@/store/wallet";
 import { useHeight } from "@/hooks/useHeight";
 import { useRoles } from "@/lib/roles";
@@ -115,7 +116,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
   const { data: myPositions = [] } = usePositions();
   const positionsForClaim = myPositions;
 
-  type ClaimMarket = { marketId: string; question: string; rules: string; status: number; winningOutcome: boolean | null; options: string[]; winningIndex: number | null; resolvedAt: number; finalizedPoolAmount: bigint };
+  type ClaimMarket = { marketId: string; question: string; rules: string; status: number; winningOutcome: boolean | null; options: string[]; winningIndex: number | null; resolvedAt: number; finalizedPoolAmount: bigint; engineV2?: boolean };
   const { data: finalizedMarkets = [] as ClaimMarket[] } = useQuery({
     queryKey: ["markets-finalized"],
     queryFn: async (): Promise<ClaimMarket[]> => {
@@ -158,6 +159,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
             winningIndex,
             resolvedAt,
             finalizedPoolAmount: BigInt(m.market?.finalized_pool_amount || 0),
+            engineV2: m.market?.engine_v2 === true,
           };
         })
       );
@@ -172,7 +174,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
       const mkt = finalizedMarkets.find((fm) => fm.marketId === pos.marketId);
       if (!mkt || pos.claimed) continue;
       // Finalized markets can only be claimed for 30 days (CLAIM_GRACE_PERIOD_V2 = 259,200 blocks) after resolution.
-      if (mkt.status === STATUS.FINALIZED && mkt.resolvedAt > 0 && (chain?.height ?? 0) > mkt.resolvedAt + 259200) continue;
+      if (mkt.status === STATUS.FINALIZED && mkt.resolvedAt > 0 && (chain?.height ?? 0) > mkt.resolvedAt + claimWindowFor(mkt.engineV2)) continue;
       const isN = mkt.options.length > 0;
       if (mkt.status !== STATUS.FINALIZED) {
         // voided / cancelled: every position refunds its cost
