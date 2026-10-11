@@ -174,7 +174,7 @@ export default function ActionForm({ def }: { def: ActionDef }) {
       const mkt = finalizedMarkets.find((fm) => fm.marketId === pos.marketId);
       if (!mkt || pos.claimed) continue;
       // Finalized markets can only be claimed for 30 days (CLAIM_GRACE_PERIOD_V2 = 259,200 blocks) after resolution.
-      if (mkt.status === STATUS.FINALIZED && mkt.resolvedAt > 0 && (chain?.height ?? 0) > mkt.resolvedAt + claimWindowFor(mkt.engineV2)) continue;
+      if (mkt.status === STATUS.FINALIZED && mkt.resolvedAt > 0 && (chain?.height ?? 0) > mkt.resolvedAt + claimWindowFor(mkt.engineV2, chain?.height ?? 0)) continue;
       const isN = mkt.options.length > 0;
       if (mkt.status !== STATUS.FINALIZED) {
         // voided / cancelled: every position refunds its cost

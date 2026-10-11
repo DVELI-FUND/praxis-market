@@ -7,9 +7,12 @@ export function engineV2Active(height: number): boolean {
   return ENGINE_V2_HEIGHT !== Number.MAX_SAFE_INTEGER && height >= ENGINE_V2_HEIGHT;
 }
 
-/** Blocks winners have to claim after finalization: 24h (8,640) for v2 markets, 30 days for older ones. */
+/** Must match PATCH_V6_HEIGHT in plugin/go/contract/patch_v6.go. */
+export const PATCH_V6_HEIGHT = 90000;
+/** Blocks winners have to claim after finalization: 24h (8,640) for v2 markets before PATCH_V6_HEIGHT, 30 days otherwise. */
 export const V2_CLAIM_WINDOW = 8640;
 export const LEGACY_CLAIM_WINDOW = 259200;
-export function claimWindowFor(engineV2?: boolean): number {
+export function claimWindowFor(engineV2?: boolean, height = 0): number {
+  if (height >= PATCH_V6_HEIGHT) return LEGACY_CLAIM_WINDOW;
   return engineV2 ? V2_CLAIM_WINDOW : LEGACY_CLAIM_WINDOW;
 }

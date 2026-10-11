@@ -74,9 +74,13 @@ func subOrZero(a, b uint64) uint64 {
 	return a - b
 }
 
-// ComputeDisputeBlocksAt: flat 48h (MIN_DISPUTE_BLOCKS) once the fix is active.
+// ComputeDisputeBlocksAt: flat 48h (MIN_DISPUTE_BLOCKS) once the fix is active;
+// flat 24h (DISPUTE_BLOCKS_V6) from PATCH_V6_HEIGHT.
 func ComputeDisputeBlocksAt(now, openTime, expiryTime uint64) uint64 {
 	if resolverFixActive(now) && !TEST_MODE {
+		if patchV6Active(now) {
+			return DISPUTE_BLOCKS_V6
+		}
 		return MIN_DISPUTE_BLOCKS
 	}
 	return ComputeDisputeBlocks(openTime, expiryTime)

@@ -107,7 +107,7 @@ oc := &OutcomeState{}
 if pe := Unmarshal(ov[oq], oc); pe != nil {
 return &PluginDeliverResponse{Error: pe}
 }
-if oc.ResolvedAt > 0 && now > oc.ResolvedAt+v2ClaimGrace(market, CLAIM_GRACE_PERIOD_V2) {
+if oc.ResolvedAt > 0 && now > oc.ResolvedAt+v2ClaimGrace(market, CLAIM_GRACE_PERIOD_V2, now) {
 return c.sweepClosedMarket(msg.MarketId, msg.ClaimantAddress, fee)
 }
 }
@@ -256,7 +256,7 @@ gracePeriod     = TEST_GRACE_PERIOD
 claimGrace      = TEST_CLAIM_GRACE_PERIOD
 }
 if resolverFixActive(now) && !TEST_MODE {
-claimGrace = v2ClaimGrace(market, CLAIM_GRACE_PERIOD_V2)
+claimGrace = v2ClaimGrace(market, CLAIM_GRACE_PERIOD_V2, now)
 }
 _ = resolutionDelay
 _ = gracePeriod

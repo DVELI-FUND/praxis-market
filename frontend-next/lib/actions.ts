@@ -99,7 +99,7 @@ export const ACTIONS: Record<string, ActionDef> = {
     build: (v) => encSend(s(v, "from"), s(v, "to"), u(v, "amount")),
   },
   claim: {
-    key: "claim", msgType: "claim_winnings", title: "Claim Winnings", eye: "Collect Payout", sub: "Winners receive 1 PRX per winning share (claim within 24 hours of finalization on v2 markets, 30 days on older ones). Cancelled or voided markets refund what you paid, including fees",
+    key: "claim", msgType: "claim_winnings", title: "Claim Winnings", eye: "Collect Payout", sub: "Winners receive 1 PRX per winning share (claim within 30 days of finalization; v2 markets had a 24-hour limit before block 90,000). Cancelled or voided markets refund what you paid, including fees",
     fields: [ MID, WALLET, FEE ],
     build: (v) => encClaim(s(v, "mid"), s(v, "addr")),
   },

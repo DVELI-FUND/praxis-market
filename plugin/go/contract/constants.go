@@ -75,7 +75,7 @@ RESOLUTION_DELAY_BLOCKS - GRACE_PERIOD_BLOCKS - CLAIM_GRACE_PERIOD - 1)
 // ─────────────────────────────────────────────────────────────────────────────
 // TIMING CONSTANTS — PORS (all values in blocks)
 // Issue-18: DISPUTE_BLOCKS is block-count based, not wall-clock.
-// At 10s/block the floor is ~48h. If block time deviates (e.g. 8s/block
+// At 10s/block the floor is ~48h (24h from PATCH_V6_HEIGHT, see patch_v6.go). If block time deviates (e.g. 8s/block
 // during validator churn), the wall-clock window shrinks proportionally.
 // Future: anchor to wall-clock via a protocol time parameter.
 // MIN_DISPUTE_BLOCKS = 17,280 ≈ 48h at ~10s block time (P5)

@@ -27,9 +27,13 @@ const (
 // V2_CLAIM_GRACE_BLOCKS: how long winners have to claim after a v2 market is finalized.
 // 8,640 blocks = 24h at 10s/block. After it, nobody is paid and the pool is swept to the
 // treasury (sweepClosedMarket). Markets created before ENGINE_V2_HEIGHT keep the 30-day window.
+// From PATCH_V6_HEIGHT the 24h limit is lifted: v2 markets get the default (30-day) window too.
 const V2_CLAIM_GRACE_BLOCKS uint64 = 8_640
 
-func v2ClaimGrace(m *MarketState, def uint64) uint64 {
+func v2ClaimGrace(m *MarketState, def uint64, now uint64) uint64 {
+	if patchV6Active(now) {
+		return def
+	}
 	if m != nil && m.EngineV2 {
 		return V2_CLAIM_GRACE_BLOCKS
 	}
