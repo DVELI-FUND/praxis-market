@@ -9,6 +9,8 @@ export interface MarketDetail {
   rules: string;
   creator: string;
   b0: bigint;
+  alphaPpm?: bigint;
+  engineV2?: boolean;
   expiry: bigint;
   status: number;
   qYes: bigint;
@@ -113,7 +115,7 @@ async function pluginFetch<T>(path: string): Promise<T> {
 }
 
 export async function fetchMarket(mid: string): Promise<MarketDetail> {
-  const raw = await pluginFetch<{ id: string; market: { q_yes: string; q_no: string; expiry_time: string; status: number; question: string; rules: string; creator: string; b_eff: string; options?: string[]; q?: (string | number)[]; open_time?: string | number; tx_count?: string | number; total_positions?: string | number } }>(`/v1/query/markets?id=${encodeURIComponent(mid)}`);
+  const raw = await pluginFetch<{ id: string; market: { q_yes: string; q_no: string; expiry_time: string; status: number; question: string; rules: string; creator: string; b_eff: string; alpha_ppm?: string | number; engine_v2?: boolean; options?: string[]; q?: (string | number)[]; open_time?: string | number; tx_count?: string | number; total_positions?: string | number } }>(`/v1/query/markets?id=${encodeURIComponent(mid)}`);
   const mk = raw.market;
   const expiry = BigInt(mk.expiry_time || 0);
   let status = mk.status ?? 0;
@@ -130,6 +132,8 @@ export async function fetchMarket(mid: string): Promise<MarketDetail> {
     rules: mk.rules || "",
     creator: b64ToHex(mk.creator || ""),
     b0: BigInt(mk.b_eff || 0),
+    alphaPpm: BigInt(mk.alpha_ppm || 0),
+    engineV2: mk.engine_v2 === true,
     expiry,
     status,
     qYes: BigInt(mk.q_yes || 0),

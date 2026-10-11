@@ -27,6 +27,10 @@ func validateCreateExtras(msg *MessageCreateMarket) *PluginError {
 		if msg.PayoutMode != 0 {
 			return ErrInvalidParam()
 		}
+		// ENGINE V2: every new market is an N-outcome market (binary = 2 options).
+		if engineV2Active(GetGlobalHeight()) {
+			return ErrInvalidParam()
+		}
 		if patchV3Active(GetGlobalHeight()) {
 			if len(msg.Question) > MAX_BINARY_QUESTION {
 				return ErrInvalidQuestion()
@@ -128,6 +132,13 @@ func tradeCostNOutcome(m *MarketState, msg *MessageSubmitPrediction) (uint64, *P
 	if idx >= len(m.Options) || len(m.Q) != len(m.Options) {
 		return 0, ErrInvalidParam()
 	}
+	if m.EngineV2 {
+		cost, err := TradeCostV2(m.Q, marketEngineV2(m), idx, msg.Shares)
+		if err != nil {
+			return 0, ErrInvalidAmount()
+		}
+		return cost, nil
+	}
 	cost, err := TradeCostN(m.Q, m.BEff, idx, msg.Shares)
 	if err != nil {
 		return 0, ErrInvalidAmount()
@@ -147,7 +158,11 @@ func checkPositionCapN(m *MarketState, p *PositionState, msg *MessageSubmitPredi
 		cur = p.Shares[idx]
 	}
 	base := m.Q[idx] + msg.Shares
-	if floor := m.BEff / 2; base < floor {
+	floorDepth := m.BEff
+	if m.EngineV2 {
+		floorDepth = depthV2(m) // adaptive depth b(q), not just b0
+	}
+	if floor := floorDepth / 2; base < floor {
 		base = floor
 	}
 	if exceedsPositionCap(cur, msg.Shares, base) {

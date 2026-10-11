@@ -9,7 +9,7 @@ import { buildSigned, friendlyError, TYPE_URLS, waitForConfirmation } from "@/li
 import { encPredict } from "@/lib/proto";
 import { submitTxRPC } from "@/lib/rpc";
 import { extractOutcomes, yesPct, nPrices, binTradeCost, marketLiquidity } from "@/lib/markets";
-import { nTradeCost } from "@/lib/nOutcome";
+import { nTradeCost, V2_PROTOCOL_FEE_BPS } from "@/lib/nOutcome";
 import { fmtPRX } from "@/lib/format";
 import { fetchPositionFull, type MarketDetail } from "@/lib/detail";
 
@@ -58,17 +58,18 @@ export default function PredictPanel({ market, outcome, onOutcome, selectedOptio
   });
   const canSign = !!privKey && !!pubKey;
   const pct = isNOutcome ? 0 : yesPct(market);
-  const nPricesArr = isNOutcome ? nPrices(market.q, market.b0) : [];
+  const nPricesArr = isNOutcome ? nPrices(market.q, market.b0, market.alphaPpm) : [];
 
   // Quote straight from the LMSR the chain uses (price moves with size; fees are 1%+1% of TRADE COST, not of shares).
   const totalCostFor = (n: number): number => {
     if (n <= 0) return 0;
     const su = BigInt(n) * 1_000_000n;
     const c = isNOutcome
-      ? nTradeCost(market.q, market.b0, selectedOption, su)
+      ? nTradeCost(market.q, market.b0, selectedOption, su, market.alphaPpm)
       : binTradeCost(market.qYes, market.qNo, market.b0, outcome, su);
     const t = Math.max(0, Math.ceil(c));
-    return t + Math.ceil(t * 0.01) * 2 + fee; // trade cost + creator/resolver fees + tx fee (before impact buffer)
+    const pf = market.engineV2 ? Math.ceil((t * V2_PROTOCOL_FEE_BPS) / 10_000) : 0; // v2 protocol fee
+    return t + Math.ceil(t * 0.01) * 2 + pf + fee; // trade cost + creator/resolver/protocol fees + tx fee (before impact buffer)
   };
   const sharesFromSpend = useMemo(() => {
     const budget = Math.max(0, spend) * 1_000_000;
@@ -82,21 +83,22 @@ export default function PredictPanel({ market, outcome, onOutcome, selectedOptio
     }
     return lo;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spend, selectedOption, outcome, isNOutcome, market.q, market.b0, market.qYes, market.qNo, fee]);
+  }, [spend, selectedOption, outcome, isNOutcome, market.q, market.b0, market.alphaPpm, market.engineV2, market.qYes, market.qNo, fee]);
   const effShares = mode === "spend" ? sharesFromSpend : shares;
   const sharesU = BigInt(Math.max(0, effShares)) * 1_000_000n; // chain share units; each winning N-outcome share pays 1 uPRX
   const bd = useMemo(() => {
     let cost = 0;
     if (sharesU > 0n) {
       cost = isNOutcome
-        ? nTradeCost(market.q, market.b0, selectedOption, sharesU)
+        ? nTradeCost(market.q, market.b0, selectedOption, sharesU, market.alphaPpm)
         : binTradeCost(market.qYes, market.qNo, market.b0, outcome, sharesU);
     }
     const tradeCost = Math.max(0, Math.ceil(cost));
     const creatorFee = Math.ceil(tradeCost * 0.01);
     const resolverFee = Math.ceil(tradeCost * 0.01);
+    const protocolFee = market.engineV2 ? Math.ceil((tradeCost * V2_PROTOCOL_FEE_BPS) / 10_000) : 0;
     // chain checks tradeCost + txFee + creatorFee + resolverFee <= maxCost
-    const maxCost = Math.ceil((tradeCost + creatorFee + resolverFee) * (1 + slip / 100)) + fee;
+    const maxCost = Math.ceil((tradeCost + creatorFee + resolverFee + protocolFee) * (1 + slip / 100)) + fee;
     // Standard LMSR: each winning share pays 1 PRX (capped pro-rata only if the pool were ever short,
     // which a funded LMSR pool never is). Binary real winner shares exclude the b/2 phantom stake.
     let toWin = Number(sharesU);
@@ -106,8 +108,8 @@ export default function PredictPanel({ market, outcome, onOutcome, selectedOptio
       const poolAfter = Number(marketLiquidity(market)) + tradeCost;
       if (real > 0) toWin = Math.min(toWin, (poolAfter * Number(sharesU)) / real);
     }
-    return { tradeCost, creatorFee, resolverFee, maxCost, toWin };
-  }, [sharesU, slip, outcome, isNOutcome, selectedOption, market.q, market.b0, market.qYes, market.qNo, fee]);
+    return { tradeCost, creatorFee, resolverFee, protocolFee, maxCost, toWin };
+  }, [sharesU, slip, outcome, isNOutcome, selectedOption, market.q, market.b0, market.alphaPpm, market.engineV2, market.qYes, market.qNo, fee]);
 
   // Chain cap (checkPositionCapN / exceedsPositionCap): per-address shares <= 20% of the side's shares AFTER the trade
   // (N-outcome floor: b/2). Existing holdings add to the numerator on-chain (fetched above).
@@ -274,6 +276,7 @@ export default function PredictPanel({ market, outcome, onOutcome, selectedOptio
         <div className="mb-3 space-y-1 rounded-card border border-line bg-bg-2 p-2.5 font-mono text-[11px]">
           <div className="flex justify-between"><span className="text-ink-3">Trade cost</span><span className="text-up">{fmtPRX(bd.tradeCost)} PRX</span></div>
           <div className="flex justify-between"><span className="text-ink-3">Market fee (2%)</span><span className="text-ink-2">{fmtPRX(bd.creatorFee + bd.resolverFee)} PRX</span></div>
+          {bd.protocolFee > 0 && <div className="flex justify-between"><span className="text-ink-3">Protocol fee (0.5%)</span><span className="text-ink-2">{fmtPRX(bd.protocolFee)} PRX</span></div>}
           <div className="flex justify-between"><span className="text-ink-3">TX fee</span><span className="text-ink-2">{fee.toLocaleString()} uPRX</span></div>
           <div className="flex justify-between border-t border-line pt-1"><span className="text-ink">Max cost</span><span className="text-up">{fmtPRX(bd.maxCost)} PRX</span></div>
           <div className="flex justify-between border-t border-line pt-1"><span className="text-ink">To Win</span><span className="text-cyanx">{fmtPRX(bd.toWin)} PRX</span></div>

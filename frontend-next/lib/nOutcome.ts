@@ -10,37 +10,48 @@ export const MAX_RULES_BYTES_N = 4096;
 // B0 must be >= FINALIZATION_BOUNTY (50M) + MIN_SEED_N (25M) micro-units for N-outcome markets.
 export const MIN_B0_N = 75_000_000n;
 
-function logSumExp(q: bigint[], b: bigint): { m: bigint; s: number } {
+/** Protocol fee on every v2 trade, in bps of trade cost. MUST equal V2_PROTOCOL_FEE_BPS in engine_v2_wire.go. */
+export const V2_PROTOCOL_FEE_BPS = 50;
+
+/** Live depth b(q) = b0 + alpha*S (ADLMSR v2). alphaPpm = 0 => fixed-b LMSR (legacy N-outcome). Display only. */
+export function nDepth(q: bigint[], b0: bigint, alphaPpm: bigint = 0n): number {
+  if (alphaPpm <= 0n) return Number(b0);
+  let sum = 0n;
+  for (const v of q) sum += v;
+  return Number(b0) + (Number(alphaPpm) * Number(sum)) / 1e6;
+}
+
+function logSumExp(q: bigint[], b: number): { m: bigint; s: number } {
   let m = 0n;
   for (const v of q) if (v > m) m = v;
-  const bb = Number(b);
   let s = 0;
-  for (const v of q) s += Math.exp(Number(v - m) / bb);
+  for (const v of q) s += Math.exp(Number(v - m) / b);
   return { m, s };
 }
 
 /** Probabilities (0..1) per option; sums to 1. */
-export function nPrices(q: bigint[], b: bigint): number[] {
+export function nPrices(q: bigint[], b: bigint, alphaPpm: bigint = 0n): number[] {
   if (!q.length || b <= 0n) return q.map(() => (q.length ? 1 / q.length : 0));
   let m = 0n;
   for (const v of q) if (v > m) m = v;
-  const bb = Number(b);
+  const bb = nDepth(q, b, alphaPpm);
   const w = q.map((v) => Math.exp(Number(v - m) / bb));
   const s = w.reduce((a, x) => a + x, 0);
   return w.map((x) => x / s);
 }
 
 /** C(q) in micro-units. */
-export function nCost(q: bigint[], b: bigint): number {
-  const { m, s } = logSumExp(q, b);
-  return Number(m) + Number(b) * Math.log(s);
+export function nCost(q: bigint[], b: bigint, alphaPpm: bigint = 0n): number {
+  const bb = nDepth(q, b, alphaPpm);
+  const { m, s } = logSumExp(q, bb);
+  return Number(m) + bb * Math.log(s);
 }
 
 /** Estimated cost (micro-units) of buying `shares` of option `idx`. Quote only. */
-export function nTradeCost(q: bigint[], b: bigint, idx: number, shares: bigint): number {
+export function nTradeCost(q: bigint[], b: bigint, idx: number, shares: bigint, alphaPpm: bigint = 0n): number {
   const q2 = q.slice();
   q2[idx] += shares;
-  return nCost(q2, b) - nCost(q, b);
+  return nCost(q2, b, alphaPpm) - nCost(q, b, alphaPpm);
 }
 
 // eslint-disable-next-line no-control-regex
@@ -68,8 +79,8 @@ export function validateOptions(opts: string[]): string | null {
 }
 
 /** Mark-to-market value (micro-units) of per-option shares at current LMSR prices. */
-export function nPositionValue(shares: bigint[], q: bigint[], b: bigint): bigint {
-  const p = nPrices(q, b);
+export function nPositionValue(shares: bigint[], q: bigint[], b: bigint, alphaPpm: bigint = 0n): bigint {
+  const p = nPrices(q, b, alphaPpm);
   let v = 0;
   for (let i = 0; i < shares.length && i < p.length; i++) v += Number(shares[i]) * p[i];
   return BigInt(Math.round(v));

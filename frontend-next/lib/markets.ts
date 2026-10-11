@@ -23,6 +23,8 @@ export interface Market {
   rules: string;
   creator: string;
   b0: bigint;
+  alphaPpm?: bigint; // ADLMSR v2 depth growth (parts per million); 0/undefined = fixed-b
+  engineV2?: boolean;
   expiry: bigint;
   status: number;
   qYes: bigint;
@@ -48,6 +50,8 @@ interface RawMarketEntry {
     rules?: string;
     creator?: string;
     b_eff?: string | number;
+    alpha_ppm?: string | number;
+    engine_v2?: boolean;
     open_time?: string | number;
     tx_count?: string | number;
     total_positions?: string | number;
@@ -101,6 +105,8 @@ async function loadMarkets(includeHidden: boolean): Promise<Market[]> {
       rules: mk.rules || "",
       creator: b64ToHex(mk.creator || ""),
       b0: BigInt(mk.b_eff || 0),
+      alphaPpm: BigInt(mk.alpha_ppm || 0),
+      engineV2: mk.engine_v2 === true,
       expiry,
       status,
       qYes,
@@ -196,9 +202,9 @@ export function sortMarkets(markets: Market[], sort: SortKey): Market[] {
 }
 
 /** Leading option for N-outcome markets (label + % chance); binary markets return YES. */
-export function leadOption(m: { options?: string[]; q?: bigint[]; b0: bigint; rules?: string }): { label: string; pct: number } {
+export function leadOption(m: { options?: string[]; q?: bigint[]; b0: bigint; alphaPpm?: bigint; rules?: string }): { label: string; pct: number } {
   if (m.options && m.options.length > 0 && m.q && m.q.length === m.options.length) {
-    const p = nPrices(m.q, m.b0);
+    const p = nPrices(m.q, m.b0, m.alphaPpm);
     let best = 0;
     for (let i = 1; i < p.length; i++) if (p[i] > p[best]) best = i;
     return { label: m.options[best], pct: Math.round(p[best] * 100) };
@@ -225,8 +231,8 @@ export function binYesPrice(qYes: bigint, qNo: bigint, b: bigint): number {
 }
 
 // Legacy binary: YES percentage from the LMSR price. N-outcome: percentage of option 0 (sort helper only; UIs show every option).
-export function yesPct(m: { qYes: bigint; qNo: bigint; options?: string[]; q?: bigint[]; b0?: bigint }): number {
-  if (m.options && m.options.length > 0 && m.q && m.b0) return Math.round(nPrices(m.q, m.b0)[0] * 100);
+export function yesPct(m: { qYes: bigint; qNo: bigint; options?: string[]; q?: bigint[]; b0?: bigint; alphaPpm?: bigint }): number {
+  if (m.options && m.options.length > 0 && m.q && m.b0) return Math.round(nPrices(m.q, m.b0, m.alphaPpm)[0] * 100);
   if (m.b0 && m.b0 > 0n) return Math.round(binYesPrice(m.qYes, m.qNo, m.b0) * 100);
   const total = m.qYes + m.qNo;
   return total > 0n ? Number((m.qYes * 100n) / total) : 50;

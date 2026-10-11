@@ -262,6 +262,7 @@ rewardOK = marketVolumeProxy(market, marketPool.Amount) >= MIN_REWARD_VOLUME
 // PATCH V3: a market nobody traded has no claimant to ever trigger a sweep, so its
 // seed was locked forever. Return it to the creator who funded it.
 var poolOps []*PluginSetOp
+var v2ResolverShare, v2TreasuryShare uint64
 gV3 := patchV3Active(now)
 if gV3 && market.TotalPositions == 0 && marketPool.Amount > 0 {
 if creatorAcc.Amount > ^uint64(0)-marketPool.Amount {
@@ -286,7 +287,16 @@ surplus = minU64(surplus, seedEstimate(market))
 if creatorAcc.Amount > ^uint64(0)-surplus {
 return &PluginDeliverResponse{Error: ErrInvalidAmount()}
 }
+if market.EngineV2 {
+// ENGINE V2: seed back to the creator first; only PROFIT above the seed is split
+// creator / resolver / treasury. The resolver+treasury shares are paid after the
+// main write (v2SettlePay) so they can never be lost to a skipped write path.
+cs, rs, ts := SettleResidualV2(surplus, seedEstimate(market), V2_PROFIT_CREATOR_BPS, V2_PROFIT_RESOLVER_BPS)
+creatorAcc.Amount += cs
+v2ResolverShare, v2TreasuryShare = rs, ts
+} else {
 creatorAcc.Amount += surplus
+}
 marketPool.Amount -= surplus
 rawSP, spe := SafeMarshal(marketPool)
 if spe != nil { return &PluginDeliverResponse{Error: spe} }
@@ -435,6 +445,11 @@ sets = append(sets, poolOps...)
 wr, werr := c.plugin.StateWrite(c, &PluginStateWriteRequest{Sets: sets})
 if pe := errCheckWrite(wr, werr); pe != nil {
 return &PluginDeliverResponse{Error: pe}
+}
+if v2ResolverShare > 0 || v2TreasuryShare > 0 {
+if pe := c.v2SettlePay(proposal.ResolverAddr, pathB || pathQ, v2ResolverShare, v2TreasuryShare); pe != nil {
+return &PluginDeliverResponse{Error: pe}
+}
 }
 if gV3 {
 if pe := c.chargeAndRoute(msg.CallerAddr, fee); pe != nil {

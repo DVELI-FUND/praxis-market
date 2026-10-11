@@ -30,7 +30,7 @@ export default function MarketCard({ market, featured = false, bookmarked, onTog
   const liq = fmtPRX(marketLiquidity(market));
 
   // N-outcome: calculate prices for all options
-  const nPricesArr = isNOutcome ? nPrices(market.q, market.b0) : [];
+  const nPricesArr = isNOutcome ? nPrices(market.q, market.b0, market.alphaPpm) : [];
 
   const [flash, setFlash] = useState<"" | "up" | "down">("");
   const prevPct = useRef(pct);

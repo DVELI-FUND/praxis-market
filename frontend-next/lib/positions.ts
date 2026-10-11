@@ -72,6 +72,7 @@ interface ValuedMarket {
   qYes: bigint;
   qNo: bigint;
   b0: bigint;
+  alphaPpm?: bigint;
 }
 
 /**
@@ -86,7 +87,7 @@ interface ValuedMarket {
 export function positionValue(pos: Position, m: ValuedMarket): bigint {
   if (pos.claimed) return 0n;
   if (m.status === STATUS.CANCELLED || m.status === STATUS.VOIDED) return pos.costPaid;
-  if (m.options.length > 0) return nPositionValue(pos.shares, m.q, m.b0);
+  if (m.options.length > 0) return nPositionValue(pos.shares, m.q, m.b0, m.alphaPpm);
   const pYes = binYesPrice(m.qYes, m.qNo, m.b0);
   const yes = Number(pos.sharesYes) * pYes;
   const no = Number(pos.sharesNo) * (1 - pYes);

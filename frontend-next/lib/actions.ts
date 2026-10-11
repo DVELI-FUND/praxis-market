@@ -3,6 +3,8 @@ import { getBlockSecs, blockSecsReady } from "@/lib/rpc";
 import { TYPE_URLS } from "@/lib/tx";
 import { buildRulesWithSub, buildRulesWithMeta } from "@/lib/cats";
 import { validateOptions } from "@/lib/nOutcome";
+import { engineV2Active } from "@/lib/engineV2";
+import { getChainContext } from "@/lib/chainContext";
 import {
   encSend, encCreate, encClaim, encReclaim, encRegister, encPropose, encDispute,
   encCommit, encReveal, encTally, encFinalize, encSlash, encForfeit,
@@ -221,7 +223,9 @@ export const ACTIONS: Record<string, ActionDef> = {
       const exp = datetimeToBlock(String(v.expiry || ""), ctx.height);
       const nonce = BigInt(Date.now()) * 1000n;
       const optionsRaw = String(v.options ?? "").trim();
-      const options = optionsRaw ? optionsRaw.split("|").map(o => o.trim()).filter(o => o.length > 0) : [];
+      let options = optionsRaw ? optionsRaw.split("|").map(o => o.trim()).filter(o => o.length > 0) : [];
+      // ENGINE V2: no legacy binary creation any more — binary is a 2-option market.
+      if (options.length < 2 && engineV2Active(ctx.height)) options = [String(v.out_yes ?? "").trim() || "Yes", String(v.out_no ?? "").trim() || "No"];
       const payoutMode = options.length >= 2 ? 0 : undefined;
       return encCreate(s(v, "creator"), u(v, "b0"), BigInt(exp), nonce, String(v.question ?? ""), rules, options.length >= 2 ? options : undefined, payoutMode);
     },
@@ -231,7 +235,8 @@ export const ACTIONS: Record<string, ActionDef> = {
       const enc = new TextEncoder();
       if (enc.encode(String(v.question)).length > 280) return "Question too long — max 280 bytes";
       if (enc.encode(composeCreateRules(v)).length > 4096) return "Rules too long — max 4,096 bytes (category/image/label tags count too)";
-      const isNMarket = String(v.options ?? "").trim() !== "";
+      const v2 = engineV2Active(getChainContext().height);
+      const isNMarket = String(v.options ?? "").trim() !== "" || v2;
       const minB0 = isNMarket ? 75 : 60; // MIN_B0 (binary) / MIN_B0_N
       if (!(Number(v.b0) >= minB0)) return `B0 liquidity must be at least ${minB0} PRX${isNMarket ? " for multi-option markets" : ""}`;
       // Creator-loss guard: trading must close at kickoff, otherwise in-play traders can buy the winning side at stale prices
@@ -240,7 +245,7 @@ export const ACTIONS: Record<string, ActionDef> = {
       if (String(v.ko ?? "").trim() && !isNaN(koMs) && !isNaN(exMs) && exMs > koMs) return "Expiry is after kickoff — traders could bet in-play. Set expiry at or before kickoff (UTC), or clear Kickoff for non-event markets.";
       // expiry is converted to a block height; refuse to guess seconds/block (the chain is ~20s, not 5s)
       if (!blockSecsReady()) return "Still measuring block time — wait a few seconds and try again";
-      const rawOpts = String(v.options ?? "").trim();
+      const rawOpts = String(v.options ?? "").trim() || (v2 ? `${String(v.out_yes ?? "").trim() || "Yes"}|${String(v.out_no ?? "").trim() || "No"}` : "");
       if (rawOpts) {
         const err = validateOptions(rawOpts.split("|"));
         if (err) return err;

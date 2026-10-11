@@ -361,9 +361,13 @@ type MarketState struct {
 	TxCount             uint64                 `protobuf:"varint,14,opt,name=tx_count,json=txCount,proto3" json:"tx_count,omitempty"` // monotonic per-market counter; doubles as market-txs log seq
 	// N-outcome markets (2-10 options). A market is LEGACY binary iff len(options)==0;
 	// legacy markets keep using q_yes/q_no and every bool field, unchanged.
-	Options       []string `protobuf:"bytes,15,rep,name=options,proto3" json:"options,omitempty"`                          // outcome labels; index i <-> q[i]
-	Q             []uint64 `protobuf:"varint,16,rep,packed,name=q,proto3" json:"q,omitempty"`                              // shares outstanding per option (len == len(options))
-	PayoutMode    uint32   `protobuf:"varint,17,opt,name=payout_mode,json=payoutMode,proto3" json:"payout_mode,omitempty"` // 0 = STANDARD LMSR (1 unit per winning share); 1 reserved (pro-rata)
+	Options    []string `protobuf:"bytes,15,rep,name=options,proto3" json:"options,omitempty"`                          // outcome labels; index i <-> q[i]
+	Q          []uint64 `protobuf:"varint,16,rep,packed,name=q,proto3" json:"q,omitempty"`                              // shares outstanding per option (len == len(options))
+	PayoutMode uint32   `protobuf:"varint,17,opt,name=payout_mode,json=payoutMode,proto3" json:"payout_mode,omitempty"` // 0 = STANDARD LMSR (1 unit per winning share); 1 reserved (pro-rata)
+	// Engine v2 (LMSR v2 / ADLMSR v2). Set once at creation, never changed. Markets created
+	// before ENGINE_V2_HEIGHT keep engine_v2=false and the original engine untouched.
+	AlphaPpm      uint64 `protobuf:"varint,18,opt,name=alpha_ppm,json=alphaPpm,proto3" json:"alpha_ppm,omitempty"` // depth growth b(q)=b_eff+alpha*sum(q), parts per million
+	EngineV2      bool   `protobuf:"varint,19,opt,name=engine_v2,json=engineV2,proto3" json:"engine_v2,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -515,6 +519,20 @@ func (x *MarketState) GetPayoutMode() uint32 {
 		return x.PayoutMode
 	}
 	return 0
+}
+
+func (x *MarketState) GetAlphaPpm() uint64 {
+	if x != nil {
+		return x.AlphaPpm
+	}
+	return 0
+}
+
+func (x *MarketState) GetEngineV2() bool {
+	if x != nil {
+		return x.EngineV2
+	}
+	return false
 }
 
 // MarketTxEntry is a single append-only log entry recorded for a market-affecting
@@ -3010,7 +3028,7 @@ const file_tx_proto_rawDesc = "" +
 	"\x11create_market_fee\x18\x02 \x01(\x04R\x0fcreateMarketFee\x122\n" +
 	"\x15submit_prediction_fee\x18\x03 \x01(\x04R\x13submitPredictionFee\x12,\n" +
 	"\x12resolve_market_fee\x18\x04 \x01(\x04R\x10resolveMarketFee\x12,\n" +
-	"\x12claim_winnings_fee\x18\x05 \x01(\x04R\x10claimWinningsFee\"\xf7\x03\n" +
+	"\x12claim_winnings_fee\x18\x05 \x01(\x04R\x10claimWinningsFee\"\xb1\x04\n" +
 	"\vMarketState\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\rR\x06status\x12\x1f\n" +
 	"\vexpiry_time\x18\x02 \x01(\x04R\n" +
@@ -3031,7 +3049,9 @@ const file_tx_proto_rawDesc = "" +
 	"\aoptions\x18\x0f \x03(\tR\aoptions\x12\f\n" +
 	"\x01q\x18\x10 \x03(\x04R\x01q\x12\x1f\n" +
 	"\vpayout_mode\x18\x11 \x01(\rR\n" +
-	"payoutMode\"\xda\x01\n" +
+	"payoutMode\x12\x1b\n" +
+	"\talpha_ppm\x18\x12 \x01(\x04R\balphaPpm\x12\x1b\n" +
+	"\tengine_v2\x18\x13 \x01(\bR\bengineV2\"\xda\x01\n" +
 	"\rMarketTxEntry\x12\x17\n" +
 	"\atx_type\x18\x01 \x01(\tR\x06txType\x12\x14\n" +
 	"\x05actor\x18\x02 \x01(\fR\x05actor\x12\x16\n" +

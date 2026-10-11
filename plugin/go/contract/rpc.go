@@ -62,10 +62,14 @@ http.Error(w, "failed to decode market", http.StatusInternalServerError)
 return
 }
 w.Header().Set("Content-Type", "application/json")
-json.NewEncoder(w).Encode(map[string]interface{}{
+out := map[string]interface{}{
 "id":     idHex,
 "market": market,
-})
+}
+if ev := engineViewOf(market); ev != nil {
+out["engine"] = ev
+}
+json.NewEncoder(w).Encode(out)
 return
 }
 resp, qErr := p.QueryState(0, &PluginStateReadRequest{
@@ -80,6 +84,7 @@ return
 type marketEntry struct {
 Id     string       `json:"id"`
 Market *MarketState `json:"market"`
+Engine *engineView  `json:"engine,omitempty"`
 }
 var markets []marketEntry
 if len(resp.Results) > 0 {
@@ -93,12 +98,14 @@ marketIdBytes := rawKey
 if len(rawKey) > 20 {
 marketIdBytes = rawKey[len(rawKey)-20:]
 }
-markets = append(markets, marketEntry{Id: hex.EncodeToString(marketIdBytes), Market: market})
+markets = append(markets, marketEntry{Id: hex.EncodeToString(marketIdBytes), Market: market, Engine: engineViewOf(market)})
 }
 }
 w.Header().Set("Content-Type", "application/json")
 json.NewEncoder(w).Encode(markets)
 })
+
+p.registerQuoteRoute(mux)
 
 // GET /v1/query/positions?market=<hex>  -> top holders for a market, sorted by total stake desc, capped at 10
 mux.HandleFunc("/v1/query/positions", func(w http.ResponseWriter, r *http.Request) {

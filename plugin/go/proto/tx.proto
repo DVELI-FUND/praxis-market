@@ -77,6 +77,10 @@ message MarketState {
   repeated string options = 15; // outcome labels; index i <-> q[i]
   repeated uint64 q       = 16; // shares outstanding per option (len == len(options))
   uint32 payout_mode      = 17; // 0 = STANDARD LMSR (1 unit per winning share); 1 reserved (pro-rata)
+  // Engine v2 (LMSR v2 / ADLMSR v2). Set once at creation, never changed. Markets created
+  // before ENGINE_V2_HEIGHT keep engine_v2=false and the original engine untouched.
+  uint64 alpha_ppm        = 18; // depth growth b(q)=b_eff+alpha*sum(q), parts per million
+  bool   engine_v2        = 19;
 }
 
 // MarketTxEntry is a single append-only log entry recorded for a market-affecting

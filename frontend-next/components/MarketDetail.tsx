@@ -69,7 +69,7 @@ export default function MarketDetail({ mid }: Props) {
     }
     const pct = yesPct(market);
   const isNOutcome = market.options && market.options.length > 0;
-  const nPricesArr = isNOutcome && market.q && market.b0 ? nPrices(market.q, market.b0) : [];
+  const nPricesArr = isNOutcome && market.q && market.b0 ? nPrices(market.q, market.b0, market.alphaPpm) : [];
     return Math.round((pct - pct24) * 10) / 10;
   }, [txs, market, chain2?.height]);
   const fmtChg = (v: number) => (v > 0 ? `▲ ${v.toFixed(1)}%` : v < 0 ? `▼ ${Math.abs(v).toFixed(1)}%` : "— 0.0%");
@@ -92,7 +92,7 @@ export default function MarketDetail({ mid }: Props) {
 
   const pct = yesPct(market);
   const isNOutcome = market.options && market.options.length > 0;
-  const nPricesArr = isNOutcome && market.q && market.b0 ? nPrices(market.q, market.b0) : [];
+  const nPricesArr = isNOutcome && market.q && market.b0 ? nPrices(market.q, market.b0, market.alphaPpm) : [];
 
   const noPct = 100 - pct;
   const total = marketVol(market);

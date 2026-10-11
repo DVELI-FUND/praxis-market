@@ -145,10 +145,11 @@ return &PluginDeliverResponse{Error: pe}
 }
 creatorFeeAmt  := ComputeBps(tradeCost, CREATOR_FEE_BPS)
 resolverFeeAmt := ComputeBps(tradeCost, RESOLVER_FEE_BPS)
+protoFeeAmt := v2ProtocolFee(market, tradeCost)
 if fee > 0 && tradeCost > ^uint64(0)-fee {
 return &PluginDeliverResponse{Error: ErrInvalidAmount()}
 }
-finalCost := tradeCost + fee + creatorFeeAmt + resolverFeeAmt
+finalCost := tradeCost + fee + creatorFeeAmt + resolverFeeAmt + protoFeeAmt
 if finalCost > msg.MaxCost {
 return &PluginDeliverResponse{Error: ErrCostExceedsMaxCost()}
 }
@@ -183,6 +184,7 @@ mPool.Amount       += tradeCost
 feeSplit := ComputeBps(fee, TX_TREASURY_SPLIT_BPS)
 feePool.Amount   += feeSplit
 gTreasury.Amount += fee - feeSplit
+gTreasury.Amount = addSat(gTreasury.Amount, protoFeeAmt)
 creatorFee.Amount  += creatorFeeAmt
 resolverFee.Amount += resolverFeeAmt
 

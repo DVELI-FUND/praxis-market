@@ -190,6 +190,14 @@ market.Q = make([]uint64, len(msg.Options))
 market.PayoutMode = PAYOUT_MODE_STANDARD
 market.BEff = nb
 market.QYes, market.QNo = 0, 0
+if engineV2Active(now) {
+a, aerr := v2AlphaFor(len(msg.Options), lmsrSeed)
+if aerr != nil {
+return &PluginDeliverResponse{Error: ErrInvalidB0()}
+}
+market.EngineV2 = true
+market.AlphaPpm = a
+}
 }
 treasury := &TreasuryReserve{LockedReserve: FINALIZATION_BOUNTY, CreatorBond: bond}
 
